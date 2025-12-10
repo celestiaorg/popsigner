@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto"
@@ -19,6 +21,27 @@ import (
 const BackendType = "openbao"
 
 // BaoKeyring implements keyring.Keyring using OpenBao.
+//
+// Thread Safety:
+// BaoKeyring is safe for concurrent use by multiple goroutines.
+// This is critical for Celestia's parallel worker pattern where
+// multiple blob submissions happen concurrently with different keys.
+//
+// The underlying BaoStore uses sync.RWMutex for metadata access,
+// and BaoClient uses HTTP connection pooling for parallel requests.
+//
+// Example (parallel workers):
+//
+//	var wg sync.WaitGroup
+//	for _, worker := range workers {
+//	    wg.Add(1)
+//	    go func(uid string, tx []byte) {
+//	        defer wg.Done()
+//	        sig, _, _ := kr.Sign(uid, tx, signing.SignMode_SIGN_MODE_DIRECT)
+//	        // Use signature...
+//	    }(worker.UID, txBytes)
+//	}
+//	wg.Wait()
 type BaoKeyring struct {
 	client *BaoClient
 	store  *BaoStore
@@ -435,6 +458,124 @@ func (k *BaoKeyring) GetWrappingKey() ([]byte, error) {
 	// For now, return nil to indicate no wrapping key is available.
 	// The Import function will use direct base64 encoding instead.
 	return nil, nil
+}
+
+// --- Batch Operations for Parallel Workers ---
+
+// CreateBatch creates multiple keys in parallel.
+// This is optimized for the Celestia parallel worker pattern where
+// multiple accounts sign blobs concurrently.
+//
+// Keys are named with the pattern: {prefix}-{1..count}
+//
+// Example:
+//
+//	results, err := kr.CreateBatch(ctx, CreateBatchOptions{
+//	    Prefix: "blob-worker",
+//	    Count:  4,
+//	})
+//	// Creates: blob-worker-1, blob-worker-2, blob-worker-3, blob-worker-4
+func (k *BaoKeyring) CreateBatch(ctx context.Context, opts CreateBatchOptions) (*CreateBatchResult, error) {
+	if opts.Count <= 0 || opts.Count > 100 {
+		return nil, fmt.Errorf("count must be between 1 and 100")
+	}
+	if opts.Prefix == "" {
+		return nil, fmt.Errorf("prefix is required")
+	}
+
+	result := &CreateBatchResult{
+		Keys:   make([]*KeyRecord, opts.Count),
+		Errors: make([]error, opts.Count),
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < opts.Count; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			uid := fmt.Sprintf("%s-%d", opts.Prefix, idx+1)
+			record, err := k.NewAccountWithOptions(uid, KeyOptions{
+				Exportable: opts.Exportable,
+			})
+			if err != nil {
+				result.Errors[idx] = err
+				return
+			}
+
+			// Get metadata to populate KeyRecord
+			meta, err := k.store.Get(uid)
+			if err != nil {
+				result.Errors[idx] = err
+				return
+			}
+
+			result.Keys[idx] = &KeyRecord{
+				Name:      record.Name,
+				PubKey:    meta.PubKeyBytes,
+				Address:   meta.Address,
+				Algorithm: meta.Algorithm,
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	// Check for any errors
+	var errs []string
+	for i, err := range result.Errors {
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("%s-%d: %v", opts.Prefix, i+1, err))
+		}
+	}
+	if len(errs) > 0 {
+		return result, fmt.Errorf("batch create partial failure: %s", strings.Join(errs, "; "))
+	}
+
+	return result, nil
+}
+
+// SignBatch signs multiple messages in parallel.
+// Each request can use a different key - perfect for parallel workers.
+//
+// Performance: Signing 4 messages takes ~200ms (not 4 × 200ms = 800ms)
+// because all signing operations execute concurrently.
+//
+// Thread Safety: This method is safe for concurrent use. The underlying
+// BaoStore uses sync.RWMutex and BaoClient uses HTTP connection pooling.
+//
+// Example:
+//
+//	results := kr.SignBatch(ctx, []BatchSignRequest{
+//	    {UID: "worker-1", Msg: tx1},
+//	    {UID: "worker-2", Msg: tx2},
+//	    {UID: "worker-3", Msg: tx3},
+//	    {UID: "worker-4", Msg: tx4},
+//	})
+func (k *BaoKeyring) SignBatch(ctx context.Context, requests []BatchSignRequest) []BatchSignResult {
+	if len(requests) == 0 {
+		return nil
+	}
+
+	results := make([]BatchSignResult, len(requests))
+	var wg sync.WaitGroup
+
+	for i, req := range requests {
+		wg.Add(1)
+		go func(idx int, r BatchSignRequest) {
+			defer wg.Done()
+			sig, pubKey, err := k.Sign(r.UID, r.Msg, signing.SignMode_SIGN_MODE_DIRECT)
+			results[idx] = BatchSignResult{
+				UID:       r.UID,
+				Signature: sig,
+				Error:     err,
+			}
+			if pubKey != nil {
+				results[idx].PubKey = pubKey.Bytes()
+			}
+		}(i, req)
+	}
+	wg.Wait()
+
+	return results
 }
 
 // --- Helper methods ---

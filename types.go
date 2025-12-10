@@ -108,3 +108,43 @@ type StoreData struct {
 	Keys    map[string]*KeyMetadata `json:"keys"`
 }
 
+// CreateBatchOptions configures batch key creation.
+// This is optimized for the Celestia parallel worker pattern where
+// multiple worker accounts sign blobs concurrently.
+type CreateBatchOptions struct {
+	Prefix     string // Key name prefix (e.g., "blob-worker")
+	Count      int    // Number of keys to create (e.g., 4)
+	Namespace  string // Optional namespace
+	Exportable bool   // Whether keys are exportable
+}
+
+// CreateBatchResult contains results of batch key creation.
+type CreateBatchResult struct {
+	Keys   []*KeyRecord // Created key records
+	Errors []error      // Per-key errors (nil if successful)
+}
+
+// KeyRecord holds minimal key information for batch results.
+// This avoids importing keyring package in types.go.
+type KeyRecord struct {
+	Name      string // Key name/UID
+	PubKey    []byte // 33-byte compressed secp256k1 public key
+	Address   string // Cosmos address
+	Algorithm string // Algorithm (always "secp256k1")
+}
+
+// BatchSignRequest represents a single signing request in a batch.
+// Each request can use a different key - perfect for parallel workers.
+type BatchSignRequest struct {
+	UID  string // Key UID
+	Msg  []byte // Message to sign
+}
+
+// BatchSignResult represents a single signing result.
+type BatchSignResult struct {
+	UID       string // Key UID
+	Signature []byte // 64-byte Cosmos signature (R||S format)
+	PubKey    []byte // 33-byte compressed secp256k1 public key
+	Error     error  // nil if successful
+}
+
