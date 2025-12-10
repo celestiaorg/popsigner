@@ -45,6 +45,20 @@ func (c Config) WithDefaults() Config {
 	return c
 }
 
+// Validate checks required configuration fields.
+func (c *Config) Validate() error {
+	if c.BaoAddr == "" {
+		return ErrMissingBaoAddr
+	}
+	if c.BaoToken == "" {
+		return ErrMissingBaoToken
+	}
+	if c.StorePath == "" {
+		return ErrMissingStorePath
+	}
+	return nil
+}
+
 // KeyMetadata contains locally stored key information.
 type KeyMetadata struct {
 	UID         string    `json:"uid"`
