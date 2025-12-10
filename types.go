@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-// TODO(01A): Implement all types below
-
 // Algorithm constants
 const (
 	AlgorithmSecp256k1   = "secp256k1"
@@ -24,16 +22,27 @@ const (
 	SourceSynced    = "synced"
 )
 
-// Config holds configuration for BaoKeyring.
+// Config holds configuration for BaoKeyring initialization.
 type Config struct {
-	BaoAddr       string
-	BaoToken      string
-	BaoNamespace  string
-	Secp256k1Path string
-	StorePath     string
-	HTTPTimeout   time.Duration
-	TLSConfig     *tls.Config
-	SkipTLSVerify bool
+	BaoAddr       string        // OpenBao server address
+	BaoToken      string        // OpenBao authentication token
+	BaoNamespace  string        // Optional: OpenBao namespace
+	Secp256k1Path string        // Plugin mount path (default: "secp256k1")
+	StorePath     string        // Path to local metadata store
+	HTTPTimeout   time.Duration // HTTP request timeout
+	TLSConfig     *tls.Config   // Optional: custom TLS config
+	SkipTLSVerify bool          // INSECURE: skip TLS verification
+}
+
+// WithDefaults returns Config with default values applied.
+func (c Config) WithDefaults() Config {
+	if c.Secp256k1Path == "" {
+		c.Secp256k1Path = DefaultSecp256k1Path
+	}
+	if c.HTTPTimeout == 0 {
+		c.HTTPTimeout = DefaultHTTPTimeout
+	}
+	return c
 }
 
 // KeyMetadata contains locally stored key information.
