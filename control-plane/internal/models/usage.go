@@ -27,60 +27,18 @@ type UsageMetric struct {
 	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
 }
 
-// PlanLimits defines the limits for each plan.
-type PlanLimits struct {
-	Keys             int   `json:"keys"`
-	SignaturesMonth  int64 `json:"signatures_month"`
-	Namespaces       int   `json:"namespaces"`
-	TeamMembers      int   `json:"team_members"`
-	AuditRetention   int   `json:"audit_retention_days"`
-}
-
-// GetPlanLimits returns the limits for a given plan.
-func GetPlanLimits(plan Plan) PlanLimits {
-	switch plan {
-	case PlanFree:
-		return PlanLimits{
-			Keys:             3,
-			SignaturesMonth:  10000,
-			Namespaces:       1,
-			TeamMembers:      1,
-			AuditRetention:   7,
-		}
-	case PlanPro:
-		return PlanLimits{
-			Keys:             25,
-			SignaturesMonth:  500000,
-			Namespaces:       5,
-			TeamMembers:      10,
-			AuditRetention:   90,
-		}
-	case PlanEnterprise:
-		return PlanLimits{
-			Keys:             -1, // Unlimited
-			SignaturesMonth:  -1, // Unlimited
-			Namespaces:       -1, // Unlimited
-			TeamMembers:      -1, // Unlimited
-			AuditRetention:   365,
-		}
-	default:
-		return GetPlanLimits(PlanFree)
-	}
-}
-
 // UsageSummary represents a summary of usage for an organization.
 type UsageSummary struct {
-	OrgID            uuid.UUID  `json:"org_id"`
-	Plan             Plan       `json:"plan"`
-	Keys             int        `json:"keys"`
-	KeysLimit        int        `json:"keys_limit"`
-	SignaturesMonth  int64      `json:"signatures_month"`
-	SignaturesLimit  int64      `json:"signatures_limit"`
-	Namespaces       int        `json:"namespaces"`
-	NamespacesLimit  int        `json:"namespaces_limit"`
-	TeamMembers      int        `json:"team_members"`
-	TeamMembersLimit int        `json:"team_members_limit"`
-	PeriodStart      time.Time  `json:"period_start"`
-	PeriodEnd        time.Time  `json:"period_end"`
+	OrgID            uuid.UUID `json:"org_id"`
+	Plan             Plan      `json:"plan"`
+	Keys             int       `json:"keys"`
+	KeysLimit        int       `json:"keys_limit"`
+	SignaturesMonth  int64     `json:"signatures_month"`
+	SignaturesLimit  int64     `json:"signatures_limit"`
+	Namespaces       int       `json:"namespaces"`
+	NamespacesLimit  int       `json:"namespaces_limit"`
+	TeamMembers      int       `json:"team_members"`
+	TeamMembersLimit int       `json:"team_members_limit"`
+	PeriodStart      time.Time `json:"period_start"`
+	PeriodEnd        time.Time `json:"period_end"`
 }
-
