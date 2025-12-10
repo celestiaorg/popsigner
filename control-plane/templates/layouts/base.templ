@@ -1,0 +1,53 @@
+package layouts
+
+templ Base(title string, showCharts, showCode bool) {
+	<!DOCTYPE html>
+	<html lang="en" class="dark">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<title>{ title } | BanhBaoRing</title>
+		
+		<!-- Fonts - Crimson Pro for headings, Figtree for body -->
+		<link rel="preconnect" href="https://fonts.bunny.net"/>
+		<link href="https://fonts.bunny.net/css?family=crimson-pro:400,500,600,700|figtree:400,500,600,700|jetbrains-mono:400" rel="stylesheet"/>
+		
+		<!-- Tailwind CSS -->
+		<link rel="stylesheet" href="/static/css/output.css"/>
+		
+		<!-- Favicon -->
+		<link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml"/>
+		
+		<!-- CSRF Token -->
+		<meta name="csrf-token" content=""/>
+	</head>
+	<body class="bg-bao-bg text-bao-text font-body antialiased">
+		{ children... }
+		
+		<!-- HTMX -->
+		<script src="https://unpkg.com/htmx.org@2.0.4" 
+				integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" 
+				crossorigin="anonymous"></script>
+		
+		<!-- Alpine.js -->
+		<script defer src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js"></script>
+		
+		if showCharts {
+			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+		}
+		
+		if showCode {
+			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css"/>
+			<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/core.min.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/go.min.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/rust.min.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/languages/bash.min.js"></script>
+			<script>hljs.highlightAll();</script>
+		}
+		
+		<!-- App JS -->
+		<script src="/static/js/app.js"></script>
+	</body>
+	</html>
+}
+

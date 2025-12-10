@@ -1,4 +1,4 @@
-.PHONY: all build run test clean docker-up docker-down migrate-up migrate-down lint fmt help
+.PHONY: all build run test clean docker-up docker-down migrate-up migrate-down lint fmt help templ templ-watch css css-watch dev-web build-web
 
 # Go parameters
 GOCMD=go
@@ -111,3 +111,40 @@ help:
 	@echo ""
 	@echo "Usage: make <target>"
 
+# ============================================
+# Dashboard / Web UI Commands
+# ============================================
+
+## Generate templ templates
+templ:
+	templ generate
+
+## Watch templ templates for changes
+templ-watch:
+	templ generate --watch
+
+## Build Tailwind CSS
+css:
+	npx tailwindcss -i static/css/input.css -o static/css/output.css --minify
+
+## Watch Tailwind CSS for changes
+css-watch:
+	npx tailwindcss -i static/css/input.css -o static/css/output.css --watch
+
+## Run web development (templ + css + server with hot reload)
+dev-web: templ css
+	@echo "Starting development server..."
+	@echo "Run 'make templ-watch' and 'make css-watch' in separate terminals for live reload"
+	air
+
+## Production build for web dashboard
+build-web: templ css build
+	@echo "Production build complete"
+
+## Install web development dependencies
+install-web-deps:
+	@echo "Installing templ CLI..."
+	go install github.com/a-h/templ/cmd/templ@latest
+	@echo "Installing air for hot reload..."
+	go install github.com/cosmtrek/air@latest
+	@echo "Done! Make sure you have Node.js installed for Tailwind CSS"

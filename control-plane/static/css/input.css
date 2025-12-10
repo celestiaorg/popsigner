@@ -1,0 +1,290 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   BanhBaoRing Dashboard Styles
+   A warm, inviting design inspired by Vietnamese bánh bao
+   ============================================ */
+
+@layer base {
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Selection color */
+  ::selection {
+    background-color: rgba(245, 158, 11, 0.3);
+    color: #faf5ff;
+  }
+
+  /* Focus visible styles */
+  :focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Custom scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #3d3454 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #3d3454;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #4d4464;
+  }
+
+  /* HTMX loading states */
+  .htmx-request .htmx-indicator {
+    display: inline-flex;
+  }
+
+  .htmx-indicator {
+    display: none;
+  }
+
+  /* Loading spinner */
+  .htmx-request.htmx-indicator,
+  .htmx-request .htmx-indicator {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Skeleton loading animation */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      #1a1625 0%,
+      #252030 50%,
+      #1a1625 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Form inputs */
+  .input {
+    @apply w-full px-4 py-2.5 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted/50;
+    @apply focus:outline-none focus:ring-2 focus:ring-bao-accent focus:border-transparent;
+    @apply transition-all duration-200;
+  }
+
+  .input:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .input-error {
+    @apply border-red-500/50 focus:ring-red-500;
+  }
+
+  /* Labels */
+  .label {
+    @apply block text-sm font-medium text-bao-text mb-1.5;
+  }
+
+  .label-hint {
+    @apply text-xs text-bao-muted mt-1;
+  }
+
+  /* Form groups */
+  .form-group {
+    @apply mb-4;
+  }
+
+  /* Code blocks */
+  .code-block {
+    @apply bg-bao-bg border border-bao-border rounded-xl p-4 font-mono text-sm overflow-x-auto;
+  }
+
+  .code-inline {
+    @apply bg-bao-bg/80 px-1.5 py-0.5 rounded font-mono text-sm text-bao-accent;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
+  }
+
+  .badge-warning {
+    @apply bg-amber-500/10 text-amber-400 border border-amber-500/20;
+  }
+
+  .badge-error {
+    @apply bg-red-500/10 text-red-400 border border-red-500/20;
+  }
+
+  .badge-info {
+    @apply bg-sky-500/10 text-sky-400 border border-sky-500/20;
+  }
+
+  .badge-neutral {
+    @apply bg-bao-border/30 text-bao-muted border border-bao-border;
+  }
+
+  /* Tables */
+  .table {
+    @apply w-full text-sm;
+  }
+
+  .table th {
+    @apply text-left text-xs font-semibold text-bao-muted uppercase tracking-wider px-4 py-3 border-b border-bao-border;
+  }
+
+  .table td {
+    @apply px-4 py-4 border-b border-bao-border/50;
+  }
+
+  .table tbody tr {
+    @apply transition-colors hover:bg-bao-card/50;
+  }
+
+  /* Dividers */
+  .divider {
+    @apply border-t border-bao-border my-6;
+  }
+
+  /* Page header */
+  .page-header {
+    @apply mb-8;
+  }
+
+  .page-title {
+    @apply text-2xl lg:text-3xl font-heading font-bold text-bao-text;
+  }
+
+  .page-subtitle {
+    @apply mt-2 text-bao-muted;
+  }
+
+  /* Tabs */
+  .tabs {
+    @apply flex gap-1 border-b border-bao-border;
+  }
+
+  .tab {
+    @apply px-4 py-2.5 text-sm font-medium text-bao-muted -mb-px border-b-2 border-transparent;
+    @apply hover:text-bao-text hover:border-bao-border transition-colors;
+  }
+
+  .tab-active {
+    @apply text-bao-accent border-bao-accent;
+  }
+
+  /* Dropdown menus */
+  .dropdown-menu {
+    @apply absolute right-0 mt-2 w-48 bg-bao-card border border-bao-border rounded-xl shadow-xl z-50 py-1 overflow-hidden;
+  }
+
+  .dropdown-item {
+    @apply block px-4 py-2 text-sm text-bao-muted hover:text-bao-text hover:bg-bao-border/30 transition-colors;
+  }
+
+  .dropdown-divider {
+    @apply border-t border-bao-border my-1;
+  }
+
+  /* Tooltips */
+  [data-tooltip] {
+    @apply relative cursor-help;
+  }
+
+  [data-tooltip]::after {
+    content: attr(data-tooltip);
+    @apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1;
+    @apply bg-bao-card border border-bao-border rounded text-xs text-bao-text whitespace-nowrap;
+    @apply opacity-0 invisible transition-all duration-200;
+  }
+
+  [data-tooltip]:hover::after {
+    @apply opacity-100 visible;
+  }
+}
+
+@layer utilities {
+  /* Text gradient utility */
+  .text-gradient {
+    @apply bg-gradient-to-r from-amber-300 via-rose-400 to-amber-500 bg-clip-text text-transparent;
+  }
+
+  /* Glow effects */
+  .glow-amber {
+    box-shadow: 0 0 20px -5px rgba(245, 158, 11, 0.4);
+  }
+
+  .glow-amber-lg {
+    box-shadow: 0 0 40px -10px rgba(245, 158, 11, 0.5);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Animation delays */
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  /* Backdrop blur fallback */
+  @supports not (backdrop-filter: blur(12px)) {
+    .backdrop-blur-lg {
+      background-color: rgba(26, 22, 37, 0.98);
+    }
+  }
+}
+

@@ -1,0 +1,142 @@
+package components
+
+import "strings"
+
+// SidebarData contains the data needed for the sidebar.
+type SidebarData struct {
+	UserName   string
+	UserEmail  string
+	AvatarURL  string
+	OrgName    string
+	OrgPlan    string
+	ActivePath string
+}
+
+// Sidebar renders the main navigation sidebar.
+templ Sidebar(data SidebarData) {
+	<div class="flex flex-col h-full bg-bao-bg">
+		<!-- Logo -->
+		<div class="flex items-center h-16 px-5 border-b border-bao-border">
+			<a href="/dashboard" class="flex items-center gap-2.5 group">
+				<span class="text-2xl group-hover:scale-110 transition-transform duration-300">🔔</span>
+				<span class="text-xl font-heading font-bold bg-gradient-to-r from-amber-300 via-rose-400 to-amber-500 bg-clip-text text-transparent">
+					BanhBaoRing
+				</span>
+			</a>
+		</div>
+		
+		<!-- Org Selector -->
+		<div class="px-4 py-3 border-b border-bao-border">
+			<div x-data="{ open: false }" class="relative">
+				<button @click="open = !open" class="w-full flex items-center gap-3 px-3 py-2.5 bg-bao-card/60 border border-bao-border rounded-lg hover:border-bao-accent/30 transition-colors">
+					<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center text-bao-bg font-bold text-sm">
+						{ getInitial(data.OrgName) }
+					</div>
+					<div class="flex-1 text-left min-w-0">
+						<p class="text-sm font-medium text-bao-text truncate">{ data.OrgName }</p>
+						<p class="text-xs text-bao-muted capitalize">{ data.OrgPlan } plan</p>
+					</div>
+					<svg class="w-4 h-4 text-bao-muted transition-transform" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+					</svg>
+				</button>
+				<!-- Dropdown menu (placeholder for org switching) -->
+				<div x-show="open" @click.outside="open = false" 
+					 x-transition:enter="transition ease-out duration-100"
+					 x-transition:enter-start="opacity-0 scale-95"
+					 x-transition:enter-end="opacity-100 scale-100"
+					 x-transition:leave="transition ease-in duration-75"
+					 x-transition:leave-start="opacity-100 scale-100"
+					 x-transition:leave-end="opacity-0 scale-95"
+					 class="absolute left-0 right-0 mt-2 bg-bao-card border border-bao-border rounded-lg shadow-xl z-50"
+					 style="display: none;">
+					<div class="p-2">
+						<a href="/settings/organizations" class="flex items-center gap-2 px-3 py-2 text-sm text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors">
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+							</svg>
+							Create organization
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Navigation -->
+		<nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
+			@SidebarLink("/dashboard", "🏠", "Overview", data.ActivePath)
+			@SidebarLink("/keys", "🔑", "Keys", data.ActivePath)
+			@SidebarLink("/usage", "📊", "Usage", data.ActivePath)
+			@SidebarLink("/audit", "📜", "Audit Log", data.ActivePath)
+			
+			<div class="pt-4 mt-4 border-t border-bao-border">
+				<p class="px-3 mb-2 text-xs font-semibold text-bao-muted/60 uppercase tracking-wider">Settings</p>
+				@SidebarLink("/settings/team", "👥", "Team", data.ActivePath)
+				@SidebarLink("/settings/api-keys", "🔗", "API Keys", data.ActivePath)
+				@SidebarLink("/settings/billing", "💳", "Billing", data.ActivePath)
+				@SidebarLink("/settings/profile", "⚙️", "Profile", data.ActivePath)
+			</div>
+		</nav>
+		
+		<!-- User Menu -->
+		<div class="p-4 border-t border-bao-border">
+			<div class="flex items-center gap-3">
+				if data.AvatarURL != "" {
+					<img src={ data.AvatarURL } alt="Avatar" class="w-9 h-9 rounded-full ring-2 ring-bao-border"/>
+				} else {
+					<div class="w-9 h-9 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-bao-bg text-sm font-bold ring-2 ring-bao-border">
+						{ getInitial(data.UserName) }
+					</div>
+				}
+				<div class="flex-1 min-w-0">
+					<p class="text-sm font-medium text-bao-text truncate">{ data.UserName }</p>
+					<p class="text-xs text-bao-muted truncate">{ data.UserEmail }</p>
+				</div>
+				<form action="/logout" method="POST">
+					<button type="submit" 
+							class="p-2 text-bao-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" 
+							title="Logout">
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+								  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+						</svg>
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}
+
+// SidebarLink renders a navigation link in the sidebar.
+templ SidebarLink(href, icon, label, activePath string) {
+	<a href={ templ.SafeURL(href) }
+	   hx-get={ href }
+	   hx-target="#main-content"
+	   hx-push-url="true"
+	   hx-swap="innerHTML show:window:top"
+	   class={ sidebarLinkClasses(href, activePath) }>
+		<span class="text-base">{ icon }</span>
+		<span class="text-sm">{ label }</span>
+	</a>
+}
+
+func sidebarLinkClasses(href, activePath string) string {
+	base := "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+	
+	// Check if this link is active (exact match or prefix for settings pages)
+	isActive := href == activePath || 
+		(strings.HasPrefix(activePath, href) && href != "/dashboard" && len(href) > 1)
+	
+	if isActive {
+		return base + " bg-gradient-to-r from-bao-accent/10 to-transparent text-bao-accent border-l-2 border-bao-accent -ml-[2px]"
+	}
+	return base + " text-bao-muted hover:text-bao-text hover:bg-bao-border/20"
+}
+
+func getInitial(name string) string {
+	if len(name) == 0 {
+		return "?"
+	}
+	return strings.ToUpper(string(name[0]))
+}
+

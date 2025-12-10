@@ -1,0 +1,82 @@
+package components
+
+// CardVariant defines the visual style of a card.
+type CardVariant string
+
+const (
+	CardDefault   CardVariant = "default"
+	CardHighlight CardVariant = "highlight"
+	CardFlat      CardVariant = "flat"
+)
+
+// Card renders a styled container card.
+templ Card(title string, variant CardVariant) {
+	<div class={ cardClasses(variant) }>
+		if title != "" {
+			<h3 class="text-lg font-heading font-semibold text-bao-text mb-4">{ title }</h3>
+		}
+		{ children... }
+	</div>
+}
+
+// CardHeader renders a card header with title and optional actions slot.
+templ CardHeader(title, subtitle string) {
+	<div class="flex items-start justify-between mb-6">
+		<div>
+			<h3 class="text-lg font-heading font-semibold text-bao-text">{ title }</h3>
+			if subtitle != "" {
+				<p class="mt-1 text-sm text-bao-muted">{ subtitle }</p>
+			}
+		</div>
+		<div class="flex items-center gap-2">
+			{ children... }
+		</div>
+	</div>
+}
+
+// StatCard renders a statistics card with value, label, and optional change indicator.
+templ StatCard(value, label, change string, positive bool) {
+	<div class="bg-bao-card/60 backdrop-blur-lg border border-bao-border rounded-xl p-5 hover:border-bao-accent/20 transition-all duration-300 group">
+		<div class="flex items-center justify-between">
+			<span class="text-bao-muted text-sm">{ label }</span>
+			if change != "" {
+				if positive {
+					<span class="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+						↑ { change }
+					</span>
+				} else {
+					<span class="text-xs text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">
+						↓ { change }
+					</span>
+				}
+			}
+		</div>
+		<div class="mt-2 text-3xl font-heading font-bold text-bao-text group-hover:text-bao-accent transition-colors">
+			{ value }
+		</div>
+	</div>
+}
+
+// EmptyState renders a placeholder for empty content areas.
+templ EmptyState(icon, title, description string) {
+	<div class="flex flex-col items-center justify-center py-12 px-4 text-center">
+		<div class="text-5xl mb-4">{ icon }</div>
+		<h3 class="text-lg font-heading font-semibold text-bao-text mb-2">{ title }</h3>
+		<p class="text-bao-muted text-sm max-w-sm mb-6">{ description }</p>
+		{ children... }
+	</div>
+}
+
+func cardClasses(variant CardVariant) string {
+	base := "rounded-xl p-6 transition-all duration-300"
+	
+	switch variant {
+	case CardHighlight:
+		return base + " bg-gradient-to-br from-bao-card via-bao-card to-bao-accent/5 border border-bao-accent/20 hover:border-bao-accent/40 shadow-lg shadow-bao-accent/5"
+	case CardFlat:
+		return base + " bg-bao-card/40"
+	default:
+		return base + " bg-bao-card/60 backdrop-blur-lg border border-bao-border hover:border-bao-accent/20 hover:shadow-lg hover:shadow-black/10"
+	}
+}
+

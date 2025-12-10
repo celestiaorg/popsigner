@@ -1,0 +1,119 @@
+package components
+
+// ModalSize defines the size of a modal.
+type ModalSize string
+
+const (
+	ModalSizeSmall  ModalSize = "sm"
+	ModalSizeMedium ModalSize = "md"
+	ModalSizeLarge  ModalSize = "lg"
+	ModalSizeXL     ModalSize = "xl"
+)
+
+// ModalContainer renders the modal container element.
+// This should be placed once in the dashboard layout.
+templ ModalContainer() {
+	<div id="modal" 
+		 class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+		 x-data="{ open: false }"
+		 x-show="open"
+		 @modal-open.window="open = true; $el.classList.remove('hidden'); $el.classList.add('flex')"
+		 @modal-close.window="open = false; setTimeout(() => { $el.classList.add('hidden'); $el.classList.remove('flex'); document.getElementById('modal-content').innerHTML = '' }, 200)"
+		 @keydown.escape.window="$dispatch('modal-close')">
+		<!-- Backdrop -->
+		<div class="absolute inset-0 bg-black/70 backdrop-blur-sm" 
+			 @click="$dispatch('modal-close')"
+			 x-transition:enter="transition ease-out duration-200"
+			 x-transition:enter-start="opacity-0"
+			 x-transition:enter-end="opacity-100"
+			 x-transition:leave="transition ease-in duration-150"
+			 x-transition:leave-start="opacity-100"
+			 x-transition:leave-end="opacity-0"></div>
+		
+		<!-- Modal Panel -->
+		<div id="modal-content" 
+			 class="relative bg-bao-card border border-bao-border rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden"
+			 x-transition:enter="transition ease-out duration-200"
+			 x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+			 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+			 x-transition:leave="transition ease-in duration-150"
+			 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+			 x-transition:leave-end="opacity-0 scale-95 translate-y-4">
+		</div>
+	</div>
+}
+
+// Modal renders a modal dialog content.
+// This should be used with HTMX to load content into #modal-content.
+templ Modal(title string, size ModalSize) {
+	<div class={ modalSizeClasses(size) }>
+		<!-- Header -->
+		<div class="flex items-center justify-between p-5 border-b border-bao-border">
+			<h3 class="text-lg font-heading font-semibold text-bao-text">{ title }</h3>
+			<button @click="$dispatch('modal-close')" 
+					class="p-1.5 text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors">
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+				</svg>
+			</button>
+		</div>
+		
+		<!-- Body -->
+		<div class="p-5">
+			{ children... }
+		</div>
+	</div>
+}
+
+// ModalFooter renders the footer section of a modal with action buttons.
+templ ModalFooter() {
+	<div class="flex items-center justify-end gap-3 px-5 py-4 bg-bao-bg/50 border-t border-bao-border">
+		{ children... }
+	</div>
+}
+
+// ConfirmModal renders a confirmation dialog.
+templ ConfirmModal(title, message, confirmText, cancelText string, variant ButtonVariant, confirmAction string) {
+	@Modal(title, ModalSizeSmall) {
+		<p class="text-bao-muted mb-6">{ message }</p>
+		@ModalFooter() {
+			<button @click="$dispatch('modal-close')" 
+					class="px-4 py-2 text-sm font-medium text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors">
+				{ cancelText }
+			</button>
+			<button hx-post={ confirmAction }
+					hx-target="#main-content"
+					@click="$dispatch('modal-close')"
+					class={ confirmButtonClasses(variant) }>
+				{ confirmText }
+			</button>
+		}
+	}
+}
+
+func modalSizeClasses(size ModalSize) string {
+	switch size {
+	case ModalSizeSmall:
+		return "max-w-sm w-full"
+	case ModalSizeLarge:
+		return "max-w-2xl w-full"
+	case ModalSizeXL:
+		return "max-w-4xl w-full"
+	default:
+		return "max-w-lg w-full"
+	}
+}
+
+func confirmButtonClasses(variant ButtonVariant) string {
+	base := "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200"
+	
+	switch variant {
+	case ButtonDanger:
+		return base + " bg-red-500 text-white hover:bg-red-600"
+	case ButtonPrimary:
+		return base + " bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg hover:shadow-lg"
+	default:
+		return base + " bg-bao-accent text-white hover:bg-bao-accent/80"
+	}
+}
+

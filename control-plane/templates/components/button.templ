@@ -1,0 +1,107 @@
+package components
+
+// ButtonVariant defines the visual style of a button.
+type ButtonVariant string
+
+const (
+	ButtonPrimary   ButtonVariant = "primary"
+	ButtonSecondary ButtonVariant = "secondary"
+	ButtonDanger    ButtonVariant = "danger"
+	ButtonGhost     ButtonVariant = "ghost"
+	ButtonSuccess   ButtonVariant = "success"
+)
+
+// ButtonSize defines the size of a button.
+type ButtonSize string
+
+const (
+	ButtonSizeSmall  ButtonSize = "sm"
+	ButtonSizeMedium ButtonSize = "md"
+	ButtonSizeLarge  ButtonSize = "lg"
+)
+
+// Button renders a styled button component.
+templ Button(variant ButtonVariant, size ButtonSize, disabled bool) {
+	<button 
+		disabled?={ disabled }
+		class={ buttonClasses(variant, size, disabled) }>
+		{ children... }
+	</button>
+}
+
+// ButtonLink renders a styled anchor that looks like a button.
+templ ButtonLink(href string, variant ButtonVariant, size ButtonSize) {
+	<a 
+		href={ templ.SafeURL(href) }
+		class={ buttonClasses(variant, size, false) }>
+		{ children... }
+	</a>
+}
+
+// IconButton renders a square icon button.
+templ IconButton(variant ButtonVariant, title string, disabled bool) {
+	<button 
+		disabled?={ disabled }
+		title={ title }
+		class={ iconButtonClasses(variant, disabled) }>
+		{ children... }
+	</button>
+}
+
+func buttonClasses(variant ButtonVariant, size ButtonSize, disabled bool) string {
+	base := "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-bao-bg select-none"
+	
+	// Size classes
+	sizeClass := " px-4 py-2.5 text-sm" // default md
+	switch size {
+	case ButtonSizeSmall:
+		sizeClass = " px-3 py-1.5 text-xs"
+	case ButtonSizeLarge:
+		sizeClass = " px-6 py-3 text-base"
+	}
+	
+	if disabled {
+		return base + sizeClass + " opacity-50 cursor-not-allowed pointer-events-none"
+	}
+	
+	var variantClass string
+	switch variant {
+	case ButtonPrimary:
+		variantClass = " bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500 text-bao-bg font-semibold shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-[1.02] focus:ring-amber-400"
+	case ButtonSecondary:
+		variantClass = " border border-bao-accent/50 text-bao-accent hover:bg-bao-accent/10 hover:border-bao-accent focus:ring-bao-accent"
+	case ButtonDanger:
+		variantClass = " bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 focus:ring-red-500"
+	case ButtonSuccess:
+		variantClass = " bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-500/50 focus:ring-emerald-500"
+	case ButtonGhost:
+		variantClass = " text-bao-muted hover:text-bao-text hover:bg-bao-border/30 focus:ring-bao-border"
+	default:
+		variantClass = ""
+	}
+	
+	return base + sizeClass + variantClass
+}
+
+func iconButtonClasses(variant ButtonVariant, disabled bool) string {
+	base := "inline-flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-bao-bg"
+	
+	if disabled {
+		return base + " opacity-50 cursor-not-allowed"
+	}
+	
+	var variantClass string
+	switch variant {
+	case ButtonPrimary:
+		variantClass = " bg-bao-accent/10 text-bao-accent hover:bg-bao-accent/20 focus:ring-bao-accent"
+	case ButtonDanger:
+		variantClass = " text-red-400 hover:bg-red-500/10 focus:ring-red-500"
+	case ButtonGhost:
+		variantClass = " text-bao-muted hover:text-bao-text hover:bg-bao-border/30 focus:ring-bao-border"
+	default:
+		variantClass = " text-bao-muted hover:text-bao-text hover:bg-bao-border/30 focus:ring-bao-border"
+	}
+	
+	return base + variantClass
+}
+
