@@ -1,0 +1,50 @@
+# BanhBaoRing Control Plane Configuration
+# This is a sample configuration file for local development.
+# In production, use environment variables with BANHBAO_ prefix.
+
+server:
+  port: 8080
+  host: "0.0.0.0"
+  read_timeout: "30s"
+  write_timeout: "30s"
+  environment: "dev"  # dev, staging, prod
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "banhbao"
+  password: "banhbao"
+  database: "banhbaoring"
+  ssl_mode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: "5m"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+
+openbao:
+  address: "http://localhost:8200"
+  token: ""
+  namespace: ""
+  secp256k1_path: "secp256k1"
+
+auth:
+  jwt_secret: "change-me-in-production"
+  jwt_expiry: "24h"
+  session_expiry: "168h"  # 7 days
+  bcrypt_cost: 12
+  oauth_github_id: ""
+  oauth_github_secret: ""
+  oauth_google_id: ""
+  oauth_google_secret: ""
+
+stripe:
+  secret_key: ""
+  webhook_secret: ""
+  price_id_free: ""
+  price_id_pro: ""
+

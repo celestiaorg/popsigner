@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: banhbao-postgres
+    environment:
+      POSTGRES_USER: banhbao
+      POSTGRES_PASSWORD: banhbao
+      POSTGRES_DB: banhbaoring
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banhbao -d banhbaoring"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: banhbao-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: banhbao-api
+    ports:
+      - "8080:8080"
+    environment:
+      BANHBAO_SERVER_PORT: 8080
+      BANHBAO_SERVER_HOST: 0.0.0.0
+      BANHBAO_SERVER_ENVIRONMENT: dev
+      BANHBAO_DATABASE_HOST: postgres
+      BANHBAO_DATABASE_PORT: 5432
+      BANHBAO_DATABASE_USER: banhbao
+      BANHBAO_DATABASE_PASSWORD: banhbao
+      BANHBAO_DATABASE_DATABASE: banhbaoring
+      BANHBAO_DATABASE_SSL_MODE: disable
+      BANHBAO_REDIS_HOST: redis
+      BANHBAO_REDIS_PORT: 6379
+      BANHBAO_AUTH_JWT_SECRET: dev-jwt-secret-change-in-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: banhbao-network
+
