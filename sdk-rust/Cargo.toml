@@ -1,0 +1,35 @@
+[package]
+name = "banhbaoring"
+version = "0.1.0"
+edition = "2021"
+authors = ["BanhBaoRing"]
+description = "Official Rust SDK for BanhBaoRing - Secure key management for Celestia"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/banhbaoring/sdk-rust"
+keywords = ["banhbaoring", "celestia", "cosmos", "keyring", "signing"]
+categories = ["cryptography", "api-bindings"]
+readme = "README.md"
+
+[dependencies]
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+base64 = "0.21"
+uuid = { version = "1", features = ["v4", "serde"] }
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.5"
+sha2 = "0.10"
+
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
+
+[[example]]
+name = "parallel_workers"
+path = "examples/parallel_workers.rs"
+
