@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/stretchr/testify/assert"
@@ -879,4 +880,868 @@ func (a mockAddress) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func (a mockAddress) Format(s fmt.State, verb rune) {
 	_, _ = fmt.Fprintf(s, "%s", string(a))
+}
+
+// ============================================
+// Agent 04B: Key Management Tests
+// ============================================
+
+// TestBaoKeyring_Key_Success tests successful key retrieval by UID.
+func TestBaoKeyring_Key_Success(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "test-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.Key("test-key")
+	require.NoError(t, err)
+	require.NotNil(t, record)
+	assert.Equal(t, "test-key", record.Name)
+
+	pubKey, err := record.GetPubKey()
+	require.NoError(t, err)
+	assert.Equal(t, pubKeyBytes, pubKey.Bytes())
+}
+
+// TestBaoKeyring_Key_NotFound tests key retrieval when key doesn't exist.
+func TestBaoKeyring_Key_NotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.Key("nonexistent")
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+}
+
+// TestBaoKeyring_KeyByAddress_Success tests successful key retrieval by address.
+func TestBaoKeyring_KeyByAddress_Success(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "test-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.KeyByAddress(mockAddress("cosmos1test"))
+	require.NoError(t, err)
+	require.NotNil(t, record)
+	assert.Equal(t, "test-key", record.Name)
+}
+
+// TestBaoKeyring_KeyByAddress_NotFound tests key retrieval by non-existent address.
+func TestBaoKeyring_KeyByAddress_NotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.KeyByAddress(mockAddress("nonexistent"))
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+}
+
+// TestBaoKeyring_List_Empty tests listing keys when store is empty.
+func TestBaoKeyring_List_Empty(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	records, err := kr.List()
+	require.NoError(t, err)
+	assert.Empty(t, records)
+}
+
+// TestBaoKeyring_List_MultipleKeys tests listing multiple keys.
+func TestBaoKeyring_List_MultipleKeys(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	// Add multiple keys
+	for i := 0; i < 3; i++ {
+		meta := &KeyMetadata{
+			UID:         fmt.Sprintf("key-%d", i),
+			Name:        fmt.Sprintf("key-%d", i),
+			PubKeyBytes: pubKeyBytes,
+			PubKeyType:  "secp256k1",
+			Address:     fmt.Sprintf("cosmos1addr%d", i),
+			BaoKeyPath:  fmt.Sprintf("secp256k1/keys/key-%d", i),
+			Algorithm:   AlgorithmSecp256k1,
+			CreatedAt:   time.Now(),
+			Source:      SourceGenerated,
+		}
+		err := kr.store.Save(meta)
+		require.NoError(t, err)
+	}
+
+	records, err := kr.List()
+	require.NoError(t, err)
+	assert.Len(t, records, 3)
+}
+
+// TestBaoKeyring_NewAccount_Success tests successful account creation.
+func TestBaoKeyring_NewAccount_Success(t *testing.T) {
+	pubKeyHex := "02" + "0102030405060708091011121314151617181920212223242526272829303132"
+	expectedAddr := "abcdef1234567890abcdef1234567890abcdef12"
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && r.URL.Path == "/v1/secp256k1/keys/new-key" {
+			resp := map[string]interface{}{
+				"data": map[string]interface{}{
+					"name":       "new-key",
+					"public_key": pubKeyHex,
+					"address":    expectedAddr,
+					"exportable": false,
+					"created_at": time.Now().Format(time.RFC3339),
+				},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.NewAccount("new-key", "", "", "", nil)
+	require.NoError(t, err)
+	require.NotNil(t, record)
+	assert.Equal(t, "new-key", record.Name)
+
+	// Verify key was stored
+	meta, err := kr.store.Get("new-key")
+	require.NoError(t, err)
+	assert.Equal(t, "new-key", meta.UID)
+	assert.Equal(t, expectedAddr, meta.Address)
+	assert.Equal(t, SourceGenerated, meta.Source)
+}
+
+// TestBaoKeyring_NewAccount_KeyExists tests account creation when key already exists.
+func TestBaoKeyring_NewAccount_KeyExists(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "existing-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.NewAccount("existing-key", "", "", "", nil)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.ErrorIs(t, err, ErrKeyExists)
+}
+
+// TestBaoKeyring_NewAccount_OpenBaoError tests account creation with OpenBao error.
+func TestBaoKeyring_NewAccount_OpenBaoError(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		resp := map[string]interface{}{
+			"errors": []string{"internal error"},
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.NewAccount("new-key", "", "", "", nil)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+}
+
+// TestBaoKeyring_NewAccount_InvalidPubKey tests account creation with invalid public key.
+func TestBaoKeyring_NewAccount_InvalidPubKey(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			resp := map[string]interface{}{
+				"data": map[string]interface{}{
+					"name":       "new-key",
+					"public_key": "invalid-hex", // Not valid hex
+					"address":    "addr123",
+					"exportable": false,
+				},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+		// DELETE request for cleanup
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.NewAccount("new-key", "", "", "", nil)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.Contains(t, err.Error(), "failed to decode public key")
+}
+
+// TestBaoKeyring_NewAccount_UnsupportedAlgo tests account creation with unsupported algorithm.
+func TestBaoKeyring_NewAccount_UnsupportedAlgo(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	// Create a mock algo that returns non-secp256k1
+	mockAlgo := &mockSignatureAlgo{name: "ed25519"}
+
+	record, err := kr.NewAccount("new-key", "", "", "", mockAlgo)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_Delete_Success tests successful key deletion.
+func TestBaoKeyring_Delete_Success(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost || r.Method == http.MethodDelete {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "test-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	// Verify key exists
+	assert.True(t, kr.store.Has("test-key"))
+
+	// Delete key
+	err := kr.Delete("test-key")
+	require.NoError(t, err)
+
+	// Verify key is gone
+	assert.False(t, kr.store.Has("test-key"))
+}
+
+// TestBaoKeyring_Delete_NotFound tests deletion of non-existent key.
+func TestBaoKeyring_Delete_NotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	err := kr.Delete("nonexistent")
+	assert.Error(t, err)
+	// The OpenBao delete might succeed (404 for config, but delete for non-existent key returns error)
+}
+
+// TestBaoKeyring_DeleteByAddress_Success tests successful deletion by address.
+func TestBaoKeyring_DeleteByAddress_Success(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "test-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	err := kr.DeleteByAddress(mockAddress("cosmos1test"))
+	require.NoError(t, err)
+
+	assert.False(t, kr.store.Has("test-key"))
+}
+
+// TestBaoKeyring_DeleteByAddress_NotFound tests deletion by non-existent address.
+func TestBaoKeyring_DeleteByAddress_NotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	err := kr.DeleteByAddress(mockAddress("nonexistent"))
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+}
+
+// TestBaoKeyring_Rename_Success tests successful key rename.
+func TestBaoKeyring_Rename_Success(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "old-name", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	err := kr.Rename("old-name", "new-name")
+	require.NoError(t, err)
+
+	// Old name should not exist
+	assert.False(t, kr.store.Has("old-name"))
+
+	// New name should exist
+	assert.True(t, kr.store.Has("new-name"))
+
+	// Get by new name should work
+	meta, err := kr.store.Get("new-name")
+	require.NoError(t, err)
+	assert.Equal(t, "new-name", meta.UID)
+}
+
+// TestBaoKeyring_Rename_SameName tests rename to same name (no-op).
+func TestBaoKeyring_Rename_SameName(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "test-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	err := kr.Rename("test-key", "test-key")
+	require.NoError(t, err)
+
+	// Key should still exist
+	assert.True(t, kr.store.Has("test-key"))
+}
+
+// TestBaoKeyring_Rename_SourceNotFound tests rename of non-existent key.
+func TestBaoKeyring_Rename_SourceNotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	err := kr.Rename("nonexistent", "new-name")
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+}
+
+// TestBaoKeyring_Rename_TargetExists tests rename when target already exists.
+func TestBaoKeyring_Rename_TargetExists(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	// Add two keys
+	for _, uid := range []string{"key1", "key2"} {
+		meta := &KeyMetadata{
+			UID:         uid,
+			Name:        uid,
+			PubKeyBytes: pubKeyBytes,
+			Address:     "addr-" + uid,
+			Algorithm:   AlgorithmSecp256k1,
+			CreatedAt:   time.Now(),
+		}
+		_ = kr.store.Save(meta)
+	}
+
+	err := kr.Rename("key1", "key2")
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrKeyExists)
+}
+
+// TestBaoKeyring_GetMetadata_Success tests successful metadata retrieval.
+func TestBaoKeyring_GetMetadata_Success(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "test-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	meta, err := kr.GetMetadata("test-key")
+	require.NoError(t, err)
+	require.NotNil(t, meta)
+	assert.Equal(t, "test-key", meta.UID)
+	assert.Equal(t, "cosmos1test", meta.Address)
+	assert.Equal(t, pubKeyBytes, meta.PubKeyBytes)
+}
+
+// TestBaoKeyring_GetMetadata_NotFound tests metadata retrieval for non-existent key.
+func TestBaoKeyring_GetMetadata_NotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	meta, err := kr.GetMetadata("nonexistent")
+	assert.Error(t, err)
+	assert.Nil(t, meta)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+}
+
+// TestBaoKeyring_NewAccountWithOptions_Success tests account creation with options.
+func TestBaoKeyring_NewAccountWithOptions_Success(t *testing.T) {
+	pubKeyHex := "02" + "0102030405060708091011121314151617181920212223242526272829303132"
+	expectedAddr := "abcdef1234567890abcdef1234567890abcdef12"
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && r.URL.Path == "/v1/secp256k1/keys/exportable-key" {
+			resp := map[string]interface{}{
+				"data": map[string]interface{}{
+					"name":       "exportable-key",
+					"public_key": pubKeyHex,
+					"address":    expectedAddr,
+					"exportable": true,
+				},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	opts := KeyOptions{Exportable: true}
+	record, err := kr.NewAccountWithOptions("exportable-key", opts)
+	require.NoError(t, err)
+	require.NotNil(t, record)
+
+	// Verify exportable flag is stored
+	meta, err := kr.store.Get("exportable-key")
+	require.NoError(t, err)
+	assert.True(t, meta.Exportable)
+}
+
+// TestBaoKeyring_NewAccountWithOptions_KeyExists tests account creation with options when key exists.
+func TestBaoKeyring_NewAccountWithOptions_KeyExists(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "existing-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	opts := KeyOptions{Exportable: true}
+	record, err := kr.NewAccountWithOptions("existing-key", opts)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.ErrorIs(t, err, ErrKeyExists)
+}
+
+// TestBaoKeyring_ExportPubKeyArmor_Success tests successful public key export.
+func TestBaoKeyring_ExportPubKeyArmor_Success(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "test-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	armor, err := kr.ExportPubKeyArmor("test-key")
+	require.NoError(t, err)
+	assert.NotEmpty(t, armor)
+	assert.Contains(t, armor, "-----BEGIN TENDERMINT PUBLIC KEY-----")
+	assert.Contains(t, armor, "-----END TENDERMINT PUBLIC KEY-----")
+}
+
+// TestBaoKeyring_ExportPubKeyArmor_NotFound tests public key export for non-existent key.
+func TestBaoKeyring_ExportPubKeyArmor_NotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	armor, err := kr.ExportPubKeyArmor("nonexistent")
+	assert.Error(t, err)
+	assert.Empty(t, armor)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+}
+
+// TestBaoKeyring_ExportPubKeyArmorByAddress_Success tests public key export by address.
+func TestBaoKeyring_ExportPubKeyArmorByAddress_Success(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "test-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	armor, err := kr.ExportPubKeyArmorByAddress(mockAddress("cosmos1test"))
+	require.NoError(t, err)
+	assert.NotEmpty(t, armor)
+	assert.Contains(t, armor, "-----BEGIN TENDERMINT PUBLIC KEY-----")
+}
+
+// TestBaoKeyring_ExportPubKeyArmorByAddress_NotFound tests public key export by non-existent address.
+func TestBaoKeyring_ExportPubKeyArmorByAddress_NotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	armor, err := kr.ExportPubKeyArmorByAddress(mockAddress("nonexistent"))
+	assert.Error(t, err)
+	assert.Empty(t, armor)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+}
+
+// TestBaoKeyring_ExportPrivKeyArmor_NotSupported tests private key export is not supported.
+func TestBaoKeyring_ExportPrivKeyArmor_NotSupported(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyringWithKey(t, "test-key", "cosmos1test", pubKeyBytes, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	armor, err := kr.ExportPrivKeyArmor("test-key", "passphrase")
+	assert.Error(t, err)
+	assert.Empty(t, armor)
+	assert.ErrorIs(t, err, ErrKeyNotExportable)
+}
+
+// TestBaoKeyring_ExportPrivKeyArmorByAddress_NotSupported tests private key export by address is not supported.
+func TestBaoKeyring_ExportPrivKeyArmorByAddress_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	armor, err := kr.ExportPrivKeyArmorByAddress(mockAddress("cosmos1test"), "passphrase")
+	assert.Error(t, err)
+	assert.Empty(t, armor)
+	assert.ErrorIs(t, err, ErrKeyNotExportable)
+}
+
+// TestBaoKeyring_ImportPrivKey_NotSupported tests private key import is not supported.
+func TestBaoKeyring_ImportPrivKey_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	err := kr.ImportPrivKey("new-key", "armor", "passphrase")
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_ImportPrivKeyHex_NotSupported tests hex private key import is not supported.
+func TestBaoKeyring_ImportPrivKeyHex_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	err := kr.ImportPrivKeyHex("new-key", "deadbeef", "secp256k1")
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_ImportPubKey_NotSupported tests public key import is not supported.
+func TestBaoKeyring_ImportPubKey_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	err := kr.ImportPubKey("new-key", "armor")
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_NewMnemonic_NotSupported tests mnemonic generation is not supported.
+func TestBaoKeyring_NewMnemonic_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, mnemonic, err := kr.NewMnemonic("new-key", 0, "", "", nil)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.Empty(t, mnemonic)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_SaveLedgerKey_NotSupported tests Ledger key saving is not supported.
+func TestBaoKeyring_SaveLedgerKey_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.SaveLedgerKey("ledger-key", nil, "cosmos", 118, 0, 0)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_SaveOfflineKey_NotSupported tests offline key saving is not supported.
+func TestBaoKeyring_SaveOfflineKey_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.SaveOfflineKey("offline-key", nil)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_SaveMultisig_NotSupported tests multisig key saving is not supported.
+func TestBaoKeyring_SaveMultisig_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.SaveMultisig("multisig-key", nil)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_ImportKey_NotSupported tests ImportKey returns error.
+func TestBaoKeyring_ImportKey_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	record, err := kr.ImportKey("new-key", []byte("wrapped-key"), true)
+	assert.Error(t, err)
+	assert.Nil(t, record)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_ExportKey_KeyNotExportable tests ExportKey returns error for non-exportable key.
+func TestBaoKeyring_ExportKey_KeyNotExportable(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	// Add non-exportable key
+	meta := &KeyMetadata{
+		UID:         "non-exportable",
+		Name:        "non-exportable",
+		PubKeyBytes: pubKeyBytes,
+		Address:     "cosmos1test",
+		Algorithm:   AlgorithmSecp256k1,
+		Exportable:  false, // Not exportable
+		CreatedAt:   time.Now(),
+	}
+	_ = kr.store.Save(meta)
+
+	key, err := kr.ExportKey("non-exportable")
+	assert.Error(t, err)
+	assert.Nil(t, key)
+	assert.ErrorIs(t, err, ErrKeyNotExportable)
+}
+
+// TestBaoKeyring_ExportKey_RequiresEndpoint tests ExportKey with exportable key.
+func TestBaoKeyring_ExportKey_RequiresEndpoint(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	// Add exportable key
+	meta := &KeyMetadata{
+		UID:         "exportable",
+		Name:        "exportable",
+		PubKeyBytes: pubKeyBytes,
+		Address:     "cosmos1test",
+		Algorithm:   AlgorithmSecp256k1,
+		Exportable:  true, // Exportable
+		CreatedAt:   time.Now(),
+	}
+	_ = kr.store.Save(meta)
+
+	key, err := kr.ExportKey("exportable")
+	assert.Error(t, err)
+	assert.Nil(t, key)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo) // Because endpoint not implemented
+}
+
+// TestBaoKeyring_ExportKey_NotFound tests ExportKey for non-existent key.
+func TestBaoKeyring_ExportKey_NotFound(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	key, err := kr.ExportKey("nonexistent")
+	assert.Error(t, err)
+	assert.Nil(t, key)
+	assert.ErrorIs(t, err, ErrKeyNotFound)
+}
+
+// TestBaoKeyring_GetWrappingKey_NotSupported tests GetWrappingKey returns error.
+func TestBaoKeyring_GetWrappingKey_NotSupported(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	key, err := kr.GetWrappingKey()
+	assert.Error(t, err)
+	assert.Nil(t, key)
+	assert.ErrorIs(t, err, ErrUnsupportedAlgo)
+}
+
+// TestBaoKeyring_metadataToRecord_Success tests metadata to record conversion.
+func TestBaoKeyring_metadataToRecord_Success(t *testing.T) {
+	pubKeyBytes := testPubKeyBytes()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	kr, server := setupTestKeyring(t, handler)
+	defer server.Close()
+	defer func() { _ = kr.store.Close() }()
+
+	meta := &KeyMetadata{
+		UID:         "test-key",
+		Name:        "test-key",
+		PubKeyBytes: pubKeyBytes,
+		Address:     "cosmos1test",
+		Algorithm:   AlgorithmSecp256k1,
+	}
+
+	record, err := kr.metadataToRecord(meta)
+	require.NoError(t, err)
+	require.NotNil(t, record)
+	assert.Equal(t, "test-key", record.Name)
+
+	pubKey, err := record.GetPubKey()
+	require.NoError(t, err)
+	assert.Equal(t, pubKeyBytes, pubKey.Bytes())
+}
+
+// mockSignatureAlgo is a mock implementation of keyring.SignatureAlgo for testing.
+type mockSignatureAlgo struct {
+	name hd.PubKeyType
+}
+
+func (m *mockSignatureAlgo) Name() hd.PubKeyType {
+	return m.name
+}
+
+func (m *mockSignatureAlgo) Derive() hd.DeriveFn {
+	return nil
+}
+
+func (m *mockSignatureAlgo) Generate() hd.GenerateFn {
+	return nil
 }
