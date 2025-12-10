@@ -1,14 +1,19 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
+
+	"github.com/openbao/openbao/sdk/v2/plugin"
+
+	"github.com/Bidon15/banhbaoring/plugin/secp256k1"
 )
 
-// TODO(03A): Implement plugin entrypoint
-
 func main() {
-	fmt.Println("TODO(03A): implement plugin")
-	os.Exit(1)
+	if err := plugin.Serve(&plugin.ServeOpts{
+		BackendFactoryFunc: secp256k1.Factory,
+	}); err != nil {
+		log.Printf("plugin shutting down: %v", err)
+		os.Exit(1)
+	}
 }
-
