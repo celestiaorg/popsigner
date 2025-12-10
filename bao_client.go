@@ -151,6 +151,68 @@ func (c *BaoClient) Sign(ctx context.Context, keyName string, data []byte, preha
 	return sig, nil
 }
 
+// ImportKey imports a key into OpenBao.
+// The ciphertext should be base64-encoded raw private key bytes.
+func (c *BaoClient) ImportKey(ctx context.Context, name string, ciphertext string, exportable bool) (*KeyInfo, error) {
+	path := fmt.Sprintf("/v1/%s/keys/%s/import", c.secp256k1Path, name)
+	body := map[string]interface{}{
+		"ciphertext": ciphertext,
+		"exportable": exportable,
+	}
+
+	resp, err := c.post(ctx, path, body)
+	if err != nil {
+		return nil, WrapKeyError("import", name, err)
+	}
+
+	var result struct {
+		Data KeyInfo `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, WrapKeyError("import", name, err)
+	}
+	return &result.Data, nil
+}
+
+// ExportKey exports a key from OpenBao.
+// Returns the base64-encoded private key if the key was created with exportable=true.
+func (c *BaoClient) ExportKey(ctx context.Context, name string) (string, *KeyInfo, error) {
+	path := fmt.Sprintf("/v1/%s/export/%s", c.secp256k1Path, name)
+	resp, err := c.get(ctx, path)
+	if err != nil {
+		return "", nil, WrapKeyError("export", name, err)
+	}
+
+	var result struct {
+		Data struct {
+			Name      string            `json:"name"`
+			PublicKey string            `json:"public_key"`
+			Address   string            `json:"address"`
+			Keys      map[string]string `json:"keys"`
+			CreatedAt time.Time         `json:"created_at"`
+			Imported  bool              `json:"imported"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return "", nil, WrapKeyError("export", name, err)
+	}
+
+	// Get the latest version of the key (version "1" for imported keys)
+	keyData, ok := result.Data.Keys["1"]
+	if !ok {
+		return "", nil, WrapKeyError("export", name, ErrKeyNotFound)
+	}
+
+	info := &KeyInfo{
+		Name:      result.Data.Name,
+		PublicKey: result.Data.PublicKey,
+		Address:   result.Data.Address,
+		CreatedAt: result.Data.CreatedAt,
+	}
+
+	return keyData, info, nil
+}
+
 // Health checks OpenBao status.
 func (c *BaoClient) Health(ctx context.Context) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/v1/sys/health", nil)
