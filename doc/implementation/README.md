@@ -521,12 +521,24 @@ Phase 9.4 - Release:
 
 ## Web Dashboard Documents
 
-### Agent 12A: Dashboard Foundation
+> **Design System:** [`doc/design/DESIGN_SYSTEM.md`](../design/DESIGN_SYSTEM.md) - Visual identity, components, landing page wireframes
+
+### Agent 11: Dashboard (Consolidated)
+
+- [IMPL_11_DASHBOARD.md](./IMPL_11_DASHBOARD.md) - **Complete dashboard implementation** (Landing, Auth, Keys, Settings)
+
+### Sub-Agent Breakdown (Within IMPL_11)
+
+| Sub-Agent | Component | Deliverables |
+|-----------|-----------|--------------|
+| **11A** | Foundation + Landing | templ setup, Tailwind, base layouts, landing page |
+| **11B** | Auth Pages | Login, signup, OAuth, onboarding wizard |
+| **11C** | Dashboard Core | Overview, keys list, key detail, HTMX partials |
+| **11D** | Settings | Profile, team, API keys, billing, audit log |
+
+### Legacy References (Deprecated)
 
 - [IMPL_12A_DASHBOARD_FOUNDATION.md](./IMPL_12A_DASHBOARD_FOUNDATION.md) - templ, Tailwind, layouts
-
-### Phase 8.1: Dashboard Pages
-
 - [IMPL_12B_DASHBOARD_AUTH.md](./IMPL_12B_DASHBOARD_AUTH.md) - Auth & Onboarding
 - [IMPL_12C_DASHBOARD_KEYS.md](./IMPL_12C_DASHBOARD_KEYS.md) - Keys Management
 - [IMPL_12D_DASHBOARD_SETTINGS.md](./IMPL_12D_DASHBOARD_SETTINGS.md) - Settings & Billing

@@ -62,6 +62,12 @@ BanhBaoRing is a complete key management SaaS platform for Celestia and Cosmos e
 | [PRD_DASHBOARD.md](./PRD_DASHBOARD.md) | Web dashboard, UX, 5-min onboarding | 📝 PRD Ready |
 | [PRD_OPERATOR.md](./PRD_OPERATOR.md) | K8s operator for one-command deployment | 📝 PRD Ready |
 
+### Design & Visual Identity
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [DESIGN_SYSTEM.md](../design/DESIGN_SYSTEM.md) | Brand identity, color palette, typography, components, landing page wireframes | 📝 Ready |
+
 ---
 
 ## Platform Layers
@@ -108,10 +114,10 @@ User-facing web application for key management.
 - Billing (Stripe)
 
 **USPs:**
-- 🚀 5-minute signup to first signature
-- 🔐 HSM-level security made simple
-- 🌐 Web3 native (wallet login)
-- 📊 Real-time monitoring
+- 🔓 No vendor lock-in - 100% open source (OpenBao)
+- 🧩 Plugin architecture - secp256k1 today, your algorithm tomorrow
+- ⚡ High performance - 100+ signs/sec with parallel workers
+- 🚀 5-minute setup - No local keyring configuration hell
 
 **Timeline:** ~7 weeks
 
@@ -171,14 +177,12 @@ spec:
 ### The Pain We Solve
 
 Rollup teams know this pain:
-- 🔓 Sequencer keys stored in plaintext `.env` files
-- 💀 Bridge operator keys on a single server = single point of failure
-- ⏰ Manual key rotation during incidents = downtime
-- 📋 No audit trail of who signed what when
-- 😰 Compliance asks "where are your keys?" and you point to a config file
-- ⚡ **Parallel workers with fee grants** need concurrent signing from multiple accounts
+- 🔒 **Vendor lock-in** - Stuck with AWS KMS or HashiCorp Vault enterprise pricing
+- 🧩 **No customizability** - Need secp256k1 for Cosmos? "Sorry, not supported."
+- 🐢 **Low performance** - Existing solutions can't handle 100+ signs/sec for parallel blob workers
+- 😫 **Tedious local setup** - Config files, passphrases, backup keys somewhere safe... every time
 
-**BanhBaoRing:** One API call to sign. Keys never leave the vault. Full audit trail. Sleep at night.
+**BanhBaoRing:** Open source. Plugin architecture. 100+ signs/sec. 5-minute setup. No lock-in. Your keys, your rules.
 
 ### Parallel Worker Support (Critical for Celestia)
 
@@ -228,5 +232,7 @@ cfg := client.Config{
 ## Quick Links
 
 - **Core Library Implementation:** [`../implementation/README.md`](../implementation/README.md)
+- **Design System:** [`../design/DESIGN_SYSTEM.md`](../design/DESIGN_SYSTEM.md)
+- **Dashboard Implementation:** [`../implementation/IMPL_11_DASHBOARD.md`](../implementation/IMPL_11_DASHBOARD.md)
 - **Repository:** `github.com/Bidon15/banhbaoring`
 

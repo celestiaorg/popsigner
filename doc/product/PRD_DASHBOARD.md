@@ -14,22 +14,21 @@
 
 > **🎯 Maximum Focus:** Rollup developers and operators only. That's it.
 
-| User Type             | The Pain                                                              |
-| --------------------- | --------------------------------------------------------------------- |
-| **Rollup Developers** | Sequencer keys in config files, no key rotation, no audit             |
-| **Rollup Operators**  | Bridge keys on single server, compliance nightmares, sleepless nights |
+| User Type             | The Pain                                                                      |
+| --------------------- | ----------------------------------------------------------------------------- |
+| **Rollup Developers** | Vendor lock-in, no secp256k1 support, slow signing, tedious local keyring setup |
+| **Rollup Operators**  | Can't self-host, no customization, performance bottlenecks, config file hell   |
 
 ### 1.4 Unique Selling Propositions (USPs)
 
-| USP                           | For Rollup Teams                                     |
-| ----------------------------- | ---------------------------------------------------- |
-| 🚀 **5-Minute Onboarding**    | Sign up → Create sequencer key → Integrate → Done    |
-| 🔐 **HSM-Level Security**     | Sequencer/bridge keys never leave the vault          |
-| 🔄 **Zero-Downtime Rotation** | Rotate compromised keys without stopping your rollup |
-| 📊 **Full Audit Trail**       | Every signature logged - compliance ready            |
-| 🔗 **One-Click Integration**  | Drop-in SDK for your sequencer/prover                |
-| 💰 **Pay As You Go**          | Scale with your rollup's transaction volume          |
-| ⚡ **Parallel Workers**       | Manage fee grant worker keys for high-throughput DA  |
+| USP                           | For Rollup Teams                                                 |
+| ----------------------------- | ---------------------------------------------------------------- |
+| 🔓 **No Vendor Lock-in**      | 100% open source (OpenBao). Self-host or use our cloud.          |
+| 🧩 **Plugin Architecture**    | secp256k1 built-in. Add your own algorithms via plugins.         |
+| ⚡ **High Performance**       | 100+ signs/sec. Parallel batch signing for Celestia DA workers.  |
+| 🚀 **5-Minute Setup**         | Sign up → Create key → First signature. No local config files.   |
+| 🔐 **HSM-Level Security**     | Keys never leave the vault. Full audit trail.                    |
+| 🔗 **Drop-in SDK**            | One line of Go/Rust. Cosmos SDK keyring interface compatible.    |
 
 ---
 
