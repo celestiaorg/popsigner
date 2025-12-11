@@ -1,6 +1,6 @@
 # Implementation: Auth - Users & Sessions
 
-## Agent: 08A - User Authentication
+## Agent: 08A - User & Session Models
 
 > **Phase 5.1** - Can run in parallel with 08B, 08C after Agent 07 completes.
 
@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-Implement user registration, login, password management, and session handling.
+Implement user models, session management, and JWT token handling. BanhBaoRing uses **OAuth-only authentication** (no email/password) - users authenticate via GitHub or Google.
 
 ---
 
@@ -16,12 +16,12 @@ Implement user registration, login, password management, and session handling.
 
 | Feature | Included |
 |---------|----------|
-| Email + Password registration | ✅ |
-| Email verification | ✅ |
-| Login/Logout | ✅ |
-| Password reset | ✅ |
+| User model (OAuth-based) | ✅ |
 | Session management | ✅ |
-| OAuth | ❌ (Agent 08B) |
+| JWT token generation | ✅ |
+| Session middleware | ✅ |
+| Email + Password | ❌ (Not supported) |
+| OAuth flows | ❌ (Agent 08B) |
 | API Keys | ❌ (Agent 08C) |
 
 ---
@@ -39,14 +39,14 @@ import (
     "github.com/google/uuid"
 )
 
+// User represents an authenticated user.
+// Users are created via OAuth only - no password field.
 type User struct {
     ID            uuid.UUID  `json:"id" db:"id"`
     Email         string     `json:"email" db:"email"`
-    PasswordHash  string     `json:"-" db:"password_hash"`
     Name          string     `json:"name" db:"name"`
     AvatarURL     string     `json:"avatar_url,omitempty" db:"avatar_url"`
-    EmailVerified bool       `json:"email_verified" db:"email_verified"`
-    OAuthProvider string     `json:"-" db:"oauth_provider"`
+    OAuthProvider string     `json:"-" db:"oauth_provider"` // "github" or "google"
     OAuthID       string     `json:"-" db:"oauth_provider_id"`
     LastLoginAt   *time.Time `json:"last_login_at,omitempty" db:"last_login_at"`
     CreatedAt     time.Time  `json:"created_at" db:"created_at"`
@@ -83,9 +83,8 @@ type UserRepository interface {
     Create(ctx context.Context, user *models.User) error
     GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
     GetByEmail(ctx context.Context, email string) (*models.User, error)
+    GetByOAuth(ctx context.Context, provider, oauthID string) (*models.User, error)
     Update(ctx context.Context, user *models.User) error
-    UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error
-    SetEmailVerified(ctx context.Context, id uuid.UUID) error
     UpdateLastLogin(ctx context.Context, id uuid.UUID) error
 }
 
@@ -98,83 +97,75 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *userRepo) Create(ctx context.Context, user *models.User) error {
-    query := `
-        INSERT INTO users (id, email, password_hash, name)
-        VALUES ($1, $2, $3, $4)
-        RETURNING created_at, updated_at`
-    
     user.ID = uuid.New()
-    return r.db.QueryRowContext(ctx, query,
-        user.ID, user.Email, user.PasswordHash, user.Name,
-    ).Scan(&user.CreatedAt, &user.UpdatedAt)
+    user.CreatedAt = time.Now()
+    user.UpdatedAt = time.Now()
+
+    _, err := r.db.ExecContext(ctx, `
+        INSERT INTO users (id, email, name, avatar_url, oauth_provider, oauth_provider_id, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, user.ID, user.Email, user.Name, user.AvatarURL, user.OAuthProvider, user.OAuthID, user.CreatedAt, user.UpdatedAt)
+    return err
 }
 
 func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-    query := `
-        SELECT id, email, password_hash, name, avatar_url, email_verified,
-               oauth_provider, oauth_provider_id, last_login_at, created_at, updated_at
-        FROM users WHERE id = $1`
-    
     var user models.User
-    err := r.db.QueryRowContext(ctx, query, id).Scan(
-        &user.ID, &user.Email, &user.PasswordHash, &user.Name,
-        &user.AvatarURL, &user.EmailVerified, &user.OAuthProvider,
-        &user.OAuthID, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
-    )
+    err := r.db.QueryRowContext(ctx, `
+        SELECT id, email, name, avatar_url, oauth_provider, oauth_provider_id, last_login_at, created_at, updated_at
+        FROM users WHERE id = $1
+    `, id).Scan(&user.ID, &user.Email, &user.Name, &user.AvatarURL, &user.OAuthProvider, &user.OAuthID, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt)
     if err == sql.ErrNoRows {
-        return nil, nil
+        return nil, ErrNotFound
     }
     return &user, err
 }
 
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-    query := `
-        SELECT id, email, password_hash, name, avatar_url, email_verified,
-               oauth_provider, oauth_provider_id, last_login_at, created_at, updated_at
-        FROM users WHERE email = $1`
-    
     var user models.User
-    err := r.db.QueryRowContext(ctx, query, email).Scan(
-        &user.ID, &user.Email, &user.PasswordHash, &user.Name,
-        &user.AvatarURL, &user.EmailVerified, &user.OAuthProvider,
-        &user.OAuthID, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
-    )
+    err := r.db.QueryRowContext(ctx, `
+        SELECT id, email, name, avatar_url, oauth_provider, oauth_provider_id, last_login_at, created_at, updated_at
+        FROM users WHERE email = $1
+    `, email).Scan(&user.ID, &user.Email, &user.Name, &user.AvatarURL, &user.OAuthProvider, &user.OAuthID, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt)
     if err == sql.ErrNoRows {
-        return nil, nil
+        return nil, ErrNotFound
+    }
+    return &user, err
+}
+
+func (r *userRepo) GetByOAuth(ctx context.Context, provider, oauthID string) (*models.User, error) {
+    var user models.User
+    err := r.db.QueryRowContext(ctx, `
+        SELECT id, email, name, avatar_url, oauth_provider, oauth_provider_id, last_login_at, created_at, updated_at
+        FROM users WHERE oauth_provider = $1 AND oauth_provider_id = $2
+    `, provider, oauthID).Scan(&user.ID, &user.Email, &user.Name, &user.AvatarURL, &user.OAuthProvider, &user.OAuthID, &user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt)
+    if err == sql.ErrNoRows {
+        return nil, ErrNotFound
     }
     return &user, err
 }
 
 func (r *userRepo) Update(ctx context.Context, user *models.User) error {
-    query := `UPDATE users SET name = $2, avatar_url = $3 WHERE id = $1`
-    _, err := r.db.ExecContext(ctx, query, user.ID, user.Name, user.AvatarURL)
-    return err
-}
-
-func (r *userRepo) UpdatePassword(ctx context.Context, id uuid.UUID, hash string) error {
-    query := `UPDATE users SET password_hash = $2 WHERE id = $1`
-    _, err := r.db.ExecContext(ctx, query, id, hash)
-    return err
-}
-
-func (r *userRepo) SetEmailVerified(ctx context.Context, id uuid.UUID) error {
-    query := `UPDATE users SET email_verified = true WHERE id = $1`
-    _, err := r.db.ExecContext(ctx, query, id)
+    user.UpdatedAt = time.Now()
+    _, err := r.db.ExecContext(ctx, `
+        UPDATE users SET email = $2, name = $3, avatar_url = $4, updated_at = $5
+        WHERE id = $1
+    `, user.ID, user.Email, user.Name, user.AvatarURL, user.UpdatedAt)
     return err
 }
 
 func (r *userRepo) UpdateLastLogin(ctx context.Context, id uuid.UUID) error {
-    query := `UPDATE users SET last_login_at = NOW() WHERE id = $1`
-    _, err := r.db.ExecContext(ctx, query, id)
+    _, err := r.db.ExecContext(ctx, `
+        UPDATE users SET last_login_at = NOW() WHERE id = $1
+    `, id)
     return err
 }
 ```
 
 ---
 
-## 5. Service
+## 5. Session Service
 
-**File:** `internal/service/auth_service.go`
+**File:** `internal/service/session_service.go`
 
 ```go
 package service
@@ -183,362 +174,300 @@ import (
     "context"
     "crypto/rand"
     "encoding/base64"
+    "encoding/json"
     "time"
 
+    "github.com/go-redis/redis/v8"
     "github.com/google/uuid"
-    "golang.org/x/crypto/bcrypt"
-
     "github.com/Bidon15/banhbaoring/control-plane/internal/models"
-    "github.com/Bidon15/banhbaoring/control-plane/internal/repository"
-    apierrors "github.com/Bidon15/banhbaoring/control-plane/internal/pkg/errors"
 )
 
-type AuthService interface {
-    Register(ctx context.Context, req RegisterRequest) (*models.User, error)
-    Login(ctx context.Context, email, password string) (*models.User, string, error)
-    Logout(ctx context.Context, sessionID string) error
-    ValidateSession(ctx context.Context, sessionID string) (*models.User, error)
-    RequestPasswordReset(ctx context.Context, email string) (string, error)
-    ResetPassword(ctx context.Context, token, newPassword string) error
-    VerifyEmail(ctx context.Context, token string) error
+type SessionService interface {
+    Create(ctx context.Context, userID uuid.UUID) (*models.Session, error)
+    Get(ctx context.Context, sessionID string) (*models.Session, error)
+    Delete(ctx context.Context, sessionID string) error
+    DeleteAllForUser(ctx context.Context, userID uuid.UUID) error
 }
 
-type RegisterRequest struct {
-    Email    string `json:"email" validate:"required,email"`
-    Password string `json:"password" validate:"required,min=8"`
-    Name     string `json:"name" validate:"required,min=2"`
+type sessionService struct {
+    redis  *redis.Client
+    expiry time.Duration
 }
 
-type authService struct {
-    userRepo    repository.UserRepository
-    sessionRepo repository.SessionRepository
-    bcryptCost  int
-}
-
-func NewAuthService(
-    userRepo repository.UserRepository,
-    sessionRepo repository.SessionRepository,
-    bcryptCost int,
-) AuthService {
-    return &authService{
-        userRepo:    userRepo,
-        sessionRepo: sessionRepo,
-        bcryptCost:  bcryptCost,
+func NewSessionService(redis *redis.Client, expiry time.Duration) SessionService {
+    return &sessionService{
+        redis:  redis,
+        expiry: expiry,
     }
 }
 
-func (s *authService) Register(ctx context.Context, req RegisterRequest) (*models.User, error) {
-    // Check if email exists
-    existing, err := s.userRepo.GetByEmail(ctx, req.Email)
-    if err != nil {
-        return nil, err
-    }
-    if existing != nil {
-        return nil, apierrors.NewConflictError("Email already registered")
-    }
-
-    // Hash password
-    hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), s.bcryptCost)
-    if err != nil {
-        return nil, err
-    }
-
-    user := &models.User{
-        Email:        req.Email,
-        PasswordHash: string(hash),
-        Name:         req.Name,
-    }
-
-    if err := s.userRepo.Create(ctx, user); err != nil {
-        return nil, err
-    }
-
-    // TODO: Send verification email (Agent 08A enhancement)
-
-    return user, nil
-}
-
-func (s *authService) Login(ctx context.Context, email, password string) (*models.User, string, error) {
-    user, err := s.userRepo.GetByEmail(ctx, email)
-    if err != nil {
-        return nil, "", err
-    }
-    if user == nil {
-        return nil, "", apierrors.ErrUnauthorized
-    }
-
-    if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
-        return nil, "", apierrors.ErrUnauthorized
-    }
-
-    // Create session
-    sessionID, err := s.createSession(ctx, user.ID)
-    if err != nil {
-        return nil, "", err
-    }
-
-    // Update last login
-    _ = s.userRepo.UpdateLastLogin(ctx, user.ID)
-
-    return user, sessionID, nil
-}
-
-func (s *authService) Logout(ctx context.Context, sessionID string) error {
-    return s.sessionRepo.Delete(ctx, sessionID)
-}
-
-func (s *authService) ValidateSession(ctx context.Context, sessionID string) (*models.User, error) {
-    session, err := s.sessionRepo.Get(ctx, sessionID)
-    if err != nil {
-        return nil, err
-    }
-    if session == nil || session.ExpiresAt.Before(time.Now()) {
-        return nil, apierrors.ErrUnauthorized
-    }
-
-    return s.userRepo.GetByID(ctx, session.UserID)
-}
-
-func (s *authService) createSession(ctx context.Context, userID uuid.UUID) (string, error) {
+func (s *sessionService) Create(ctx context.Context, userID uuid.UUID) (*models.Session, error) {
+    // Generate secure random session ID
     b := make([]byte, 32)
     if _, err := rand.Read(b); err != nil {
-        return "", err
+        return nil, err
     }
     sessionID := base64.URLEncoding.EncodeToString(b)
 
     session := &models.Session{
         ID:        sessionID,
         UserID:    userID,
-        ExpiresAt: time.Now().Add(7 * 24 * time.Hour), // 7 days
+        ExpiresAt: time.Now().Add(s.expiry),
+        CreatedAt: time.Now(),
     }
 
-    if err := s.sessionRepo.Create(ctx, session); err != nil {
-        return "", err
+    data, err := json.Marshal(session)
+    if err != nil {
+        return nil, err
     }
 
-    return sessionID, nil
+    // Store in Redis
+    if err := s.redis.Set(ctx, "session:"+sessionID, data, s.expiry).Err(); err != nil {
+        return nil, err
+    }
+
+    // Track user sessions for logout-all
+    s.redis.SAdd(ctx, "user_sessions:"+userID.String(), sessionID)
+
+    return session, nil
 }
 
-func (s *authService) RequestPasswordReset(ctx context.Context, email string) (string, error) {
-    // Implementation: generate token, store in Redis, send email
-    panic("TODO(08A): implement password reset")
+func (s *sessionService) Get(ctx context.Context, sessionID string) (*models.Session, error) {
+    data, err := s.redis.Get(ctx, "session:"+sessionID).Bytes()
+    if err == redis.Nil {
+        return nil, ErrSessionNotFound
+    }
+    if err != nil {
+        return nil, err
+    }
+
+    var session models.Session
+    if err := json.Unmarshal(data, &session); err != nil {
+        return nil, err
+    }
+
+    return &session, nil
 }
 
-func (s *authService) ResetPassword(ctx context.Context, token, newPassword string) error {
-    panic("TODO(08A): implement password reset")
+func (s *sessionService) Delete(ctx context.Context, sessionID string) error {
+    return s.redis.Del(ctx, "session:"+sessionID).Err()
 }
 
-func (s *authService) VerifyEmail(ctx context.Context, token string) error {
-    panic("TODO(08A): implement email verification")
+func (s *sessionService) DeleteAllForUser(ctx context.Context, userID uuid.UUID) error {
+    sessionIDs, err := s.redis.SMembers(ctx, "user_sessions:"+userID.String()).Result()
+    if err != nil {
+        return err
+    }
+
+    for _, sid := range sessionIDs {
+        s.redis.Del(ctx, "session:"+sid)
+    }
+    s.redis.Del(ctx, "user_sessions:"+userID.String())
+
+    return nil
 }
+
+var ErrSessionNotFound = errors.New("session not found")
 ```
 
 ---
 
-## 6. Handler
+## 6. JWT Service
 
-**File:** `internal/handler/auth_handler.go`
+**File:** `internal/service/jwt_service.go`
 
 ```go
-package handler
+package service
 
 import (
-    "encoding/json"
-    "net/http"
     "time"
 
-    "github.com/go-chi/chi/v5"
-    "github.com/go-playground/validator/v10"
-
-    "github.com/Bidon15/banhbaoring/control-plane/internal/service"
-    "github.com/Bidon15/banhbaoring/control-plane/internal/pkg/response"
-    apierrors "github.com/Bidon15/banhbaoring/control-plane/internal/pkg/errors"
+    "github.com/golang-jwt/jwt/v5"
+    "github.com/google/uuid"
 )
 
-type AuthHandler struct {
-    authService service.AuthService
-    validate    *validator.Validate
+type JWTService interface {
+    Generate(userID uuid.UUID) (string, error)
+    Validate(tokenString string) (*Claims, error)
 }
 
-func NewAuthHandler(authService service.AuthService) *AuthHandler {
-    return &AuthHandler{
-        authService: authService,
-        validate:    validator.New(),
+type Claims struct {
+    UserID uuid.UUID `json:"user_id"`
+    jwt.RegisteredClaims
+}
+
+type jwtService struct {
+    secret []byte
+    expiry time.Duration
+}
+
+func NewJWTService(secret string, expiry time.Duration) JWTService {
+    return &jwtService{
+        secret: []byte(secret),
+        expiry: expiry,
     }
 }
 
-func (h *AuthHandler) Routes() chi.Router {
-    r := chi.NewRouter()
+func (s *jwtService) Generate(userID uuid.UUID) (string, error) {
+    claims := &Claims{
+        UserID: userID,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.expiry)),
+            IssuedAt:  jwt.NewNumericDate(time.Now()),
+            Issuer:    "banhbaoring",
+        },
+    }
 
-    r.Post("/register", h.Register)
-    r.Post("/login", h.Login)
-    r.Post("/logout", h.Logout)
-    r.Get("/me", h.Me)
-    r.Post("/password/forgot", h.ForgotPassword)
-    r.Post("/password/reset", h.ResetPassword)
-    r.Post("/email/verify", h.VerifyEmail)
-
-    return r
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString(s.secret)
 }
 
-func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-    var req service.RegisterRequest
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        response.Error(w, apierrors.ErrBadRequest)
-        return
-    }
-
-    if err := h.validate.Struct(req); err != nil {
-        response.Error(w, apierrors.NewValidationError("", err.Error()))
-        return
-    }
-
-    user, err := h.authService.Register(r.Context(), req)
-    if err != nil {
-        response.Error(w, err)
-        return
-    }
-
-    response.Created(w, user)
-}
-
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-    var req struct {
-        Email    string `json:"email"`
-        Password string `json:"password"`
-    }
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        response.Error(w, apierrors.ErrBadRequest)
-        return
-    }
-
-    user, sessionID, err := h.authService.Login(r.Context(), req.Email, req.Password)
-    if err != nil {
-        response.Error(w, err)
-        return
-    }
-
-    // Set session cookie
-    http.SetCookie(w, &http.Cookie{
-        Name:     "session",
-        Value:    sessionID,
-        Path:     "/",
-        HttpOnly: true,
-        Secure:   true,
-        SameSite: http.SameSiteLaxMode,
-        MaxAge:   int(7 * 24 * time.Hour / time.Second),
+func (s *jwtService) Validate(tokenString string) (*Claims, error) {
+    token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+        return s.secret, nil
     })
-
-    response.OK(w, map[string]any{
-        "user":       user,
-        "session_id": sessionID,
-    })
-}
-
-func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-    cookie, err := r.Cookie("session")
     if err != nil {
-        response.NoContent(w)
-        return
+        return nil, err
     }
 
-    _ = h.authService.Logout(r.Context(), cookie.Value)
-
-    // Clear cookie
-    http.SetCookie(w, &http.Cookie{
-        Name:   "session",
-        Value:  "",
-        Path:   "/",
-        MaxAge: -1,
-    })
-
-    response.NoContent(w)
-}
-
-func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
-    cookie, err := r.Cookie("session")
-    if err != nil {
-        response.Error(w, apierrors.ErrUnauthorized)
-        return
+    if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+        return claims, nil
     }
 
-    user, err := h.authService.ValidateSession(r.Context(), cookie.Value)
-    if err != nil {
-        response.Error(w, err)
-        return
-    }
-
-    response.OK(w, user)
-}
-
-func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
-    panic("TODO(08A): implement forgot password handler")
-}
-
-func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
-    panic("TODO(08A): implement reset password handler")
-}
-
-func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-    panic("TODO(08A): implement verify email handler")
+    return nil, jwt.ErrTokenInvalidClaims
 }
 ```
 
 ---
 
-## 7. Deliverables
+## 7. Session Middleware
+
+**File:** `internal/middleware/session.go`
+
+```go
+package middleware
+
+import (
+    "context"
+    "net/http"
+    "strings"
+
+    "github.com/Bidon15/banhbaoring/control-plane/internal/service"
+)
+
+type contextKey string
+
+const UserIDKey contextKey = "user_id"
+
+func SessionMiddleware(jwtSvc service.JWTService, sessionSvc service.SessionService) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            // Try Authorization header first (API/JWT)
+            authHeader := r.Header.Get("Authorization")
+            if strings.HasPrefix(authHeader, "Bearer ") {
+                tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+                
+                claims, err := jwtSvc.Validate(tokenString)
+                if err == nil {
+                    ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
+                    next.ServeHTTP(w, r.WithContext(ctx))
+                    return
+                }
+            }
+
+            // Try session cookie (Dashboard)
+            cookie, err := r.Cookie("session_id")
+            if err == nil {
+                session, err := sessionSvc.Get(r.Context(), cookie.Value)
+                if err == nil {
+                    ctx := context.WithValue(r.Context(), UserIDKey, session.UserID)
+                    next.ServeHTTP(w, r.WithContext(ctx))
+                    return
+                }
+            }
+
+            // No valid auth
+            http.Error(w, "unauthorized", http.StatusUnauthorized)
+        })
+    }
+}
+
+// GetUserID extracts user ID from context
+func GetUserID(ctx context.Context) (uuid.UUID, bool) {
+    userID, ok := ctx.Value(UserIDKey).(uuid.UUID)
+    return userID, ok
+}
+```
+
+---
+
+## 8. Database Schema Update
+
+Update the users table to remove password fields:
+
+**File:** `internal/database/migrations/002_oauth_only.up.sql`
+
+```sql
+-- Remove password-related columns (OAuth-only auth)
+ALTER TABLE users DROP COLUMN IF EXISTS password_hash;
+ALTER TABLE users DROP COLUMN IF EXISTS email_verified;
+
+-- Add unique constraint on OAuth provider + ID
+ALTER TABLE users ADD CONSTRAINT users_oauth_unique UNIQUE (oauth_provider, oauth_provider_id);
+```
+
+**File:** `internal/database/migrations/002_oauth_only.down.sql`
+
+```sql
+-- Restore password columns
+ALTER TABLE users ADD COLUMN password_hash VARCHAR(255);
+ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_oauth_unique;
+```
+
+---
+
+## 9. Deliverables
 
 | File | Description |
 |------|-------------|
-| `internal/models/user.go` | User & Session models |
+| `internal/models/user.go` | User and Session models |
 | `internal/repository/user_repo.go` | User database operations |
-| `internal/repository/session_repo.go` | Session database operations |
-| `internal/service/auth_service.go` | Auth business logic |
-| `internal/handler/auth_handler.go` | HTTP handlers |
-| `internal/handler/auth_handler_test.go` | Tests |
+| `internal/service/session_service.go` | Redis session management |
+| `internal/service/jwt_service.go` | JWT generation/validation |
+| `internal/middleware/session.go` | Auth middleware |
+| `internal/database/migrations/002_*.sql` | OAuth-only schema |
 
 ---
 
-## 8. API Endpoints
+## 10. Dependencies
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/v1/auth/register` | Create account |
-| POST | `/v1/auth/login` | Login |
-| POST | `/v1/auth/logout` | Logout |
-| GET | `/v1/auth/me` | Current user |
-| POST | `/v1/auth/password/forgot` | Request reset |
-| POST | `/v1/auth/password/reset` | Reset password |
-| POST | `/v1/auth/email/verify` | Verify email |
+**After:** Agent 07 (Control Plane Foundation)
+
+**Before:** Agent 08B (OAuth Implementation)
 
 ---
 
-## 9. Success Criteria
+## 11. Verification
 
-- [ ] User registration works
-- [ ] Login returns session
-- [ ] Session validation works
-- [ ] Password hashing with bcrypt
-- [ ] All tests pass
+```bash
+# Run tests
+go test ./internal/service/... -v -run "Session|JWT"
+go test ./internal/middleware/... -v -run Session
 
----
-
-## 10. Agent Prompt
-
-```
-You are Agent 08A - User Authentication. Implement user registration, login, and sessions.
-
-Read the spec: doc/implementation/IMPL_08A_AUTH_USERS.md
-
-Deliverables:
-1. User model and repository
-2. Session model and repository  
-3. Auth service (register, login, logout, validate)
-4. Auth HTTP handlers
-5. Unit tests
-
-Dependencies: Agent 07 (Foundation) must complete first.
-
-Test: go test ./internal/... -v
+# Run migrations
+go run ./cmd/migrate up
 ```
 
+---
+
+## 12. Checklist
+
+- [ ] User model (no password field)
+- [ ] User repository with OAuth lookup
+- [ ] Session service with Redis
+- [ ] JWT service
+- [ ] Session middleware
+- [ ] Migration to remove password columns
+- [ ] Unit tests

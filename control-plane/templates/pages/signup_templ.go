@@ -9,12 +9,11 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
 
-// SignupPage renders the signup/registration page.
-func SignupPage(errorMsg string, formValues SignupFormValues) templ.Component {
+// SignupPage renders the signup/registration page with OAuth options (GitHub and Google only).
+func SignupPage(errorMsg string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -59,7 +58,7 @@ func SignupPage(errorMsg string, formValues SignupFormValues) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/signup.templ`, Line: 15, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/signup.templ`, Line: 14, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -70,7 +69,7 @@ func SignupPage(errorMsg string, formValues SignupFormValues) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " <h2 class=\"text-2xl font-heading font-bold text-bao-text mb-2\">Create your account</h2><p class=\"text-bao-muted text-sm mb-6\">Start managing your keys securely in minutes</p><!-- OAuth Buttons --> <div class=\"space-y-3 mb-6\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " <h2 class=\"text-2xl font-heading font-bold text-bao-text mb-2\">Create your account</h2><p class=\"text-bao-muted text-sm mb-8\">Start managing your keys securely in minutes</p><!-- OAuth Buttons --> <div class=\"space-y-3\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -82,63 +81,7 @@ func SignupPage(errorMsg string, formValues SignupFormValues) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = OAuthButton("discord", "Sign up with Discord").Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><!-- Divider --> <div class=\"relative my-6\"><div class=\"absolute inset-0 flex items-center\"><div class=\"w-full border-t border-bao-border\"></div></div><div class=\"relative flex justify-center text-sm\"><span class=\"px-4 bg-bao-card text-bao-muted\">or sign up with email</span></div></div><!-- Registration Form --> <form action=\"/signup\" method=\"POST\" class=\"space-y-4\"><div><label for=\"name\" class=\"block text-sm font-medium text-bao-text mb-1.5\">Full Name</label> <input type=\"text\" id=\"name\" name=\"name\" required autocomplete=\"name\" value=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(formValues.Name)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/signup.templ`, Line: 49, Col: 28}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" class=\"w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors\" placeholder=\"John Doe\"></div><div><label for=\"email\" class=\"block text-sm font-medium text-bao-text mb-1.5\">Email</label> <input type=\"email\" id=\"email\" name=\"email\" required autocomplete=\"email\" value=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(formValues.Email)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/signup.templ`, Line: 63, Col: 29}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" class=\"w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors\" placeholder=\"you@example.com\"></div><div><label for=\"password\" class=\"block text-sm font-medium text-bao-text mb-1.5\">Password</label> <input type=\"password\" id=\"password\" name=\"password\" required autocomplete=\"new-password\" minlength=\"8\" class=\"w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors\" placeholder=\"••••••••\"><p class=\"mt-1.5 text-xs text-bao-muted\">Must be at least 8 characters</p></div><div><label for=\"password_confirm\" class=\"block text-sm font-medium text-bao-text mb-1.5\">Confirm Password</label> <input type=\"password\" id=\"password_confirm\" name=\"password_confirm\" required autocomplete=\"new-password\" class=\"w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors\" placeholder=\"••••••••\"></div><!-- Terms Agreement --><div class=\"flex items-start gap-3 pt-2\"><input type=\"checkbox\" id=\"terms\" name=\"terms\" required class=\"mt-1 h-4 w-4 rounded border-bao-border bg-bao-bg text-bao-accent focus:ring-bao-accent focus:ring-offset-bao-bg\"> <label for=\"terms\" class=\"text-sm text-bao-muted\">I agree to the  <a href=\"/terms\" class=\"text-bao-accent hover:text-amber-300 transition-colors\">Terms of Service</a> and  <a href=\"/privacy\" class=\"text-bao-accent hover:text-amber-300 transition-colors\">Privacy Policy</a></label></div><div class=\"pt-2\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"w-full text-center\">Create Account</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				return nil
-			})
-			templ_7745c5c3_Err = components.Button(components.ButtonPrimary, components.ButtonSizeLarge, false).Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></form><p class=\"mt-6 text-center text-sm text-bao-muted\">Already have an account? <a href=\"/login\" class=\"text-bao-accent hover:text-amber-300 font-medium transition-colors\">Sign in</a></p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><!-- Features --> <div class=\"mt-8 p-4 bg-bao-bg rounded-xl border border-bao-border\"><p class=\"text-sm font-medium text-bao-text mb-3\">What you get with BanhBaoRing:</p><ul class=\"space-y-2 text-sm text-bao-muted\"><li class=\"flex items-center gap-2\"><span class=\"text-green-400\">✓</span> <span>HSM-level key security without complexity</span></li><li class=\"flex items-center gap-2\"><span class=\"text-green-400\">✓</span> <span>Parallel worker support for Celestia rollups</span></li><li class=\"flex items-center gap-2\"><span class=\"text-green-400\">✓</span> <span>Full audit trail for compliance</span></li><li class=\"flex items-center gap-2\"><span class=\"text-green-400\">✓</span> <span>Free tier with 3 keys and 10K signatures/month</span></li></ul></div><p class=\"mt-6 text-center text-sm text-bao-muted\">Already have an account? <a href=\"/login\" class=\"text-bao-accent hover:text-amber-300 font-medium transition-colors\">Sign in</a></p><p class=\"mt-4 text-center text-xs text-bao-muted\">By signing up, you agree to our  <a href=\"/terms\" class=\"text-bao-accent hover:underline\">Terms</a> and  <a href=\"/privacy\" class=\"text-bao-accent hover:underline\">Privacy Policy</a></p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -150,12 +93,6 @@ func SignupPage(errorMsg string, formValues SignupFormValues) templ.Component {
 		}
 		return nil
 	})
-}
-
-// SignupFormValues holds form values for re-rendering on error.
-type SignupFormValues struct {
-	Name  string
-	Email string
 }
 
 var _ = templruntime.GeneratedTemplate

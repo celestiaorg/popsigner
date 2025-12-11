@@ -75,12 +75,12 @@ All 4 worker keys stored in BanhBaoRing, all signing concurrently.
 
 #### 2.1.1 Authentication Methods
 
+> **OAuth-Only:** BanhBaoRing uses OAuth exclusively - no email/password. This eliminates password storage liability, password reset flows, and credential stuffing attacks.
+
 | Method               | Use Case            | Implementation               |
 | -------------------- | ------------------- | ---------------------------- |
-| **Email + Password** | Individual users    | bcrypt, email verification   |
-| **OAuth 2.0**        | Quick signup        | GitHub, Google, Discord      |
+| **OAuth 2.0**        | User authentication | GitHub, Google               |
 | **API Keys**         | Programmatic access | Scoped tokens with rotation  |
-| **Wallet Connect**   | Web3 native users   | SIWE (Sign-In with Ethereum) |
 
 #### 2.1.2 API Key Scopes
 

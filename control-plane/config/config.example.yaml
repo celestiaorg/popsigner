@@ -1,0 +1,74 @@
+# BanhBaoRing Control Plane Configuration
+# Copy this file to config.yaml and fill in your values
+#
+# Environment variables override file values with prefix BANHBAO_
+# Example: BANHBAO_DATABASE_PASSWORD overrides database.password
+
+server:
+  port: 8080
+  host: "0.0.0.0"
+  read_timeout: "30s"
+  write_timeout: "30s"
+  environment: "dev"  # dev | staging | prod
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "banhbao"
+  password: "banhbao"  # Change in production!
+  database: "banhbaoring"
+  ssl_mode: "disable"  # Use "require" in production
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: "5m"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+
+openbao:
+  address: "http://localhost:8200"
+  token: ""  # Set via BANHBAO_OPENBAO_TOKEN env var
+  namespace: ""
+  secp256k1_path: "secp256k1"
+
+# Authentication (OAuth-only - no email/password)
+auth:
+  # Generate with: openssl rand -base64 32
+  jwt_secret: ""  # Required! Set via BANHBAO_AUTH_JWT_SECRET
+  jwt_expiry: "24h"
+  session_expiry: "168h"  # 7 days
+
+  # OAuth Callback URL (where providers redirect after auth)
+  oauth_callback_url: "http://localhost:8080"
+  
+  # Dashboard URL (where to redirect after successful login)
+  dashboard_url: "http://localhost:3000"
+
+  # GitHub OAuth (Required)
+  # Create at: https://github.com/settings/developers
+  # Callback URL: {oauth_callback_url}/auth/github/callback
+  oauth_github_id: ""
+  oauth_github_secret: ""
+
+  # Google OAuth (Required)
+  # Create at: https://console.cloud.google.com/apis/credentials
+  # Callback URL: {oauth_callback_url}/auth/google/callback
+  oauth_google_id: ""
+  oauth_google_secret: ""
+
+# Stripe Billing
+stripe:
+  # Get from: https://dashboard.stripe.com/test/apikeys
+  secret_key: ""  # sk_test_... or sk_live_...
+  
+  # Get from: https://dashboard.stripe.com/test/webhooks
+  # Endpoint URL: {server_url}/webhooks/stripe
+  webhook_secret: ""  # whsec_...
+  
+  # Create products in Stripe Dashboard, copy Price IDs
+  price_id_free: ""   # price_...
+  price_id_pro: ""    # price_...
+

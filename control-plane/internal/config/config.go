@@ -71,19 +71,17 @@ type OpenBaoConfig struct {
 }
 
 // AuthConfig holds authentication configuration.
+// BanhBaoRing uses OAuth-only authentication (no email/password).
 type AuthConfig struct {
-	JWTSecret          string        `mapstructure:"jwt_secret"`
-	JWTExpiry          time.Duration `mapstructure:"jwt_expiry"`
-	SessionExpiry      time.Duration `mapstructure:"session_expiry"`
-	BCryptCost         int           `mapstructure:"bcrypt_cost"`
-	OAuthGitHubID      string        `mapstructure:"oauth_github_id"`
-	OAuthGitHubSecret  string        `mapstructure:"oauth_github_secret"`
-	OAuthGoogleID      string        `mapstructure:"oauth_google_id"`
-	OAuthGoogleSecret  string        `mapstructure:"oauth_google_secret"`
-	OAuthDiscordID     string        `mapstructure:"oauth_discord_id"`
-	OAuthDiscordSecret string        `mapstructure:"oauth_discord_secret"`
-	OAuthCallbackURL   string        `mapstructure:"oauth_callback_url"`
-	DashboardURL       string        `mapstructure:"dashboard_url"`
+	JWTSecret         string        `mapstructure:"jwt_secret"`
+	JWTExpiry         time.Duration `mapstructure:"jwt_expiry"`
+	SessionExpiry     time.Duration `mapstructure:"session_expiry"`
+	OAuthGitHubID     string        `mapstructure:"oauth_github_id"`
+	OAuthGitHubSecret string        `mapstructure:"oauth_github_secret"`
+	OAuthGoogleID     string        `mapstructure:"oauth_google_id"`
+	OAuthGoogleSecret string        `mapstructure:"oauth_google_secret"`
+	OAuthCallbackURL  string        `mapstructure:"oauth_callback_url"`
+	DashboardURL      string        `mapstructure:"dashboard_url"`
 }
 
 // StripeConfig holds Stripe payment configuration.
@@ -159,8 +157,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("openbao.namespace", "")
 	v.SetDefault("openbao.secp256k1_path", "secp256k1")
 
-	// Auth defaults
-	v.SetDefault("auth.bcrypt_cost", 12)
+	// Auth defaults (OAuth-only, no email/password)
 	v.SetDefault("auth.jwt_expiry", "24h")
 	v.SetDefault("auth.session_expiry", "168h") // 7 days
 	v.SetDefault("auth.oauth_callback_url", "http://localhost:8080")

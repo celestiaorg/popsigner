@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-Implement OAuth 2.0 authentication with GitHub, Google, and Discord.
+Implement OAuth 2.0 authentication with GitHub and Google. BanhBaoRing uses **OAuth-only** authentication - this is the primary login method for all users.
 
 ---
 
@@ -18,8 +18,8 @@ Implement OAuth 2.0 authentication with GitHub, Google, and Discord.
 |----------|----------|
 | GitHub | ✅ |
 | Google | ✅ |
-| Discord | ✅ |
-| Wallet Connect (SIWE) | ❌ (Future) |
+| Discord | ❌ (Not planned) |
+| Wallet Connect (SIWE) | ❌ (Not planned) |
 
 ---
 

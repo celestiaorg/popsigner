@@ -20,12 +20,6 @@ import (
 	"github.com/Bidon15/banhbaoring/control-plane/internal/repository"
 )
 
-// DiscordEndpoint is the OAuth2 endpoint for Discord.
-var DiscordEndpoint = oauth2.Endpoint{
-	AuthURL:  "https://discord.com/api/oauth2/authorize",
-	TokenURL: "https://discord.com/api/oauth2/token",
-}
-
 // OAuthUserInfo contains user information fetched from OAuth providers.
 type OAuthUserInfo struct {
 	ID        string
@@ -90,16 +84,7 @@ func NewOAuthService(
 		}
 	}
 
-	// Configure Discord OAuth if credentials are provided
-	if cfg.OAuthDiscordID != "" && cfg.OAuthDiscordSecret != "" {
-		configs["discord"] = &oauth2.Config{
-			ClientID:     cfg.OAuthDiscordID,
-			ClientSecret: cfg.OAuthDiscordSecret,
-			Endpoint:     DiscordEndpoint,
-			RedirectURL:  callbackBaseURL + "/v1/auth/oauth/discord/callback",
-			Scopes:       []string{"identify", "email"},
-		}
-	}
+	// Note: BanhBaoRing supports GitHub and Google OAuth only
 
 	return &oauthService{
 		configs:       configs,
@@ -184,8 +169,6 @@ func (s *oauthService) fetchUserInfo(ctx context.Context, provider string, token
 		return s.fetchGitHubUser(client)
 	case "google":
 		return s.fetchGoogleUser(client)
-	case "discord":
-		return s.fetchDiscordUser(client)
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", provider)
 	}
@@ -293,49 +276,6 @@ func (s *oauthService) fetchGoogleUser(client *http.Client) (*OAuthUserInfo, err
 		Email:     data.Email,
 		Name:      data.Name,
 		AvatarURL: data.Picture,
-	}, nil
-}
-
-func (s *oauthService) fetchDiscordUser(client *http.Client) (*OAuthUserInfo, error) {
-	resp, err := client.Get("https://discord.com/api/users/@me")
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch Discord user: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Discord API returned status %d", resp.StatusCode)
-	}
-
-	var data struct {
-		ID            string `json:"id"`
-		Username      string `json:"username"`
-		Email         string `json:"email"`
-		Avatar        string `json:"avatar"`
-		Discriminator string `json:"discriminator"`
-		GlobalName    string `json:"global_name"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return nil, fmt.Errorf("failed to decode Discord user response: %w", err)
-	}
-
-	// Build avatar URL
-	avatarURL := ""
-	if data.Avatar != "" {
-		avatarURL = fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.png", data.ID, data.Avatar)
-	}
-
-	// Use global name if available, otherwise fall back to username
-	name := data.GlobalName
-	if name == "" {
-		name = data.Username
-	}
-
-	return &OAuthUserInfo{
-		ID:        data.ID,
-		Email:     data.Email,
-		Name:      name,
-		AvatarURL: avatarURL,
 	}, nil
 }
 
