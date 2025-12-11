@@ -101,6 +101,13 @@ func Load() (*Config, error) {
 	// Set defaults
 	setDefaults(v)
 
+	// Explicitly bind OAuth environment variables (nested struct issue with viper)
+	v.BindEnv("auth.oauth_github_id", "BANHBAO_AUTH_OAUTH_GITHUB_ID")
+	v.BindEnv("auth.oauth_github_secret", "BANHBAO_AUTH_OAUTH_GITHUB_SECRET")
+	v.BindEnv("auth.oauth_google_id", "BANHBAO_AUTH_OAUTH_GOOGLE_ID")
+	v.BindEnv("auth.oauth_google_secret", "BANHBAO_AUTH_OAUTH_GOOGLE_SECRET")
+	v.BindEnv("auth.oauth_callback_url", "BANHBAO_AUTH_OAUTH_CALLBACK_URL")
+
 	// Read config file (optional)
 	if err := v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
