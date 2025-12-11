@@ -19,20 +19,27 @@ import (
 
 // mockBillingService is a mock implementation of BillingService for testing.
 type mockBillingService struct {
-	createCustomerFunc          func(ctx context.Context, orgID uuid.UUID, email, name string) error
-	getCustomerFunc             func(ctx context.Context, orgID uuid.UUID) (*stripe.Customer, error)
-	getSubscriptionFunc         func(ctx context.Context, orgID uuid.UUID) (*service.SubscriptionInfo, error)
-	createSubscriptionFunc      func(ctx context.Context, orgID uuid.UUID, priceID string) (*service.SubscriptionInfo, error)
-	changePlanFunc              func(ctx context.Context, orgID uuid.UUID, newPriceID string) (*service.SubscriptionInfo, error)
-	cancelSubscriptionFunc      func(ctx context.Context, orgID uuid.UUID) error
-	reactivateSubscriptionFunc  func(ctx context.Context, orgID uuid.UUID) error
-	createSetupIntentFunc       func(ctx context.Context, orgID uuid.UUID) (string, error)
-	listPaymentMethodsFunc      func(ctx context.Context, orgID uuid.UUID) ([]*stripe.PaymentMethod, error)
-	setDefaultPaymentMethodFunc func(ctx context.Context, orgID uuid.UUID, paymentMethodID string) error
-	listInvoicesFunc            func(ctx context.Context, orgID uuid.UUID) ([]*stripe.Invoice, error)
-	getCurrentUsageFunc         func(ctx context.Context, orgID uuid.UUID) (*service.UsageInfo, error)
-	reportUsageFunc             func(ctx context.Context, orgID uuid.UUID, metric string, quantity int64) error
-	handleWebhookFunc           func(ctx context.Context, payload []byte, signature string) error
+	createCustomerFunc              func(ctx context.Context, orgID uuid.UUID, email, name string) error
+	getCustomerFunc                 func(ctx context.Context, orgID uuid.UUID) (*stripe.Customer, error)
+	getSubscriptionFunc             func(ctx context.Context, orgID uuid.UUID) (*service.SubscriptionInfo, error)
+	createSubscriptionFunc          func(ctx context.Context, orgID uuid.UUID, priceID string) (*service.SubscriptionInfo, error)
+	changePlanFunc                  func(ctx context.Context, orgID uuid.UUID, newPriceID string) (*service.SubscriptionInfo, error)
+	cancelSubscriptionFunc          func(ctx context.Context, orgID uuid.UUID) error
+	reactivateSubscriptionFunc      func(ctx context.Context, orgID uuid.UUID) error
+	createSetupIntentFunc           func(ctx context.Context, orgID uuid.UUID) (string, error)
+	confirmSetupIntentFunc          func(ctx context.Context, orgID uuid.UUID, setupIntentID string) error
+	listPaymentMethodsFunc          func(ctx context.Context, orgID uuid.UUID) ([]*stripe.PaymentMethod, error)
+	setDefaultPaymentMethodFunc     func(ctx context.Context, orgID uuid.UUID, paymentMethodID string) error
+	listInvoicesFunc                func(ctx context.Context, orgID uuid.UUID) ([]*stripe.Invoice, error)
+	getCurrentUsageFunc             func(ctx context.Context, orgID uuid.UUID) (*service.UsageInfo, error)
+	reportUsageFunc                 func(ctx context.Context, orgID uuid.UUID, metric string, quantity int64) error
+	handleWebhookFunc               func(ctx context.Context, payload []byte, signature string) error
+	createPortalSessionFunc         func(ctx context.Context, orgID uuid.UUID, returnURL string) (string, error)
+	createCheckoutSessionFunc       func(ctx context.Context, orgID uuid.UUID, plan, returnURL string) (string, error)
+	getPublicKeyFunc                func() string
+	createSetupIntentWithSecretFunc func(ctx context.Context, orgID uuid.UUID) (*service.SetupIntentInfo, error)
+	getSignaturesTimeSeriesFunc     func(ctx context.Context, orgID uuid.UUID, start, end time.Time) ([]service.TimeSeriesPoint, error)
+	getAPICallsTimeSeriesFunc       func(ctx context.Context, orgID uuid.UUID, start, end time.Time) ([]service.TimeSeriesPoint, error)
 }
 
 func (m *mockBillingService) CreateCustomer(ctx context.Context, orgID uuid.UUID, email, name string) error {
@@ -91,6 +98,13 @@ func (m *mockBillingService) CreateSetupIntent(ctx context.Context, orgID uuid.U
 	return "", nil
 }
 
+func (m *mockBillingService) ConfirmSetupIntent(ctx context.Context, orgID uuid.UUID, setupIntentID string) error {
+	if m.confirmSetupIntentFunc != nil {
+		return m.confirmSetupIntentFunc(ctx, orgID, setupIntentID)
+	}
+	return nil
+}
+
 func (m *mockBillingService) ListPaymentMethods(ctx context.Context, orgID uuid.UUID) ([]*stripe.PaymentMethod, error) {
 	if m.listPaymentMethodsFunc != nil {
 		return m.listPaymentMethodsFunc(ctx, orgID)
@@ -131,6 +145,48 @@ func (m *mockBillingService) HandleWebhook(ctx context.Context, payload []byte, 
 		return m.handleWebhookFunc(ctx, payload, signature)
 	}
 	return nil
+}
+
+func (m *mockBillingService) CreatePortalSession(ctx context.Context, orgID uuid.UUID, returnURL string) (string, error) {
+	if m.createPortalSessionFunc != nil {
+		return m.createPortalSessionFunc(ctx, orgID, returnURL)
+	}
+	return "", nil
+}
+
+func (m *mockBillingService) CreateCheckoutSession(ctx context.Context, orgID uuid.UUID, plan, returnURL string) (string, error) {
+	if m.createCheckoutSessionFunc != nil {
+		return m.createCheckoutSessionFunc(ctx, orgID, plan, returnURL)
+	}
+	return "", nil
+}
+
+func (m *mockBillingService) GetPublicKey() string {
+	if m.getPublicKeyFunc != nil {
+		return m.getPublicKeyFunc()
+	}
+	return ""
+}
+
+func (m *mockBillingService) CreateSetupIntentWithSecret(ctx context.Context, orgID uuid.UUID) (*service.SetupIntentInfo, error) {
+	if m.createSetupIntentWithSecretFunc != nil {
+		return m.createSetupIntentWithSecretFunc(ctx, orgID)
+	}
+	return nil, nil
+}
+
+func (m *mockBillingService) GetSignaturesTimeSeries(ctx context.Context, orgID uuid.UUID, start, end time.Time) ([]service.TimeSeriesPoint, error) {
+	if m.getSignaturesTimeSeriesFunc != nil {
+		return m.getSignaturesTimeSeriesFunc(ctx, orgID, start, end)
+	}
+	return nil, nil
+}
+
+func (m *mockBillingService) GetAPICallsTimeSeries(ctx context.Context, orgID uuid.UUID, start, end time.Time) ([]service.TimeSeriesPoint, error) {
+	if m.getAPICallsTimeSeriesFunc != nil {
+		return m.getAPICallsTimeSeriesFunc(ctx, orgID, start, end)
+	}
+	return nil, nil
 }
 
 // createBillingTestRequest creates a request with org ID in context
@@ -855,4 +911,3 @@ func TestBillingHandler_InvalidJSON(t *testing.T) {
 		t.Errorf("Status = %d, want %d", rec.Code, http.StatusBadRequest)
 	}
 }
-
