@@ -5,12 +5,15 @@
 
 # Versions
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-REGISTRY ?= ghcr.io/bidon15
+REGISTRY ?= rg.nl-ams.scw.cloud/banhbao
 
-# Image names
-OPERATOR_IMAGE := $(REGISTRY)/banhbaoring-operator:$(VERSION)
-CONTROL_PLANE_IMAGE := $(REGISTRY)/banhbaoring-control-plane:$(VERSION)
-PLUGIN_IMAGE := $(REGISTRY)/banhbaoring-secp256k1:$(VERSION)
+# Platform for cross-compilation (amd64 for Scaleway K8s)
+PLATFORM ?= linux/amd64
+
+# Image names (simplified for Scaleway)
+OPERATOR_IMAGE := $(REGISTRY)/operator:$(VERSION)
+CONTROL_PLANE_IMAGE := $(REGISTRY)/control-plane:$(VERSION)
+PLUGIN_IMAGE := $(REGISTRY)/secp256k1-plugin:$(VERSION)
 
 ##@ General
 
@@ -42,21 +45,25 @@ lint: ## Run linters
 
 ##@ Docker
 
-docker-build: docker-build-operator docker-build-control-plane docker-build-plugin ## Build all Docker images
+# Create buildx builder for cross-platform builds
+docker-setup: ## Setup Docker buildx for cross-platform builds
+	docker buildx create --name banhbao-builder --use 2>/dev/null || docker buildx use banhbao-builder
+
+docker-build: docker-setup docker-build-operator docker-build-control-plane docker-build-plugin ## Build all Docker images (amd64)
 
 docker-build-operator: ## Build operator image
-	docker build -t $(OPERATOR_IMAGE) ./operator
+	docker buildx build --platform $(PLATFORM) -t $(OPERATOR_IMAGE) --load ./operator
 
 docker-build-control-plane: ## Build control-plane image
-	docker build -t $(CONTROL_PLANE_IMAGE) -f ./control-plane/docker/Dockerfile ./control-plane
+	docker buildx build --platform $(PLATFORM) -t $(CONTROL_PLANE_IMAGE) --load -f ./control-plane/docker/Dockerfile ./control-plane
 
 docker-build-plugin: ## Build plugin image
-	docker build -t $(PLUGIN_IMAGE) ./plugin
+	docker buildx build --platform $(PLATFORM) -t $(PLUGIN_IMAGE) --load ./plugin
 
-docker-push: ## Push all images to registry
-	docker push $(OPERATOR_IMAGE)
-	docker push $(CONTROL_PLANE_IMAGE)
-	docker push $(PLUGIN_IMAGE)
+docker-push: docker-setup ## Build and push all images to registry
+	docker buildx build --platform $(PLATFORM) -t $(OPERATOR_IMAGE) --push ./operator
+	docker buildx build --platform $(PLATFORM) -t $(CONTROL_PLANE_IMAGE) --push -f ./control-plane/docker/Dockerfile ./control-plane
+	docker buildx build --platform $(PLATFORM) -t $(PLUGIN_IMAGE) --push ./plugin
 
 ##@ Kind (Local K8s)
 
