@@ -4,114 +4,114 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-      - persistentvolumeclaims
-      - secrets
-      - services
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - apps
-    resources:
-      - deployments
-      - statefulsets
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - autoscaling
-    resources:
-      - horizontalpodautoscalers
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - banhbaoring.io
-    resources:
-      - banhbaoringbackups
-      - banhbaoringclusters
-      - banhbaoringrestores
-      - banhbaoringtenants
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - banhbaoring.io
-    resources:
-      - banhbaoringbackups/finalizers
-      - banhbaoringclusters/finalizers
-      - banhbaoringrestores/finalizers
-      - banhbaoringtenants/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - banhbaoring.io
-    resources:
-      - banhbaoringbackups/status
-      - banhbaoringclusters/status
-      - banhbaoringrestores/status
-      - banhbaoringtenants/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - batch
-    resources:
-      - jobs
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - cert-manager.io
-    resources:
-      - certificates
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - networking.k8s.io
-    resources:
-      - ingresses
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - persistentvolumeclaims
+  - secrets
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - banhbaoring.io
+  resources:
+  - banhbaoringbackups
+  - banhbaoringclusters
+  - banhbaoringrestores
+  - banhbaoringtenants
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - banhbaoring.io
+  resources:
+  - banhbaoringbackups/finalizers
+  - banhbaoringclusters/finalizers
+  - banhbaoringrestores/finalizers
+  - banhbaoringtenants/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - banhbaoring.io
+  resources:
+  - banhbaoringbackups/status
+  - banhbaoringclusters/status
+  - banhbaoringrestores/status
+  - banhbaoringtenants/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

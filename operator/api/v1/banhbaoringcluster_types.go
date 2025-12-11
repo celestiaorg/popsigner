@@ -158,6 +158,9 @@ type APISpec struct {
 	// +kubebuilder:default="1.0.0"
 	Version string `json:"version,omitempty"`
 
+	// Image overrides the default image (e.g., "rg.nl-ams.scw.cloud/banhbao/control-plane")
+	Image string `json:"image,omitempty"`
+
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	Autoscaling AutoscalingSpec `json:"autoscaling,omitempty"`
@@ -178,6 +181,9 @@ type DashboardSpec struct {
 
 	// +kubebuilder:default="1.0.0"
 	Version string `json:"version,omitempty"`
+
+	// Image overrides the default image (e.g., "rg.nl-ams.scw.cloud/banhbao/dashboard")
+	Image string `json:"image,omitempty"`
 
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
