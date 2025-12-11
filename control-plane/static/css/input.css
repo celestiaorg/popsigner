@@ -4,7 +4,7 @@
 
 /* ============================================
    BanhBaoRing Dashboard Styles
-   A warm, inviting design inspired by Vietnamese bánh bao
+   Dark trading terminal aesthetic
    ============================================ */
 
 @layer base {
@@ -13,24 +13,113 @@
     scroll-behavior: smooth;
   }
 
-  /* Selection color */
+  /* Selection color - orange accent */
   ::selection {
-    background-color: rgba(245, 158, 11, 0.3);
-    color: #faf5ff;
+    background-color: rgba(255, 106, 0, 0.3);
+    color: #ffffff;
   }
 
   /* Focus visible styles */
   :focus-visible {
-    outline: 2px solid #f59e0b;
+    outline: 2px solid #FF6A00;
     outline-offset: 2px;
   }
 }
 
 @layer components {
+  /* ============================================
+     Landing Page Components
+     ============================================ */
+
+  /* Terminal-style card */
+  .terminal-card {
+    @apply bg-terminal-card border border-terminal-border rounded-lg p-6;
+    @apply hover:border-terminal-border-highlight transition-all duration-200;
+  }
+
+  /* CTA Button - Primary */
+  .btn-cta {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3;
+    @apply bg-terminal-accent text-terminal-bg font-display font-semibold;
+    @apply rounded-lg transition-all duration-200;
+    @apply hover:bg-terminal-accent-hover hover:shadow-glow-orange;
+    @apply focus:outline-none focus:ring-2 focus:ring-terminal-accent focus:ring-offset-2 focus:ring-offset-terminal-bg;
+  }
+
+  /* CTA Button - Secondary/Ghost */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3;
+    @apply border border-terminal-border text-terminal-text font-display font-medium;
+    @apply rounded-lg transition-all duration-200;
+    @apply hover:border-terminal-accent hover:text-terminal-accent;
+    @apply focus:outline-none focus:ring-2 focus:ring-terminal-accent/50;
+  }
+
+  /* Code block terminal style */
+  .code-terminal {
+    @apply bg-terminal-bg border border-terminal-border rounded-lg;
+    @apply font-mono text-sm overflow-x-auto;
+  }
+
+  /* Section heading */
+  .section-heading {
+    @apply text-3xl md:text-4xl font-display font-bold text-terminal-text;
+  }
+
+  /* Section subheading */
+  .section-subheading {
+    @apply text-terminal-muted text-lg max-w-2xl;
+  }
+
+  /* Feature icon container */
+  .feature-icon {
+    @apply w-12 h-12 rounded-lg bg-terminal-elevated border border-terminal-border;
+    @apply flex items-center justify-center text-terminal-accent text-xl;
+  }
+
+  /* Status LED indicator */
+  .status-led {
+    @apply w-2 h-2 rounded-full;
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  .status-led-teal {
+    @apply bg-terminal-teal;
+    box-shadow: 0 0 6px rgba(0, 240, 209, 0.8);
+  }
+
+  .status-led-orange {
+    @apply bg-terminal-accent;
+    box-shadow: 0 0 6px rgba(255, 106, 0, 0.8);
+  }
+
+  /* Glowing borders */
+  .glow-border-orange {
+    box-shadow: 0 0 0 1px rgba(255, 106, 0, 0.3),
+                0 0 15px -3px rgba(255, 106, 0, 0.2);
+  }
+
+  .glow-border-teal {
+    box-shadow: 0 0 0 1px rgba(0, 240, 209, 0.3),
+                0 0 15px -3px rgba(0, 240, 209, 0.2);
+  }
+
+  /* Terminal grid background */
+  .terminal-grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(42, 42, 48, 0.3) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(42, 42, 48, 0.3) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* ============================================
+     Dashboard Components (existing)
+     ============================================ */
+
   /* Custom scrollbar */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #3d3454 transparent;
+    scrollbar-color: #2A2A30 transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -43,12 +132,12 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #3d3454;
+    background: #2A2A30;
     border-radius: 3px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: #4d4464;
+    background: #3A3A42;
   }
 
   /* HTMX loading states */
@@ -79,9 +168,9 @@
   .skeleton {
     background: linear-gradient(
       90deg,
-      #1a1625 0%,
-      #252030 50%,
-      #1a1625 100%
+      #1B1B1F 0%,
+      #232328 50%,
+      #1B1B1F 100%
     );
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s ease-in-out infinite;
@@ -98,8 +187,8 @@
 
   /* Form inputs */
   .input {
-    @apply w-full px-4 py-2.5 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted/50;
-    @apply focus:outline-none focus:ring-2 focus:ring-bao-accent focus:border-transparent;
+    @apply w-full px-4 py-2.5 bg-terminal-bg border border-terminal-border rounded-xl text-terminal-text placeholder-terminal-muted/50;
+    @apply focus:outline-none focus:ring-2 focus:ring-terminal-accent focus:border-transparent;
     @apply transition-all duration-200;
   }
 
@@ -113,11 +202,11 @@
 
   /* Labels */
   .label {
-    @apply block text-sm font-medium text-bao-text mb-1.5;
+    @apply block text-sm font-medium text-terminal-text mb-1.5;
   }
 
   .label-hint {
-    @apply text-xs text-bao-muted mt-1;
+    @apply text-xs text-terminal-muted mt-1;
   }
 
   /* Form groups */
@@ -127,11 +216,11 @@
 
   /* Code blocks */
   .code-block {
-    @apply bg-bao-bg border border-bao-border rounded-xl p-4 font-mono text-sm overflow-x-auto;
+    @apply bg-terminal-bg border border-terminal-border rounded-xl p-4 font-mono text-sm overflow-x-auto;
   }
 
   .code-inline {
-    @apply bg-bao-bg/80 px-1.5 py-0.5 rounded font-mono text-sm text-bao-accent;
+    @apply bg-terminal-bg/80 px-1.5 py-0.5 rounded font-mono text-sm text-terminal-accent;
   }
 
   /* Badges */
@@ -156,7 +245,7 @@
   }
 
   .badge-neutral {
-    @apply bg-bao-border/30 text-bao-muted border border-bao-border;
+    @apply bg-terminal-border/30 text-terminal-muted border border-terminal-border;
   }
 
   /* Tables */
@@ -165,20 +254,25 @@
   }
 
   .table th {
-    @apply text-left text-xs font-semibold text-bao-muted uppercase tracking-wider px-4 py-3 border-b border-bao-border;
+    @apply text-left text-xs font-semibold text-terminal-muted uppercase tracking-wider px-4 py-3 border-b border-terminal-border;
   }
 
   .table td {
-    @apply px-4 py-4 border-b border-bao-border/50;
+    @apply px-4 py-4 border-b border-terminal-border/50;
   }
 
   .table tbody tr {
-    @apply transition-colors hover:bg-bao-card/50;
+    @apply transition-colors hover:bg-terminal-card/50;
   }
 
   /* Dividers */
   .divider {
-    @apply border-t border-bao-border my-6;
+    @apply border-t border-terminal-border my-6;
+  }
+
+  /* Glowing divider */
+  .divider-glow {
+    @apply h-px bg-gradient-to-r from-transparent via-terminal-border-highlight to-transparent;
   }
 
   /* Page header */
@@ -187,38 +281,38 @@
   }
 
   .page-title {
-    @apply text-2xl lg:text-3xl font-heading font-bold text-bao-text;
+    @apply text-2xl lg:text-3xl font-display font-bold text-terminal-text;
   }
 
   .page-subtitle {
-    @apply mt-2 text-bao-muted;
+    @apply mt-2 text-terminal-muted;
   }
 
   /* Tabs */
   .tabs {
-    @apply flex gap-1 border-b border-bao-border;
+    @apply flex gap-1 border-b border-terminal-border;
   }
 
   .tab {
-    @apply px-4 py-2.5 text-sm font-medium text-bao-muted -mb-px border-b-2 border-transparent;
-    @apply hover:text-bao-text hover:border-bao-border transition-colors;
+    @apply px-4 py-2.5 text-sm font-medium text-terminal-muted -mb-px border-b-2 border-transparent;
+    @apply hover:text-terminal-text hover:border-terminal-border transition-colors;
   }
 
   .tab-active {
-    @apply text-bao-accent border-bao-accent;
+    @apply text-terminal-accent border-terminal-accent;
   }
 
   /* Dropdown menus */
   .dropdown-menu {
-    @apply absolute right-0 mt-2 w-48 bg-bao-card border border-bao-border rounded-xl shadow-xl z-50 py-1 overflow-hidden;
+    @apply absolute right-0 mt-2 w-48 bg-terminal-card border border-terminal-border rounded-xl shadow-xl z-50 py-1 overflow-hidden;
   }
 
   .dropdown-item {
-    @apply block px-4 py-2 text-sm text-bao-muted hover:text-bao-text hover:bg-bao-border/30 transition-colors;
+    @apply block px-4 py-2 text-sm text-terminal-muted hover:text-terminal-text hover:bg-terminal-border/30 transition-colors;
   }
 
   .dropdown-divider {
-    @apply border-t border-bao-border my-1;
+    @apply border-t border-terminal-border my-1;
   }
 
   /* Tooltips */
@@ -229,7 +323,7 @@
   [data-tooltip]::after {
     content: attr(data-tooltip);
     @apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1;
-    @apply bg-bao-card border border-bao-border rounded text-xs text-bao-text whitespace-nowrap;
+    @apply bg-terminal-card border border-terminal-border rounded text-xs text-terminal-text whitespace-nowrap;
     @apply opacity-0 invisible transition-all duration-200;
   }
 
@@ -239,18 +333,26 @@
 }
 
 @layer utilities {
-  /* Text gradient utility */
+  /* Text gradient utility - orange */
   .text-gradient {
-    @apply bg-gradient-to-r from-amber-300 via-rose-400 to-amber-500 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-terminal-accent via-orange-400 to-terminal-accent bg-clip-text text-transparent;
+  }
+
+  .text-gradient-orange {
+    @apply bg-gradient-to-r from-terminal-accent via-orange-400 to-terminal-accent bg-clip-text text-transparent;
   }
 
   /* Glow effects */
-  .glow-amber {
-    box-shadow: 0 0 20px -5px rgba(245, 158, 11, 0.4);
+  .glow-orange {
+    box-shadow: 0 0 20px -5px rgba(255, 106, 0, 0.4);
   }
 
-  .glow-amber-lg {
-    box-shadow: 0 0 40px -10px rgba(245, 158, 11, 0.5);
+  .glow-orange-lg {
+    box-shadow: 0 0 40px -10px rgba(255, 106, 0, 0.5);
+  }
+
+  .glow-teal {
+    box-shadow: 0 0 20px -5px rgba(0, 240, 209, 0.3);
   }
 
   /* Hide scrollbar but keep functionality */
@@ -283,8 +385,7 @@
   /* Backdrop blur fallback */
   @supports not (backdrop-filter: blur(12px)) {
     .backdrop-blur-lg {
-      background-color: rgba(26, 22, 37, 0.98);
+      background-color: rgba(12, 12, 12, 0.98);
     }
   }
 }
-

@@ -1,0 +1,16 @@
+package layouts
+
+// Landing layout for public marketing pages (no sidebar, fixed nav)
+templ Landing(title string) {
+	@Base(title, false, true) {
+		<div class="min-h-screen bg-terminal-bg relative">
+			<!-- Subtle grid background pattern -->
+			<div class="fixed inset-0 terminal-grid-bg opacity-40 pointer-events-none"></div>
+
+			<!-- Content -->
+			<div class="relative z-10">
+				{ children... }
+			</div>
+		</div>
+	}
+}

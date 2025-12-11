@@ -9,25 +9,31 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // BanhBaoRing warm, inviting palette inspired by Vietnamese bánh bao
-        'bao': {
-          // Core backgrounds
-          bg: '#0d0b14',
-          card: '#1a1625',
-          border: '#3d3454',
-          // Text colors
-          text: '#faf5ff',
-          muted: '#9b8fb8',
-          // Accent - warm amber/gold
-          accent: '#f59e0b',
+        // Trading Terminal Palette
+        'terminal': {
+          // Backgrounds
+          'bg': '#0C0C0C',           // Carbon Black - primary background
+          'card': '#1B1B1F',         // Graphite Grey - card backgrounds
+          'elevated': '#232328',     // Slightly elevated surfaces
+          'border': '#2A2A30',       // Subtle borders
+          'border-highlight': '#3A3A42', // Highlighted borders on hover
+
+          // Text
+          'text': '#FFFFFF',         // Primary white
+          'muted': '#A0A0A5',        // Muted text
+          'dim': '#6B6B70',          // Very dim text
+
+          // Accents
+          'accent': '#FF6A00',       // Laser Orange - primary CTA
+          'accent-hover': '#FF8533', // Orange hover state
+          'teal': '#00F0D1',         // Electric Teal - micro accent
+          'teal-dim': '#00C4AA',     // Teal for hover states
         },
       },
       fontFamily: {
-        // Crimson Pro - elegant serif for headings
-        heading: ['Crimson Pro', 'Georgia', 'serif'],
-        // Figtree - friendly, readable body text
-        body: ['Figtree', 'system-ui', 'sans-serif'],
-        // JetBrains Mono - excellent for code
+        // New font stack
+        display: ['Outfit', 'system-ui', 'sans-serif'],
+        body: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {
@@ -40,8 +46,10 @@ module.exports = {
         '3xl': '1.5rem',
       },
       boxShadow: {
-        'glow': '0 0 20px -5px rgba(245, 158, 11, 0.3)',
-        'glow-lg': '0 0 40px -10px rgba(245, 158, 11, 0.4)',
+        'glow-orange': '0 0 20px -5px rgba(255, 106, 0, 0.4)',
+        'glow-orange-lg': '0 0 40px -10px rgba(255, 106, 0, 0.5)',
+        'glow-teal': '0 0 20px -5px rgba(0, 240, 209, 0.3)',
+        'glow-teal-sm': '0 0 8px rgba(0, 240, 209, 0.4)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
@@ -70,10 +78,10 @@ module.exports = {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'gradient-warm': 'linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #f59e0b 100%)',
+        'terminal-grid': 'linear-gradient(to right, rgba(42, 42, 48, 0.3) 1px, transparent 1px), linear-gradient(to bottom, rgba(42, 42, 48, 0.3) 1px, transparent 1px)',
+        'gradient-radial-dark': 'radial-gradient(ellipse at center, rgba(255, 106, 0, 0.08) 0%, transparent 70%)',
       },
     },
   },
   plugins: [],
 }
-

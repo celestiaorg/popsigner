@@ -1,0 +1,122 @@
+package landing
+
+// Pricing renders the pricing tiers
+templ Pricing() {
+	<section id="pricing" class="py-20 px-4 sm:px-6 lg:px-8 bg-terminal-card/30">
+		<div class="max-w-5xl mx-auto">
+			<div class="text-center mb-16">
+				<h2 class="section-heading mb-4">Simple, transparent pricing</h2>
+				<p class="section-subheading mx-auto">
+					Start free, scale as you grow. No hidden fees.
+				</p>
+			</div>
+
+			<div class="grid md:grid-cols-3 gap-6">
+				@PricingTier(PricingTierData{
+					Name:        "Free",
+					Price:       "$0",
+					Period:      "forever",
+					Features:    []string{"1,000 signs/month", "3 keys", "Community support", "Basic analytics"},
+					Highlighted: false,
+					CTAText:     "Get Started",
+					CTAHref:     "/signup",
+				})
+
+				@PricingTier(PricingTierData{
+					Name:        "Pro",
+					Price:       "$49",
+					Period:      "/month",
+					Features:    []string{"100,000 signs/month", "Unlimited keys", "Priority support", "Advanced analytics", "Webhooks", "Audit logs (90 days)"},
+					Highlighted: true,
+					CTAText:     "Start Pro Trial",
+					CTAHref:     "/signup?plan=pro",
+				})
+
+				@PricingTier(PricingTierData{
+					Name:        "Enterprise",
+					Price:       "Custom",
+					Period:      "contact us",
+					Features:    []string{"Unlimited signs", "Dedicated support", "SLA guarantee", "Custom integrations", "On-premise option", "Audit logs (unlimited)"},
+					Highlighted: false,
+					CTAText:     "Contact Sales",
+					CTAHref:     "/contact",
+				})
+			</div>
+		</div>
+	</section>
+}
+
+type PricingTierData struct {
+	Name        string
+	Price       string
+	Period      string
+	Features    []string
+	Highlighted bool
+	CTAText     string
+	CTAHref     string
+}
+
+templ PricingTier(data PricingTierData) {
+	<div class={ pricingCardClasses(data.Highlighted) }>
+		if data.Highlighted {
+			<div class="absolute -top-3 left-1/2 -translate-x-1/2">
+				<span class="px-3 py-1 bg-terminal-accent text-terminal-bg text-xs font-semibold rounded-full">
+					Most Popular
+				</span>
+			</div>
+		}
+
+		<div class="text-center mb-6">
+			<h3 class="text-lg font-display font-semibold text-terminal-text mb-2">{ data.Name }</h3>
+			<div class="flex items-baseline justify-center gap-1">
+				<span class={ priceClasses(data.Highlighted) }>{ data.Price }</span>
+				<span class="text-terminal-muted text-sm">{ data.Period }</span>
+			</div>
+		</div>
+
+		<ul class="space-y-3 mb-8">
+			for _, feature := range data.Features {
+				<li class="flex items-center gap-2 text-sm text-terminal-muted">
+					<svg class={ checkIconClasses(data.Highlighted) } fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+					</svg>
+					{ feature }
+				</li>
+			}
+		</ul>
+
+		<a href={ templ.SafeURL(data.CTAHref) } class={ pricingCTAClasses(data.Highlighted) }>
+			{ data.CTAText }
+		</a>
+	</div>
+}
+
+func pricingCardClasses(highlighted bool) string {
+	base := "relative terminal-card"
+	if highlighted {
+		return base + " border-terminal-accent glow-border-orange"
+	}
+	return base
+}
+
+func priceClasses(highlighted bool) string {
+	base := "text-4xl font-display font-bold"
+	if highlighted {
+		return base + " text-terminal-accent"
+	}
+	return base + " text-terminal-text"
+}
+
+func checkIconClasses(highlighted bool) string {
+	if highlighted {
+		return "w-4 h-4 text-terminal-accent shrink-0"
+	}
+	return "w-4 h-4 text-terminal-teal shrink-0"
+}
+
+func pricingCTAClasses(highlighted bool) string {
+	if highlighted {
+		return "btn-cta w-full"
+	}
+	return "btn-ghost w-full"
+}

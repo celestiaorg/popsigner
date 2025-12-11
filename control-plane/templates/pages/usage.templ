@@ -2,11 +2,28 @@ package pages
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
+
+// formatNumber formats a number with thousand separators
+func formatNumber(n int64) string {
+	s := strconv.FormatInt(n, 10)
+	if len(s) <= 3 {
+		return s
+	}
+	var result []byte
+	for i, c := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			result = append(result, ',')
+		}
+		result = append(result, byte(c))
+	}
+	return string(result)
+}
 
 // UsageDataPoint represents a data point for charts.
 type UsageDataPoint struct {

@@ -1,0 +1,16 @@
+{
+  "name": "control-plane",
+  "version": "1.0.0",
+  "description": "Multi-tenant API for managing cryptographic key operations, authentication, billing, and tenant isolation.",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

@@ -1,0 +1,31 @@
+package pages
+
+import (
+	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components/landing"
+)
+
+// LandingPage renders the main marketing landing page
+templ LandingPage() {
+	@layouts.Landing("Secure Key Management") {
+		@landing.Nav()
+
+		<main>
+			@landing.Hero()
+
+			<div class="divider-glow"></div>
+
+			@landing.Problems()
+
+			@landing.Solution()
+
+			@landing.Features()
+
+			@landing.Pricing()
+
+			@landing.CTA()
+		</main>
+
+		@landing.Footer()
+	}
+}

@@ -59,7 +59,7 @@ func WorkerKeysModal(namespaces []*models.Namespace, limits *models.PlanLimits, 
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(formatLimit(limits.Keys))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/partials/worker_keys.templ`, Line: 60, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/partials/worker_keys.templ`, Line: 60, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -72,7 +72,7 @@ func WorkerKeysModal(namespaces []*models.Namespace, limits *models.PlanLimits, 
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(formatLimit(currentKeyCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/partials/worker_keys.templ`, Line: 61, Col: 81}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/partials/worker_keys.templ`, Line: 61, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -95,7 +95,7 @@ func WorkerKeysModal(namespaces []*models.Namespace, limits *models.PlanLimits, 
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(ns.ID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/partials/worker_keys.templ`, Line: 72, Col: 37}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/partials/worker_keys.templ`, Line: 72, Col: 37}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -118,7 +118,7 @@ func WorkerKeysModal(namespaces []*models.Namespace, limits *models.PlanLimits, 
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(ns.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/partials/worker_keys.templ`, Line: 73, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/partials/worker_keys.templ`, Line: 73, Col: 17}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -203,7 +203,7 @@ func WorkerKeysResult(created int, failed int, errors []string) templ.Component 
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(formatLimit(created))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/partials/worker_keys.templ`, Line: 133, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/partials/worker_keys.templ`, Line: 133, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -221,7 +221,7 @@ func WorkerKeysResult(created int, failed int, errors []string) templ.Component 
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(formatLimit(failed))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/partials/worker_keys.templ`, Line: 137, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/partials/worker_keys.templ`, Line: 137, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -249,7 +249,7 @@ func WorkerKeysResult(created int, failed int, errors []string) templ.Component 
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(errors[0])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/partials/worker_keys.templ`, Line: 153, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/partials/worker_keys.templ`, Line: 153, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {

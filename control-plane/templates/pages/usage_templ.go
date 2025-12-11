@@ -10,11 +10,28 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
+
+// formatNumber formats a number with thousand separators
+func formatNumber(n int64) string {
+	s := strconv.FormatInt(n, 10)
+	if len(s) <= 3 {
+		return s
+	}
+	var result []byte
+	for i, c := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			result = append(result, ',')
+		}
+		result = append(result, byte(c))
+	}
+	return string(result)
+}
 
 // UsageDataPoint represents a data point for charts.
 type UsageDataPoint struct {
@@ -82,7 +99,7 @@ func UsagePage(data UsagePageData) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.PeriodStart.Format("Jan 2"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 45, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 62, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -95,7 +112,7 @@ func UsagePage(data UsagePageData) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.PeriodEnd.Format("Jan 2, 2006"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 45, Col: 93}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 62, Col: 93}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -144,7 +161,7 @@ func UsagePage(data UsagePageData) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(formatNumber(getMaxValue(data.SignaturesData)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 72, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 89, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -157,7 +174,7 @@ func UsagePage(data UsagePageData) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(formatNumber(getMaxValue(data.SignaturesData) / 2))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 73, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 90, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -184,7 +201,7 @@ func UsagePage(data UsagePageData) templ.Component {
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var8).String())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 1, Col: 0}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 1, Col: 0}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -197,7 +214,7 @@ func UsagePage(data UsagePageData) templ.Component {
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("height: %d%%", getBarHeight(point.Value, data.SignaturesData)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 88, Col: 96}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 105, Col: 96}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -210,7 +227,7 @@ func UsagePage(data UsagePageData) templ.Component {
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s: %d", point.Date.Format("Jan 2"), point.Value))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 89, Col: 83}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 106, Col: 83}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -234,7 +251,7 @@ func UsagePage(data UsagePageData) templ.Component {
 						var templ_7745c5c3_Var12 string
 						templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(point.Date.Format("Jan 2"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 100, Col: 43}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 117, Col: 43}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 						if templ_7745c5c3_Err != nil {
@@ -321,7 +338,7 @@ func UsagePage(data UsagePageData) templ.Component {
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(formatNumber(avgDaily(data.Signatures, data.PeriodStart, data.PeriodEnd)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 128, Col: 83}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 145, Col: 83}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -334,7 +351,7 @@ func UsagePage(data UsagePageData) templ.Component {
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(formatNumber(getPeakValue(data.SignaturesData)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 137, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 154, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -347,7 +364,7 @@ func UsagePage(data UsagePageData) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(formatNumber(data.APICalls))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 146, Col: 37}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 163, Col: 37}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -360,7 +377,7 @@ func UsagePage(data UsagePageData) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(daysRemaining(data.PeriodEnd))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 155, Col: 39}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 172, Col: 39}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -429,7 +446,7 @@ func UsageProgressBar(label string, current, limit int64, icon string) templ.Com
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 186, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 203, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -442,7 +459,7 @@ func UsageProgressBar(label string, current, limit int64, icon string) templ.Com
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 187, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 204, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -455,7 +472,7 @@ func UsageProgressBar(label string, current, limit int64, icon string) templ.Com
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(formatNumber(current))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 190, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 207, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -473,7 +490,7 @@ func UsageProgressBar(label string, current, limit int64, icon string) templ.Com
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(formatNumber(limit))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 192, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 209, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -506,7 +523,7 @@ func UsageProgressBar(label string, current, limit int64, icon string) templ.Com
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var24).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 1, Col: 0}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -519,7 +536,7 @@ func UsageProgressBar(label string, current, limit int64, icon string) templ.Com
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("width: %d%%", min(100, current*100/limit)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 201, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 218, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -547,7 +564,7 @@ func UsageProgressBar(label string, current, limit int64, icon string) templ.Com
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%% used", float64(current)/float64(limit)*100))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 208, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 225, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -560,7 +577,7 @@ func UsageProgressBar(label string, current, limit int64, icon string) templ.Com
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(formatNumber(limit - current))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/usage.templ`, Line: 209, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/usage.templ`, Line: 226, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {

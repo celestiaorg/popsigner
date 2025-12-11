@@ -8,9 +8,9 @@ templ Base(title string, showCharts, showCode bool) {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 		<title>{ title } | BanhBaoRing</title>
 		
-		<!-- Fonts - Crimson Pro for headings, Figtree for body -->
+		<!-- Fonts - Outfit for display, Plus Jakarta Sans for body -->
 		<link rel="preconnect" href="https://fonts.bunny.net"/>
-		<link href="https://fonts.bunny.net/css?family=crimson-pro:400,500,600,700|figtree:400,500,600,700|jetbrains-mono:400" rel="stylesheet"/>
+		<link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700,800|plus-jakarta-sans:400,500,600,700|jetbrains-mono:400,500" rel="stylesheet"/>
 		
 		<!-- Tailwind CSS -->
 		<link rel="stylesheet" href="/static/css/output.css"/>
@@ -21,7 +21,7 @@ templ Base(title string, showCharts, showCode bool) {
 		<!-- CSRF Token -->
 		<meta name="csrf-token" content=""/>
 	</head>
-	<body class="bg-bao-bg text-bao-text font-body antialiased">
+	<body class="bg-terminal-bg text-terminal-text font-body antialiased">
 		{ children... }
 		
 		<!-- HTMX -->

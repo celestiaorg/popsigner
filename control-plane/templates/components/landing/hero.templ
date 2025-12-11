@@ -1,0 +1,54 @@
+package landing
+
+// Hero renders the hero section with tagline and CTA
+templ Hero() {
+	<section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+		<div class="max-w-5xl mx-auto text-center">
+			<!-- Badge -->
+			<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-terminal-card border border-terminal-border mb-8">
+				<span class="status-led status-led-teal"></span>
+				<span class="text-xs font-medium text-terminal-teal">Open Source &amp; Self-Hostable</span>
+			</div>
+
+			<!-- Main Headline -->
+			<h1 class="text-5xl sm:text-6xl lg:text-7xl font-display font-bold text-terminal-text leading-tight mb-6">
+				Ring ring!
+				<br class="hidden sm:block"/>
+				<span class="text-gradient-orange">Secure keys, delivered.</span>
+			</h1>
+
+			<!-- Sub-headline -->
+			<p class="text-xl text-terminal-muted max-w-2xl mx-auto mb-10">
+				Enterprise-grade key management for Celestia &amp; Cosmos rollups.
+				HSM-backed security. Open source. Deploys in minutes.
+			</p>
+
+			<!-- CTAs -->
+			<div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+				<a href="/signup" class="btn-cta text-base px-8 py-4">
+					Start Free
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+					</svg>
+				</a>
+				<a href="/docs" class="btn-ghost text-base px-8 py-4">
+					View Documentation
+				</a>
+			</div>
+
+			<!-- Stats row -->
+			<div class="mt-16 grid grid-cols-3 gap-8 max-w-xl mx-auto">
+				@HeroStat("100+", "Signs/sec")
+				@HeroStat("5 min", "Setup time")
+				@HeroStat("100%", "Open source")
+			</div>
+		</div>
+	</section>
+}
+
+templ HeroStat(value, label string) {
+	<div class="text-center">
+		<div class="text-2xl sm:text-3xl font-display font-bold text-terminal-accent">{ value }</div>
+		<div class="text-sm text-terminal-muted mt-1">{ label }</div>
+	</div>
+}

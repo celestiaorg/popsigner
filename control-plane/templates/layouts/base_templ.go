@@ -36,13 +36,13 @@ func Base(title string, showCharts, showCode bool) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/layouts/base.templ`, Line: 9, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/layouts/base.templ`, Line: 9, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | BanhBaoRing</title><!-- Fonts - Crimson Pro for headings, Figtree for body --><link rel=\"preconnect\" href=\"https://fonts.bunny.net\"><link href=\"https://fonts.bunny.net/css?family=crimson-pro:400,500,600,700|figtree:400,500,600,700|jetbrains-mono:400\" rel=\"stylesheet\"><!-- Tailwind CSS --><link rel=\"stylesheet\" href=\"/static/css/output.css\"><!-- Favicon --><link rel=\"icon\" href=\"/static/img/favicon.svg\" type=\"image/svg+xml\"><!-- CSRF Token --><meta name=\"csrf-token\" content=\"\"></head><body class=\"bg-bao-bg text-bao-text font-body antialiased\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | BanhBaoRing</title><!-- Fonts - Outfit for display, Plus Jakarta Sans for body --><link rel=\"preconnect\" href=\"https://fonts.bunny.net\"><link href=\"https://fonts.bunny.net/css?family=outfit:400,500,600,700,800|plus-jakarta-sans:400,500,600,700|jetbrains-mono:400,500\" rel=\"stylesheet\"><!-- Tailwind CSS --><link rel=\"stylesheet\" href=\"/static/css/output.css\"><!-- Favicon --><link rel=\"icon\" href=\"/static/img/favicon.svg\" type=\"image/svg+xml\"><!-- CSRF Token --><meta name=\"csrf-token\" content=\"\"></head><body class=\"bg-terminal-bg text-terminal-text font-body antialiased\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

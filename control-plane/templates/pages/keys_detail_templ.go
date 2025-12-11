@@ -78,7 +78,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.Key.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 53, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 53, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -91,7 +91,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Key.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 64, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 64, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -104,7 +104,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.Namespace)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 68, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 68, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -117,7 +117,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(string(data.Key.Algorithm))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 68, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 68, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -146,7 +146,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(data.Key.ID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 87, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 87, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -159,7 +159,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(truncateID(data.Key.ID.String()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 88, Col: 42}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 88, Col: 42}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -189,7 +189,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(data.Key.Address)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 100, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 100, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -202,7 +202,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(truncateAddress(data.Key.Address))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 101, Col: 43}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 101, Col: 43}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -232,7 +232,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(formatHex(data.Key.PublicKey))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 113, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 113, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -245,7 +245,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(truncatePubKey(formatHex(data.Key.PublicKey)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 114, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 114, Col: 55}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -275,7 +275,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(string(data.Key.Algorithm))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 127, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 127, Col: 36}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -288,7 +288,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(data.Namespace)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 135, Col: 24}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 135, Col: 24}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -301,7 +301,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(data.Key.CreatedAt.Format("Jan 2, 2006 at 3:04 PM"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 142, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 142, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -329,7 +329,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(formatVersion(data.Key.Version))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 162, Col: 41}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 162, Col: 41}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -376,7 +376,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var22 string
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(keysFormatNumber(data.SigningStats.Total))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 178, Col: 91}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 178, Col: 91}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
@@ -389,7 +389,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var23 string
 				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(formatFloat(data.SigningStats.AvgPerDay))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 183, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 183, Col: 90}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
@@ -428,7 +428,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var25 string
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs("/keys/" + data.Key.ID.String() + "/sign-test")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 190, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 190, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 				if templ_7745c5c3_Err != nil {
@@ -467,7 +467,7 @@ func KeyDetailPage(data KeyDetailData) templ.Component {
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs("/keys/" + data.Key.ID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/keys_detail.templ`, Line: 220, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_detail.templ`, Line: 220, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {

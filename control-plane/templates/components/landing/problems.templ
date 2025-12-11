@@ -1,0 +1,53 @@
+package landing
+
+// Problems renders the pain points section
+templ Problems() {
+	<section class="py-20 px-4 sm:px-6 lg:px-8">
+		<div class="max-w-6xl mx-auto">
+			<div class="text-center mb-16">
+				<h2 class="section-heading mb-4">Key management is broken</h2>
+				<p class="section-subheading mx-auto">
+					Current solutions force you to choose between security and developer experience.
+				</p>
+			</div>
+
+			<div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+				@ProblemCard("lock", "Vendor Lock-in", "Proprietary APIs trap you with a single provider, making migration costly and complex.")
+				@ProblemCard("puzzle", "No Customizability", "One-size-fits-all solutions that can't adapt to your specific security requirements.")
+				@ProblemCard("turtle", "Low Performance", "Synchronous signing creates bottlenecks that slow down your entire application.")
+				@ProblemCard("sad", "Tedious Setup", "Days or weeks of configuration before you can sign your first transaction.")
+			</div>
+		</div>
+	</section>
+}
+
+templ ProblemCard(icon, title, description string) {
+	<div class="terminal-card group">
+		<div class="text-3xl mb-4 opacity-60 group-hover:opacity-100 transition-opacity">
+			@problemIcon(icon)
+		</div>
+		<h3 class="text-lg font-display font-semibold text-terminal-text mb-2">{ title }</h3>
+		<p class="text-sm text-terminal-muted leading-relaxed">{ description }</p>
+	</div>
+}
+
+templ problemIcon(name string) {
+	switch name {
+		case "lock":
+			<svg class="w-8 h-8 text-terminal-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+			</svg>
+		case "puzzle":
+			<svg class="w-8 h-8 text-terminal-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/>
+			</svg>
+		case "turtle":
+			<svg class="w-8 h-8 text-terminal-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+			</svg>
+		case "sad":
+			<svg class="w-8 h-8 text-terminal-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+			</svg>
+	}
+}

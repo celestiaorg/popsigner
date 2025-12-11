@@ -19,6 +19,7 @@ import (
 	"github.com/Bidon15/banhbaoring/control-plane/internal/database"
 	"github.com/Bidon15/banhbaoring/control-plane/internal/middleware"
 	"github.com/Bidon15/banhbaoring/control-plane/internal/pkg/response"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/pages"
 )
 
 func main() {
@@ -208,52 +209,11 @@ func readyHandler(db *database.Postgres, redis *database.Redis) http.HandlerFunc
 	}
 }
 
-// landingPageHandler serves the web dashboard landing page.
+// landingPageHandler serves the web dashboard landing page using templ.
 func landingPageHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write([]byte(`<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>BanhBaoRing - Secure Key Management</title>
-	<link rel="stylesheet" href="/static/css/output.css">
-	<link rel="preconnect" href="https://fonts.bunny.net"/>
-	<link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700|jetbrains-mono:400" rel="stylesheet"/>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center">
-	<div class="text-center max-w-2xl px-6">
-		<h1 class="text-6xl font-bold mb-4 bg-gradient-to-r from-amber-400 to-rose-500 bg-clip-text text-transparent">🔔 BanhBaoRing</h1>
-		<p class="text-slate-400 text-xl mb-8">Secure key management for the decentralized web</p>
-		<div class="flex gap-4 justify-center">
-			<a href="/login" class="px-8 py-4 bg-gradient-to-r from-amber-400 to-rose-500 text-slate-900 font-semibold rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all">
-				Login
-			</a>
-			<a href="/login" class="px-8 py-4 border border-amber-400/50 text-amber-400 rounded-xl hover:bg-amber-400/10 transition-colors">
-				Sign Up
-			</a>
-		</div>
-		<div class="mt-16 grid grid-cols-3 gap-8 text-left">
-			<div class="p-6 bg-slate-800/50 rounded-xl border border-slate-700">
-				<div class="text-3xl mb-3">🔐</div>
-				<h3 class="font-semibold mb-2">Secure Storage</h3>
-				<p class="text-slate-400 text-sm">Enterprise-grade HSM-backed key storage with OpenBao</p>
-			</div>
-			<div class="p-6 bg-slate-800/50 rounded-xl border border-slate-700">
-				<div class="text-3xl mb-3">⚡</div>
-				<h3 class="font-semibold mb-2">Fast Signing</h3>
-				<p class="text-slate-400 text-sm">Parallel signing operations with secp256k1 support</p>
-			</div>
-			<div class="p-6 bg-slate-800/50 rounded-xl border border-slate-700">
-				<div class="text-3xl mb-3">🌐</div>
-				<h3 class="font-semibold mb-2">API First</h3>
-				<p class="text-slate-400 text-sm">RESTful API with Go and Rust SDKs</p>
-			</div>
-		</div>
-	</div>
-</body>
-</html>`))
+		pages.LandingPage().Render(r.Context(), w)
 	}
 }
 

@@ -1,0 +1,89 @@
+package landing
+
+import "html/template"
+
+// codeSnippet returns the code example as raw HTML
+func codeSnippet() template.HTML {
+	return template.HTML(`<div class="text-terminal-muted">// Initialize client</div>
+<div><span class="text-terminal-teal">client</span> := banhbaoring.<span class="text-terminal-accent">NewClient</span>(apiKey)</div>
+<div class="h-4"></div>
+<div class="text-terminal-muted">// Sign a message - that's it!</div>
+<div><span class="text-terminal-teal">sig</span>, err := client.<span class="text-terminal-accent">Sign</span>(ctx, &amp;SignRequest{</div>
+<div class="pl-4">KeyID:   <span class="text-green-400">"key_abc123"</span>,</div>
+<div class="pl-4">Message: txBytes,</div>
+<div>})</div>`)
+}
+
+// Solution renders the solution section with code example
+templ Solution() {
+	<section class="py-20 px-4 sm:px-6 lg:px-8 bg-terminal-card/30">
+		<div class="max-w-6xl mx-auto">
+			<div class="grid lg:grid-cols-2 gap-12 items-center">
+				<!-- Left: Code example -->
+				<div class="order-2 lg:order-1">
+					<div class="code-terminal">
+						<div class="flex items-center gap-2 px-4 py-3 border-b border-terminal-border">
+							<div class="flex gap-1.5">
+								<span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+								<span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+								<span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+							</div>
+							<span class="text-xs text-terminal-dim ml-2 font-mono">main.go</span>
+						</div>
+						<div class="p-4 overflow-x-auto text-sm font-mono leading-6">
+							@templ.Raw(string(codeSnippet()))
+						</div>
+					</div>
+				</div>
+
+				<!-- Right: Solution cards -->
+				<div class="order-1 lg:order-2">
+					<h2 class="section-heading mb-4">Built for developers</h2>
+					<p class="section-subheading mb-8">
+						BanhBaoRing is designed from the ground up for speed, security, and simplicity.
+					</p>
+
+					<div class="space-y-4">
+						@SolutionCard("unlock", "Open Source", "Full transparency. Audit the code, self-host, or contribute.")
+						@SolutionCard("plugin", "Plugin Architecture", "Extend functionality with custom plugins for any use case.")
+						@SolutionCard("bolt", "100+ Signs/sec", "Parallel signing with OpenBao for maximum throughput.")
+						@SolutionCard("rocket", "5-Minute Setup", "Kubernetes operator or Docker Compose. Production-ready fast.")
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+}
+
+templ SolutionCard(icon, title, description string) {
+	<div class="flex gap-4 items-start p-4 rounded-lg hover:bg-terminal-card/50 transition-colors">
+		<div class="feature-icon shrink-0">
+			@solutionIcon(icon)
+		</div>
+		<div>
+			<h3 class="font-display font-semibold text-terminal-text mb-1">{ title }</h3>
+			<p class="text-sm text-terminal-muted">{ description }</p>
+		</div>
+	</div>
+}
+
+templ solutionIcon(name string) {
+	switch name {
+		case "unlock":
+			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+			</svg>
+		case "plugin":
+			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z"/>
+			</svg>
+		case "bolt":
+			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+			</svg>
+		case "rocket":
+			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+			</svg>
+	}
+}
