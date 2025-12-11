@@ -13,7 +13,6 @@ import (
 )
 
 const configTemplate = `ui = true
-disable_mlock = false
 plugin_directory = "{{ .PluginDir }}"
 
 listener "tcp" {

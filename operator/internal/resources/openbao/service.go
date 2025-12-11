@@ -9,6 +9,16 @@ import (
 	"github.com/Bidon15/banhbaoring/operator/internal/resources"
 )
 
+// ServiceAccount builds the ServiceAccount for OpenBao.
+func ServiceAccount(cluster *banhbaoringv1.BanhBaoRingCluster) *corev1.ServiceAccount {
+	name := resources.ResourceName(cluster.Name, constants.ComponentOpenBao)
+	labels := resources.Labels(cluster.Name, constants.ComponentOpenBao, cluster.Spec.OpenBao.Version)
+
+	return &corev1.ServiceAccount{
+		ObjectMeta: resources.ObjectMeta(name, cluster.Namespace, labels),
+	}
+}
+
 // HeadlessService builds the headless service for StatefulSet DNS.
 func HeadlessService(cluster *banhbaoringv1.BanhBaoRingCluster) *corev1.Service {
 	name := resources.ResourceName(cluster.Name, constants.ComponentOpenBao)

@@ -130,11 +130,7 @@ func buildOpenBaoContainer(cluster *banhbaoringv1.BanhBaoRingCluster, version st
 			InitialDelaySeconds: 30,
 			PeriodSeconds:       30,
 		},
-		SecurityContext: &corev1.SecurityContext{
-			Capabilities: &corev1.Capabilities{
-				Add: []corev1.Capability{"IPC_LOCK"},
-			},
-		},
+		// IPC_LOCK capability is no longer needed as OpenBao dropped mlock support
 	}
 }
 

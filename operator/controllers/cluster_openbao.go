@@ -2,9 +2,17 @@ package controllers
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
+	"math/big"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,6 +32,25 @@ import (
 func (r *ClusterReconciler) reconcileOpenBao(ctx context.Context, cluster *banhbaoringv1.BanhBaoRingCluster) error {
 	log := log.FromContext(ctx)
 	log.Info("Reconciling OpenBao")
+
+	name := resources.ResourceName(cluster.Name, constants.ComponentOpenBao)
+
+	// 0. Create ServiceAccount
+	sa := openbao.ServiceAccount(cluster)
+	if err := r.createOrUpdate(ctx, cluster, sa); err != nil {
+		return fmt.Errorf("failed to reconcile serviceaccount: %w", err)
+	}
+
+	// 0.5 Create self-signed TLS secret (if not exists)
+	tlsSecret, err := r.ensureTLSSecret(ctx, cluster, name)
+	if err != nil {
+		return fmt.Errorf("failed to ensure TLS secret: %w", err)
+	}
+	if tlsSecret != nil {
+		if err := r.createOrUpdate(ctx, cluster, tlsSecret); err != nil {
+			return fmt.Errorf("failed to reconcile TLS secret: %w", err)
+		}
+	}
 
 	// 1. Create/update ConfigMap
 	configMap, err := openbao.ConfigMap(cluster)
@@ -55,11 +82,13 @@ func (r *ClusterReconciler) reconcileOpenBao(ctx context.Context, cluster *banhb
 	// 5. Create/update StatefulSet
 	sts := openbao.StatefulSet(cluster)
 
-	// Add init container for plugin download
-	sts.Spec.Template.Spec.InitContainers = append(
-		sts.Spec.Template.Spec.InitContainers,
-		openbao.InitContainer(cluster),
-	)
+	// TODO: Add init container for plugin download once release artifacts are published
+	// For now, we skip the plugin download init container since the GitHub release doesn't exist yet
+	// The plugin can be registered manually after deployment
+	// sts.Spec.Template.Spec.InitContainers = append(
+	// 	sts.Spec.Template.Spec.InitContainers,
+	// 	openbao.InitContainer(cluster),
+	// )
 
 	// Add unseal provider configuration if enabled
 	if cluster.Spec.OpenBao.AutoUnseal.Enabled {
@@ -232,12 +261,124 @@ func (r *ClusterReconciler) createOrUpdate(ctx context.Context, cluster *banhbao
 			obj.SetResourceVersion(existing.GetResourceVersion())
 
 			if err := r.Update(ctx, obj); err != nil {
-				return fmt.Errorf("failed to update resource: %w", err)
-			}
-		} else {
-			return fmt.Errorf("failed to create resource: %w", err)
+			return fmt.Errorf("failed to update resource: %w", err)
 		}
+	} else {
+		return fmt.Errorf("failed to create resource: %w", err)
 	}
+}
 
 	return nil
+}
+
+// ensureTLSSecret creates a self-signed TLS certificate for OpenBao if it doesn't exist.
+func (r *ClusterReconciler) ensureTLSSecret(ctx context.Context, cluster *banhbaoringv1.BanhBaoRingCluster, name string) (*corev1.Secret, error) {
+	secretName := name + "-tls"
+	
+	// Check if secret already exists
+	existing := &corev1.Secret{}
+	err := r.Get(ctx, types.NamespacedName{Name: secretName, Namespace: cluster.Namespace}, existing)
+	if err == nil {
+		return nil, nil // Secret exists, no need to create
+	}
+	if !errors.IsNotFound(err) {
+		return nil, err
+	}
+
+	// Generate self-signed certificate
+	certPEM, keyPEM, caPEM, err := generateSelfSignedCert(name, cluster.Namespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate certificate: %w", err)
+	}
+
+	labels := resources.Labels(cluster.Name, constants.ComponentOpenBao, cluster.Spec.OpenBao.Version)
+	
+	return &corev1.Secret{
+		ObjectMeta: resources.ObjectMeta(secretName, cluster.Namespace, labels),
+		Type:       corev1.SecretTypeTLS,
+		Data: map[string][]byte{
+			"tls.crt": certPEM,
+			"tls.key": keyPEM,
+			"ca.crt":  caPEM,
+		},
+	}, nil
+}
+
+// generateSelfSignedCert generates a self-signed CA and certificate for OpenBao.
+func generateSelfSignedCert(name, namespace string) (certPEM, keyPEM, caPEM []byte, err error) {
+	// Generate CA key
+	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Create CA certificate
+	caTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{"BanhBaoRing"},
+			CommonName:   "OpenBao CA",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(10, 0, 0), // 10 years
+		IsCA:                  true,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+	}
+
+	caCertDER, err := x509.CreateCertificate(rand.Reader, &caTemplate, &caTemplate, &caKey.PublicKey, caKey)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	caCert, err := x509.ParseCertificate(caCertDER)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Generate server key
+	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Create server certificate
+	serverTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(2),
+		Subject: pkix.Name{
+			Organization: []string{"BanhBaoRing"},
+			CommonName:   name,
+		},
+		NotBefore: time.Now(),
+		NotAfter:  time.Now().AddDate(1, 0, 0), // 1 year
+		KeyUsage:  x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageServerAuth,
+			x509.ExtKeyUsageClientAuth,
+		},
+		DNSNames: []string{
+			name,
+			name + "." + namespace,
+			name + "." + namespace + ".svc",
+			name + "." + namespace + ".svc.cluster.local",
+			"*." + name,
+			"*." + name + "." + namespace,
+			"*." + name + "." + namespace + ".svc",
+			"*." + name + "." + namespace + ".svc.cluster.local",
+			"localhost",
+		},
+		IPAddresses: nil,
+	}
+
+	serverCertDER, err := x509.CreateCertificate(rand.Reader, &serverTemplate, caCert, &serverKey.PublicKey, caKey)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	// Encode to PEM
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverCertDER})
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(serverKey)})
+	caPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caCertDER})
+
+	return certPEM, keyPEM, caPEM, nil
 }

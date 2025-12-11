@@ -69,7 +69,26 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Phase 3: OpenBao (StatefulSet, unseal, plugin)
-	// TODO: Implement OpenBao reconciliation
+	if err := r.reconcileOpenBao(ctx, cluster); err != nil {
+		log.Error(err, "Failed to reconcile OpenBao")
+		return ctrl.Result{}, err
+	}
+
+	// Update OpenBao status
+	if err := r.updateOpenBaoStatus(ctx, cluster); err != nil {
+		log.Error(err, "Failed to update OpenBao status")
+		return ctrl.Result{}, err
+	}
+
+	// Check if OpenBao is ready before proceeding to apps
+	if !r.isOpenBaoReady(ctx, cluster) {
+		log.Info("OpenBao not ready, requeuing")
+		if err := r.Status().Update(ctx, cluster); err != nil {
+			log.Error(err, "Failed to update cluster status")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+	}
 
 	// Phase 4: Applications (API, Dashboard)
 	if err := r.reconcileAPI(ctx, cluster); err != nil {
