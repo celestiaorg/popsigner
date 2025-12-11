@@ -447,15 +447,16 @@ open https://dashboard.banhbaoring.example.com
 
 ## Cost Estimation (Scaleway)
 
-| Resource | Type | Monthly Cost (approx) |
-|----------|------|----------------------|
-| Kapsule Cluster | 3x DEV1-M | ~€45 |
-| Block Storage | 50GB SSD | ~€5 |
-| Load Balancer | LB-S | ~€10 |
-| Container Registry | Private | ~€0 (usage-based) |
-| **Total** | | **~€60/month** |
+| Resource           | Type      | Monthly Cost (approx) |
+| ------------------ | --------- | --------------------- |
+| Kapsule Cluster    | 3x DEV1-M | ~€45                  |
+| Block Storage      | 50GB SSD  | ~€5                   |
+| Load Balancer      | LB-S      | ~€10                  |
+| Container Registry | Private   | ~€0 (usage-based)     |
+| **Total**          |           | **~€60/month**        |
 
 For production, consider:
+
 - Managed PostgreSQL: ~€20/month
 - Larger nodes (PRO2-S): ~€90/month
 - Multiple availability zones
@@ -521,4 +522,3 @@ scw k8s cluster delete <cluster-id>
 2. **Enable backups** - Set up scheduled backups to Scaleway Object Storage
 3. **Production hardening** - Switch to managed PostgreSQL, enable auto-unseal with cloud KMS
 4. **Scale testing** - Test with parallel worker load
-
