@@ -170,7 +170,7 @@ func APIKeysList(keys []*models.APIKey) templ.Component {
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var6).String())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 1, Col: 0}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 1, Col: 0}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -183,7 +183,7 @@ func APIKeysList(keys []*models.APIKey) templ.Component {
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(key.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 92, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 92, Col: 65}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -206,7 +206,7 @@ func APIKeysList(keys []*models.APIKey) templ.Component {
 						var templ_7745c5c3_Var9 string
 						templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(key.ExpiresAt.Format("Jan 2"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 97, Col: 50}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 97, Col: 50}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 						if templ_7745c5c3_Err != nil {
@@ -224,7 +224,7 @@ func APIKeysList(keys []*models.APIKey) templ.Component {
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(key.KeyPrefix)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 102, Col: 68}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 102, Col: 68}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -237,7 +237,7 @@ func APIKeysList(keys []*models.APIKey) templ.Component {
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(key.CreatedAt.Format("Jan 2, 2006"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 105, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 105, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 					if templ_7745c5c3_Err != nil {
@@ -255,7 +255,7 @@ func APIKeysList(keys []*models.APIKey) templ.Component {
 						var templ_7745c5c3_Var12 string
 						templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(key.LastUsedAt.Format("Jan 2"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 110, Col: 53}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 110, Col: 53}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 						if templ_7745c5c3_Err != nil {
@@ -278,7 +278,7 @@ func APIKeysList(keys []*models.APIKey) templ.Component {
 						var templ_7745c5c3_Var13 string
 						templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(scope)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 118, Col: 18}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 118, Col: 18}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 						if templ_7745c5c3_Err != nil {
@@ -301,7 +301,7 @@ func APIKeysList(keys []*models.APIKey) templ.Component {
 						var templ_7745c5c3_Var14 string
 						templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("/settings/api-keys/" + key.ID.String())
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 127, Col: 67}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 127, Col: 67}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 						if templ_7745c5c3_Err != nil {
@@ -486,7 +486,7 @@ func APIKeyCreatedResult(name, key string) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 236, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 236, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -499,7 +499,7 @@ func APIKeyCreatedResult(name, key string) templ.Component {
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(key)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 240, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 240, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -567,7 +567,7 @@ func scopeCheckbox(scope, label, description string) templ.Component {
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(scope)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 266, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 266, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -580,7 +580,7 @@ func scopeCheckbox(scope, label, description string) templ.Component {
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 269, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 269, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -593,7 +593,7 @@ func scopeCheckbox(scope, label, description string) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_apikeys.templ`, Line: 270, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_apikeys.templ`, Line: 270, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {

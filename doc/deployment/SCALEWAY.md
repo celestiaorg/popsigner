@@ -11,7 +11,6 @@ This guide walks you through deploying the complete BanhBaoRing stack to Scalewa
 - Docker (for building images)
 - GitHub OAuth App credentials
 - Google OAuth credentials
-- Stripe account (sandbox/test mode is fine)
 
 ---
 
@@ -139,11 +138,7 @@ kubectl create secret generic banhbaoring-config \
   --from-literal=oauth-github-id="YOUR_GITHUB_CLIENT_ID" \
   --from-literal=oauth-github-secret="YOUR_GITHUB_CLIENT_SECRET" \
   --from-literal=oauth-google-id="YOUR_GOOGLE_CLIENT_ID" \
-  --from-literal=oauth-google-secret="YOUR_GOOGLE_CLIENT_SECRET" \
-  --from-literal=stripe-secret-key="sk_test_YOUR_STRIPE_KEY" \
-  --from-literal=stripe-webhook-secret="whsec_YOUR_WEBHOOK_SECRET" \
-  --from-literal=stripe-price-id-free="price_YOUR_FREE_PRICE" \
-  --from-literal=stripe-price-id-pro="price_YOUR_PRO_PRICE"
+  --from-literal=oauth-google-secret="YOUR_GOOGLE_CLIENT_SECRET"
 ```
 
 ### Database Secrets

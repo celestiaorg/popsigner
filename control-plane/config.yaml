@@ -36,15 +36,10 @@ auth:
   jwt_secret: "change-me-in-production"
   jwt_expiry: "24h"
   session_expiry: "168h"  # 7 days
-  bcrypt_cost: 12
   oauth_github_id: ""
   oauth_github_secret: ""
   oauth_google_id: ""
   oauth_google_secret: ""
-
-stripe:
-  secret_key: ""
-  webhook_secret: ""
-  price_id_free: ""
-  price_id_pro: ""
+  oauth_callback_url: "http://localhost:8080"
+  dashboard_url: "http://localhost:3000"
 

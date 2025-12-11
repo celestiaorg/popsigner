@@ -16,7 +16,6 @@ type Config struct {
 	Redis    RedisConfig    `mapstructure:"redis"`
 	OpenBao  OpenBaoConfig  `mapstructure:"openbao"`
 	Auth     AuthConfig     `mapstructure:"auth"`
-	Stripe   StripeConfig   `mapstructure:"stripe"`
 }
 
 // ServerConfig holds HTTP server configuration.
@@ -82,14 +81,6 @@ type AuthConfig struct {
 	OAuthGoogleSecret string        `mapstructure:"oauth_google_secret"`
 	OAuthCallbackURL  string        `mapstructure:"oauth_callback_url"`
 	DashboardURL      string        `mapstructure:"dashboard_url"`
-}
-
-// StripeConfig holds Stripe payment configuration.
-type StripeConfig struct {
-	SecretKey     string `mapstructure:"secret_key"`
-	WebhookSecret string `mapstructure:"webhook_secret"`
-	PriceIDFree   string `mapstructure:"price_id_free"`
-	PriceIDPro    string `mapstructure:"price_id_pro"`
 }
 
 // Load reads configuration from files and environment variables.

@@ -138,7 +138,6 @@ create_secrets() {
     echo "You'll need the following credentials:"
     echo "  - GitHub OAuth: https://github.com/settings/developers"
     echo "  - Google OAuth: https://console.cloud.google.com/apis/credentials"
-    echo "  - Stripe: https://dashboard.stripe.com/test/apikeys"
     echo ""
     
     read -p "Enter GitHub OAuth Client ID: " GITHUB_ID
@@ -147,12 +146,6 @@ create_secrets() {
     read -p "Enter Google OAuth Client ID: " GOOGLE_ID
     read -sp "Enter Google OAuth Client Secret: " GOOGLE_SECRET
     echo ""
-    read -sp "Enter Stripe Secret Key (sk_test_...): " STRIPE_KEY
-    echo ""
-    read -sp "Enter Stripe Webhook Secret (whsec_...): " STRIPE_WEBHOOK
-    echo ""
-    read -p "Enter Stripe Free Price ID (price_...): " STRIPE_FREE
-    read -p "Enter Stripe Pro Price ID (price_...): " STRIPE_PRO
     
     # Generate JWT secret
     JWT_SECRET=$(openssl rand -base64 32)
@@ -165,10 +158,6 @@ create_secrets() {
         --from-literal=oauth-github-secret="$GITHUB_SECRET" \
         --from-literal=oauth-google-id="$GOOGLE_ID" \
         --from-literal=oauth-google-secret="$GOOGLE_SECRET" \
-        --from-literal=stripe-secret-key="$STRIPE_KEY" \
-        --from-literal=stripe-webhook-secret="$STRIPE_WEBHOOK" \
-        --from-literal=stripe-price-id-free="$STRIPE_FREE" \
-        --from-literal=stripe-price-id-pro="$STRIPE_PRO" \
         --dry-run=client -o yaml | kubectl apply -f -
     
     # Create database secrets

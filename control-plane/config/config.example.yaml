@@ -59,16 +59,6 @@ auth:
   oauth_google_id: ""
   oauth_google_secret: ""
 
-# Stripe Billing
-stripe:
-  # Get from: https://dashboard.stripe.com/test/apikeys
-  secret_key: ""  # sk_test_... or sk_live_...
-  
-  # Get from: https://dashboard.stripe.com/test/webhooks
-  # Endpoint URL: {server_url}/webhooks/stripe
-  webhook_secret: ""  # whsec_...
-  
-  # Create products in Stripe Dashboard, copy Price IDs
-  price_id_free: ""   # price_...
-  price_id_pro: ""    # price_...
+# NOTE: Billing (Stripe) integration is planned for a future release.
+# For now, all users have access to full functionality.
 

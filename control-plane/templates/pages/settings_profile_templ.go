@@ -85,7 +85,7 @@ func SettingsProfilePage(data ProfilePageData) templ.Component {
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.AvatarURL)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_profile.templ`, Line: 39, Col: 33}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_profile.templ`, Line: 39, Col: 33}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -103,7 +103,7 @@ func SettingsProfilePage(data ProfilePageData) templ.Component {
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(getInitialFromName(data.Name))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_profile.templ`, Line: 42, Col: 40}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_profile.templ`, Line: 42, Col: 40}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -121,7 +121,7 @@ func SettingsProfilePage(data ProfilePageData) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(data.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_profile.templ`, Line: 67, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_profile.templ`, Line: 67, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -134,7 +134,7 @@ func SettingsProfilePage(data ProfilePageData) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.Email)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_profile.templ`, Line: 81, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_profile.templ`, Line: 81, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -177,7 +177,7 @@ func SettingsProfilePage(data ProfilePageData) templ.Component {
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(data.OAuthProvider)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_profile.templ`, Line: 101, Col: 45}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_profile.templ`, Line: 101, Col: 45}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -393,7 +393,7 @@ func DeleteAccountModal(email string) templ.Component {
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_profile.templ`, Line: 270, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_profile.templ`, Line: 270, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -406,7 +406,7 @@ func DeleteAccountModal(email string) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/settings_profile.templ`, Line: 274, Col: 28}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `control-plane/templates/pages/settings_profile.templ`, Line: 274, Col: 28}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {

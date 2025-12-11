@@ -37,14 +37,13 @@ const (
 
 // WebHandler handles HTTP requests for the web dashboard.
 type WebHandler struct {
-	authService    service.AuthService
-	oauthService   service.OAuthService
-	keyService     service.KeyService
-	orgService     service.OrgService
-	billingService service.BillingService
-	auditService   service.AuditService
-	apiKeyService  service.APIKeyService
-	sessionStore   sessions.Store
+	authService   service.AuthService
+	oauthService  service.OAuthService
+	keyService    service.KeyService
+	orgService    service.OrgService
+	auditService  service.AuditService
+	apiKeyService service.APIKeyService
+	sessionStore  sessions.Store
 }
 
 // Config holds configuration for the web handler.
@@ -58,19 +57,17 @@ func NewWebHandler(
 	authService service.AuthService,
 	keyService service.KeyService,
 	orgService service.OrgService,
-	billingService service.BillingService,
 	auditService service.AuditService,
 	apiKeyService service.APIKeyService,
 	sessionStore sessions.Store,
 ) *WebHandler {
 	return &WebHandler{
-		authService:    authService,
-		keyService:     keyService,
-		orgService:     orgService,
-		billingService: billingService,
-		auditService:   auditService,
-		apiKeyService:  apiKeyService,
-		sessionStore:   sessionStore,
+		authService:   authService,
+		keyService:    keyService,
+		orgService:    orgService,
+		auditService:  auditService,
+		apiKeyService: apiKeyService,
+		sessionStore:  sessionStore,
 	}
 }
 
@@ -162,12 +159,6 @@ func (h *WebHandler) Routes() chi.Router {
 			r.Get("/api-keys/new", h.SettingsAPIKeysNewModal)
 			r.Post("/api-keys", h.SettingsAPIKeysCreate)
 			r.Delete("/api-keys/{id}", h.SettingsAPIKeysDelete)
-			r.Get("/billing", h.SettingsBilling)
-			r.Get("/billing/upgrade", h.SettingsBillingUpgrade)
-			r.Get("/billing/card", h.SettingsBillingCard)
-			r.Post("/billing/card/confirm", h.SettingsBillingCardConfirm)
-			r.Post("/billing/checkout", h.SettingsBillingCheckout)
-			r.Post("/billing/portal", h.SettingsBillingPortal)
 		})
 
 		// Audit log detail

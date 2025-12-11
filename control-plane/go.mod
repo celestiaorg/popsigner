@@ -3,6 +3,7 @@ module github.com/Bidon15/banhbaoring/control-plane
 go 1.25
 
 require (
+	github.com/a-h/templ v0.3.960
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/cors v1.2.1
 	github.com/go-playground/validator/v10 v10.28.0
@@ -14,14 +15,12 @@ require (
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
-	github.com/stripe/stripe-go/v76 v76.25.0
 	golang.org/x/crypto v0.42.0
 	golang.org/x/oauth2 v0.34.0
 )
 
 require (
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
-	github.com/a-h/templ v0.3.960 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect

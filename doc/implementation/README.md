@@ -1,6 +1,6 @@
 # Implementation Guide
 
-This directory contains implementation specifications for **41 agents** across 5 products:
+This directory contains implementation specifications for **40 agents** across 5 products:
 
 - **Core Library** (Phases 0-5): 19 agents
 - **Control Plane API** (Phase 6): 8 agents
@@ -150,12 +150,13 @@ replace (
 | **09A** | Orgs & Namespaces  | Multi-tenancy   | `org_service.go`, RBAC      |
 | **09B** | Key Management API | BaoKeyring wrap | `key_service.go`, batch ops |
 
-### Phase 6.3: Supporting Services (2 parallel)
+### Phase 6.3: Supporting Services (1 agent)
 
 | ID      | Component        | Skills     | Files                                    |
 | ------- | ---------------- | ---------- | ---------------------------------------- |
 | **10A** | Audit & Webhooks | HMAC, HTTP | `audit_service.go`, `webhook_service.go` |
-| **10B** | Billing (Stripe) | Stripe API | `billing_service.go`                     |
+
+> **Note:** Billing (Stripe) integration is planned for a future release.
 
 ---
 
@@ -276,12 +277,13 @@ Phase 6.2 - Core Services (2 parallel):
 │ Namespaces   │  │ Batch Sign   │
 └──────────────┘  └──────────────┘
 
-Phase 6.3 - Supporting Services (2 parallel):
-┌──────────────┐  ┌──────────────┐
-│     10A      │  │     10B      │
-│ Audit Logs   │  │   Stripe     │
-│ Webhooks     │  │   Billing    │
-└──────────────┘  └──────────────┘
+Phase 6.3 - Supporting Services (1 agent):
+                ┌──────────────┐
+                │     10A      │
+                │ Audit Logs   │
+                │ Webhooks     │
+                └──────────────┘
+        (Billing planned for future release)
 
 ════════════════════════════════════════════════════════════════════════
                          SDKS (CAN RUN PARALLEL)
@@ -376,9 +378,9 @@ Phase 9.4 - Release:
 | **6.0** | 1 (blocking) | Agent 07 - CP Foundation       |
 | **6.1** | 3 parallel   | 08A, 08B, 08C - Auth Layer     |
 | **6.2** | 2 parallel   | 09A, 09B - Core Services       |
-| **6.3** | 2 parallel   | 10A, 10B - Supporting Services |
+| **6.3** | 1            | 10A - Audit & Webhooks         |
 
-**Subtotal: 8 agents**
+**Subtotal: 7 agents**
 
 ### SDKs (Phase 7)
 
@@ -411,7 +413,7 @@ Phase 9.4 - Release:
 
 ---
 
-**Total: 41 agents** across Core Library + Control Plane + SDKs + Dashboard + Operator
+**Total: 40 agents** across Core Library + Control Plane + SDKs + Dashboard + Operator
 
 ---
 
@@ -507,7 +509,8 @@ Phase 9.4 - Release:
 ### Phase 6.3: Supporting Services
 
 - [IMPL_10A_AUDIT_WEBHOOKS.md](./IMPL_10A_AUDIT_WEBHOOKS.md) - Audit Logs & Webhooks
-- [IMPL_10B_BILLING_STRIPE.md](./IMPL_10B_BILLING_STRIPE.md) - Stripe Billing
+
+> **Note:** Billing implementation (`IMPL_10B_BILLING_STRIPE.md`) is deferred to a future release.
 
 ### Phase 7: SDKs
 
