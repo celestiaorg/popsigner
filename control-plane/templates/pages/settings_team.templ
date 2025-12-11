@@ -1,0 +1,340 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/Bidon15/banhbaoring/control-plane/internal/models"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
+	"github.com/google/uuid"
+)
+
+// TeamMemberDisplay represents a team member for display.
+type TeamMemberDisplay struct {
+	ID        uuid.UUID
+	Name      string
+	Email     string
+	AvatarURL string
+	Role      models.Role
+	JoinedAt  string
+	IsCurrentUser bool
+}
+
+// TeamPageData contains all data for the team settings page.
+type TeamPageData struct {
+	layouts.DashboardData
+	Members      []*TeamMemberDisplay
+	Invitations  []*models.Invitation
+	CurrentRole  models.Role
+	MemberLimit  int
+	MemberCount  int
+}
+
+// SettingsTeamPage renders the team settings page.
+templ SettingsTeamPage(data TeamPageData) {
+	@layouts.Dashboard("Team Settings", data.DashboardData) {
+		<div class="space-y-6">
+			<!-- Page Header -->
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+				<div>
+					<h1 class="text-2xl font-heading font-bold text-bao-text">Team</h1>
+					<p class="text-bao-muted mt-1">
+						Manage your team members 
+						<span class="text-bao-text">({ data.MemberCount }/{ formatLimit(data.MemberLimit) })</span>
+					</p>
+				</div>
+				if canInvite(data.CurrentRole) && data.MemberCount < data.MemberLimit {
+					<button hx-get="/settings/team/invite"
+							hx-target="#modal-content"
+							@click="$dispatch('modal-open')"
+							class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-semibold rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-200">
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+						</svg>
+						Invite Member
+					</button>
+				}
+			</div>
+			
+			<!-- Team Members Table -->
+			@components.Card("Members", components.CardDefault) {
+				<div class="overflow-x-auto">
+					<table class="w-full">
+						<thead>
+							<tr class="text-left text-sm text-bao-muted border-b border-bao-border">
+								<th class="pb-3 font-medium">Member</th>
+								<th class="pb-3 font-medium">Role</th>
+								<th class="pb-3 font-medium">Joined</th>
+								<th class="pb-3 font-medium"></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, member := range data.Members {
+								<tr class="border-b border-bao-border/50 hover:bg-bao-card/50 transition-colors group">
+									<td class="py-4">
+										<div class="flex items-center gap-3">
+											if member.AvatarURL != "" {
+												<img src={ member.AvatarURL } alt="" class="w-10 h-10 rounded-full ring-2 ring-bao-border"/>
+											} else {
+												<div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-bao-bg text-sm font-bold ring-2 ring-bao-border">
+													{ getInitialFromName(member.Name) }
+												</div>
+											}
+											<div>
+												<p class="font-medium text-bao-text">
+													{ member.Name }
+													if member.IsCurrentUser {
+														<span class="ml-2 text-xs text-bao-muted">(you)</span>
+													}
+												</p>
+												<p class="text-sm text-bao-muted">{ member.Email }</p>
+											</div>
+										</div>
+									</td>
+									<td class="py-4">
+										<span class={ roleBadgeClass(member.Role) }>
+											{ string(member.Role) }
+										</span>
+									</td>
+									<td class="py-4 text-bao-muted text-sm">
+										{ member.JoinedAt }
+									</td>
+									<td class="py-4 text-right">
+										if !member.IsCurrentUser && canManageMember(data.CurrentRole, member.Role) {
+											<div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-end gap-2">
+												<button hx-get={ "/settings/team/" + member.ID.String() + "/edit" }
+														hx-target="#modal-content"
+														@click="$dispatch('modal-open')"
+														class="p-2 text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors"
+														title="Change role">
+													<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+													</svg>
+												</button>
+												<button hx-delete={ "/settings/team/" + member.ID.String() }
+														hx-confirm="Are you sure you want to remove this team member?"
+														hx-target="#team-list"
+														hx-swap="outerHTML"
+														class="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+														title="Remove member">
+													<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+													</svg>
+												</button>
+											</div>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+			
+			<!-- Pending Invitations -->
+			if len(data.Invitations) > 0 {
+				@components.Card("Pending Invitations", components.CardDefault) {
+					<div class="space-y-3">
+						for _, inv := range data.Invitations {
+							<div class="flex items-center justify-between p-4 bg-bao-bg/50 rounded-xl border border-bao-border/50">
+								<div class="flex items-center gap-4">
+									<div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400/20 to-rose-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400">
+										<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+										</svg>
+									</div>
+									<div>
+										<p class="font-medium text-bao-text">{ inv.Email }</p>
+										<p class="text-sm text-bao-muted">
+											Invited as <span class={ roleBadgeClass(inv.Role) }>{ string(inv.Role) }</span>
+											· Expires { inv.ExpiresAt.Format("Jan 2") }
+										</p>
+									</div>
+								</div>
+								<div class="flex items-center gap-2">
+									<button hx-post={ "/settings/team/invitations/" + inv.ID.String() + "/resend" }
+											class="px-3 py-1.5 text-sm text-bao-accent hover:text-bao-text hover:bg-bao-accent/10 rounded-lg transition-colors">
+										Resend
+									</button>
+									<button hx-delete={ "/settings/team/invitations/" + inv.ID.String() }
+											hx-target="closest div.flex"
+											hx-swap="outerHTML"
+											class="px-3 py-1.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+										Cancel
+									</button>
+								</div>
+							</div>
+						}
+					</div>
+				}
+			}
+			
+			<!-- Roles Info -->
+			@components.Card("Role Permissions", components.CardFlat) {
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+					<div class="p-4 bg-bao-bg/50 rounded-xl border border-bao-border/50">
+						<div class="flex items-center gap-2 mb-2">
+							<span class={ roleBadgeClass(models.RoleOwner) }>owner</span>
+						</div>
+						<p class="text-bao-muted">Full access including billing and danger zone actions</p>
+					</div>
+					<div class="p-4 bg-bao-bg/50 rounded-xl border border-bao-border/50">
+						<div class="flex items-center gap-2 mb-2">
+							<span class={ roleBadgeClass(models.RoleAdmin) }>admin</span>
+						</div>
+						<p class="text-bao-muted">Manage keys, team, and API keys. No billing access</p>
+					</div>
+					<div class="p-4 bg-bao-bg/50 rounded-xl border border-bao-border/50">
+						<div class="flex items-center gap-2 mb-2">
+							<span class={ roleBadgeClass(models.RoleOperator) }>operator</span>
+						</div>
+						<p class="text-bao-muted">Create and sign with keys. Cannot manage team</p>
+					</div>
+					<div class="p-4 bg-bao-bg/50 rounded-xl border border-bao-border/50">
+						<div class="flex items-center gap-2 mb-2">
+							<span class={ roleBadgeClass(models.RoleViewer) }>viewer</span>
+						</div>
+						<p class="text-bao-muted">View keys and audit logs. Read-only access</p>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+// InviteMemberModal renders the invite member modal.
+templ InviteMemberModal() {
+	@components.Modal("Invite Team Member", components.ModalSizeMedium) {
+		<form hx-post="/settings/team/invite"
+			  hx-swap="none"
+			  hx-on::after-request="if(event.detail.successful) { $dispatch('modal-close'); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Invitation sent successfully', type: 'success' }})); htmx.trigger('#main-content', 'refresh') }"
+			  class="space-y-6">
+			
+			<div>
+				<label for="email" class="block text-sm font-medium text-bao-text mb-2">
+					Email Address
+				</label>
+				<input type="email"
+					   id="email"
+					   name="email"
+					   placeholder="colleague@company.com"
+					   required
+					   class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder:text-bao-muted/50 focus:outline-none focus:ring-2 focus:ring-bao-accent/50 focus:border-bao-accent transition-all"/>
+			</div>
+			
+			<div>
+				<label for="role" class="block text-sm font-medium text-bao-text mb-2">
+					Role
+				</label>
+				<select id="role"
+						name="role"
+						required
+						class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text focus:outline-none focus:ring-2 focus:ring-bao-accent/50 focus:border-bao-accent transition-all">
+					<option value="viewer">Viewer - Read-only access</option>
+					<option value="operator" selected>Operator - Create and sign keys</option>
+					<option value="admin">Admin - Full key and team management</option>
+				</select>
+			</div>
+			
+			<p class="text-sm text-bao-muted">
+				An email invitation will be sent. The invite expires in 7 days.
+			</p>
+			
+			@components.ModalFooter() {
+				<button type="button"
+						@click="$dispatch('modal-close')"
+						class="px-4 py-2 text-sm font-medium text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors">
+					Cancel
+				</button>
+				<button type="submit"
+						class="px-6 py-2 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-semibold rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all">
+					Send Invitation
+				</button>
+			}
+		</form>
+	}
+}
+
+// EditMemberRoleModal renders the edit member role modal.
+templ EditMemberRoleModal(member *TeamMemberDisplay) {
+	@components.Modal("Change Role", components.ModalSizeSmall) {
+		<form hx-patch={ "/settings/team/" + member.ID.String() }
+			  hx-swap="none"
+			  hx-on::after-request="if(event.detail.successful) { $dispatch('modal-close'); htmx.trigger('#main-content', 'refresh') }"
+			  class="space-y-6">
+			
+			<div class="flex items-center gap-3 p-4 bg-bao-bg/50 rounded-xl">
+				if member.AvatarURL != "" {
+					<img src={ member.AvatarURL } alt="" class="w-10 h-10 rounded-full"/>
+				} else {
+					<div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-bao-bg text-sm font-bold">
+						{ getInitialFromName(member.Name) }
+					</div>
+				}
+				<div>
+					<p class="font-medium text-bao-text">{ member.Name }</p>
+					<p class="text-sm text-bao-muted">{ member.Email }</p>
+				</div>
+			</div>
+			
+			<div>
+				<label for="role" class="block text-sm font-medium text-bao-text mb-2">
+					New Role
+				</label>
+				<select id="role"
+						name="role"
+						required
+						class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text focus:outline-none focus:ring-2 focus:ring-bao-accent/50 focus:border-bao-accent transition-all">
+					<option value="viewer" selected?={ member.Role == models.RoleViewer }>Viewer</option>
+					<option value="operator" selected?={ member.Role == models.RoleOperator }>Operator</option>
+					<option value="admin" selected?={ member.Role == models.RoleAdmin }>Admin</option>
+				</select>
+			</div>
+			
+			@components.ModalFooter() {
+				<button type="button"
+						@click="$dispatch('modal-close')"
+						class="px-4 py-2 text-sm font-medium text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors">
+					Cancel
+				</button>
+				<button type="submit"
+						class="px-4 py-2 text-sm font-medium bg-bao-accent text-white hover:bg-bao-accent/80 rounded-lg transition-colors">
+					Update Role
+				</button>
+			}
+		</form>
+	}
+}
+
+func roleBadgeClass(role models.Role) string {
+	base := "inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full"
+	
+	switch role {
+	case models.RoleOwner:
+		return base + " bg-amber-500/10 text-amber-400"
+	case models.RoleAdmin:
+		return base + " bg-violet-500/10 text-violet-400"
+	case models.RoleOperator:
+		return base + " bg-blue-500/10 text-blue-400"
+	case models.RoleViewer:
+		return base + " bg-slate-500/10 text-slate-400"
+	default:
+		return base + " bg-bao-border/30 text-bao-muted"
+	}
+}
+
+func canInvite(role models.Role) bool {
+	return role == models.RoleOwner || role == models.RoleAdmin
+}
+
+func canManageMember(currentRole, memberRole models.Role) bool {
+	return models.RoleLevel(currentRole) > models.RoleLevel(memberRole)
+}
+
+func formatLimit(limit int) string {
+	if limit < 0 {
+		return "∞"
+	}
+	return fmt.Sprintf("%d", limit)
+}
+

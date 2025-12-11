@@ -1,0 +1,287 @@
+package pages
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
+)
+
+// UsageDataPoint represents a data point for charts.
+type UsageDataPoint struct {
+	Date  time.Time
+	Value int64
+}
+
+// UsagePageData contains all data for the usage page.
+type UsagePageData struct {
+	layouts.DashboardData
+	// Current period stats
+	Signatures        int64
+	SignaturesLimit   int64
+	Keys              int64
+	KeysLimit         int64
+	APICalls          int64
+	TeamMembers       int64
+	TeamMembersLimit  int64
+	// Time series data
+	SignaturesData    []UsageDataPoint
+	APICallsData      []UsageDataPoint
+	// Period info
+	PeriodStart       time.Time
+	PeriodEnd         time.Time
+}
+
+// UsagePage renders the usage analytics page.
+templ UsagePage(data UsagePageData) {
+	@layouts.Dashboard("Usage", data.DashboardData) {
+		<div class="space-y-6">
+			<!-- Page Header -->
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+				<div>
+					<h1 class="text-2xl font-heading font-bold text-bao-text">Usage</h1>
+					<p class="text-bao-muted mt-1">
+						Usage for { data.PeriodStart.Format("Jan 2") } - { data.PeriodEnd.Format("Jan 2, 2006") }
+					</p>
+				</div>
+				<div class="flex items-center gap-2">
+					<select class="px-3 py-2 bg-bao-bg border border-bao-border rounded-lg text-bao-text text-sm focus:outline-none focus:ring-2 focus:ring-bao-accent/50">
+						<option value="current">Current Period</option>
+						<option value="last">Last Period</option>
+					</select>
+				</div>
+			</div>
+			
+			<!-- Stats Cards -->
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+				@components.StatCard(formatNumber(data.Signatures), "Signatures", usageChange(data.Signatures, data.SignaturesLimit), true)
+				@components.StatCard(formatNumber(data.APICalls), "API Calls", "", true)
+				@components.StatCard(formatNumber(data.Keys), "Active Keys", "", true)
+				@components.StatCard(formatNumber(data.TeamMembers), "Team Members", "", true)
+			</div>
+			
+			<!-- Usage Chart -->
+			@components.Card("Signatures Over Time", components.CardDefault) {
+				<div class="h-64 relative" id="signatures-chart">
+					<!-- Chart placeholder - would integrate with Chart.js or similar -->
+					<div class="absolute inset-0 flex flex-col">
+						<!-- Y-axis labels -->
+						<div class="flex h-full">
+							<div class="w-12 flex flex-col justify-between text-xs text-bao-muted py-2">
+								<span>{ formatNumber(getMaxValue(data.SignaturesData)) }</span>
+								<span>{ formatNumber(getMaxValue(data.SignaturesData) / 2) }</span>
+								<span>0</span>
+							</div>
+							<!-- Chart area -->
+							<div class="flex-1 relative border-l border-b border-bao-border">
+								<!-- Grid lines -->
+								<div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+									<div class="border-t border-bao-border/30"></div>
+									<div class="border-t border-bao-border/30"></div>
+								</div>
+								<!-- Bars -->
+								<div class="absolute inset-0 flex items-end justify-around px-2 pb-1">
+									for _, point := range data.SignaturesData {
+										<div class="flex flex-col items-center group">
+											<div class={ "w-8 rounded-t transition-all duration-300 group-hover:opacity-80", barColorClass(point.Value, data.SignaturesLimit / int64(len(data.SignaturesData))) }
+												 style={ fmt.Sprintf("height: %d%%", getBarHeight(point.Value, data.SignaturesData)) }
+												 title={ fmt.Sprintf("%s: %d", point.Date.Format("Jan 2"), point.Value) }>
+											</div>
+										</div>
+									}
+								</div>
+							</div>
+						</div>
+						<!-- X-axis labels -->
+						<div class="flex ml-12 justify-around text-xs text-bao-muted pt-2">
+							for i, point := range data.SignaturesData {
+								if i % 3 == 0 || i == len(data.SignaturesData) - 1 {
+									<span>{ point.Date.Format("Jan 2") }</span>
+								}
+							}
+						</div>
+					</div>
+				</div>
+			}
+			
+			<!-- Usage Breakdown -->
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				<!-- Resource Usage -->
+				@components.Card("Resource Usage", components.CardDefault) {
+					<div class="space-y-6">
+						@UsageProgressBar("Signatures", data.Signatures, data.SignaturesLimit, "✍️")
+						@UsageProgressBar("Keys", data.Keys, data.KeysLimit, "🔑")
+						@UsageProgressBar("Team Members", data.TeamMembers, data.TeamMembersLimit, "👥")
+					</div>
+				}
+				
+				<!-- Quick Stats -->
+				@components.Card("This Period", components.CardDefault) {
+					<div class="space-y-4">
+						<div class="flex items-center justify-between p-4 bg-bao-bg/50 rounded-xl">
+							<div class="flex items-center gap-3">
+								<span class="text-xl">📊</span>
+								<span class="text-bao-muted">Avg. daily signatures</span>
+							</div>
+							<span class="text-lg font-medium text-bao-text">
+								{ formatNumber(avgDaily(data.Signatures, data.PeriodStart, data.PeriodEnd)) }
+							</span>
+						</div>
+						<div class="flex items-center justify-between p-4 bg-bao-bg/50 rounded-xl">
+							<div class="flex items-center gap-3">
+								<span class="text-xl">⚡</span>
+								<span class="text-bao-muted">Peak daily signatures</span>
+							</div>
+							<span class="text-lg font-medium text-bao-text">
+								{ formatNumber(getPeakValue(data.SignaturesData)) }
+							</span>
+						</div>
+						<div class="flex items-center justify-between p-4 bg-bao-bg/50 rounded-xl">
+							<div class="flex items-center gap-3">
+								<span class="text-xl">🔗</span>
+								<span class="text-bao-muted">API calls</span>
+							</div>
+							<span class="text-lg font-medium text-bao-text">
+								{ formatNumber(data.APICalls) }
+							</span>
+						</div>
+						<div class="flex items-center justify-between p-4 bg-bao-bg/50 rounded-xl">
+							<div class="flex items-center gap-3">
+								<span class="text-xl">📅</span>
+								<span class="text-bao-muted">Days remaining</span>
+							</div>
+							<span class="text-lg font-medium text-bao-text">
+								{ daysRemaining(data.PeriodEnd) }
+							</span>
+						</div>
+					</div>
+				}
+			</div>
+			
+			<!-- Upgrade CTA -->
+			if data.Signatures > data.SignaturesLimit * 70 / 100 {
+				<div class="p-6 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-rose-500/10 border border-violet-500/30 rounded-2xl">
+					<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+						<div>
+							<h3 class="text-lg font-heading font-bold text-bao-text">Running low on signatures?</h3>
+							<p class="text-bao-muted mt-1">Upgrade to Pro for 500K signatures/month and more features.</p>
+						</div>
+						<a href="/settings/billing"
+						   class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-semibold rounded-xl shadow-lg hover:shadow-amber-500/30 transition-all">
+							Upgrade Plan →
+						</a>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+// UsageProgressBar renders a usage progress bar with details.
+templ UsageProgressBar(label string, current, limit int64, icon string) {
+	<div>
+		<div class="flex items-center justify-between mb-2">
+			<span class="flex items-center gap-2 text-sm text-bao-muted">
+				<span>{ icon }</span>
+				{ label }
+			</span>
+			<span class="text-sm font-medium text-bao-text">
+				{ formatNumber(current) }
+				if limit > 0 {
+					<span class="text-bao-muted"> / { formatNumber(limit) }</span>
+				} else {
+					<span class="text-bao-muted"> (unlimited)</span>
+				}
+			</span>
+		</div>
+		<div class="h-3 bg-bao-border rounded-full overflow-hidden">
+			if limit > 0 {
+				<div class={ usageProgressColor(current, limit) }
+					 style={ fmt.Sprintf("width: %d%%", min(100, current*100/limit)) }></div>
+			} else {
+				<div class="h-full w-full bg-gradient-to-r from-emerald-500/30 to-emerald-400/20 rounded-full"></div>
+			}
+		</div>
+		if limit > 0 {
+			<div class="flex justify-between mt-1 text-xs text-bao-muted">
+				<span>{ fmt.Sprintf("%.1f%% used", float64(current)/float64(limit)*100) }</span>
+				<span>{ formatNumber(limit - current) } remaining</span>
+			</div>
+		}
+	</div>
+}
+
+func usageProgressColor(current, limit int64) string {
+	if limit <= 0 {
+		return "h-full rounded-full bg-emerald-500/50"
+	}
+	pct := float64(current) / float64(limit) * 100
+	base := "h-full rounded-full transition-all duration-500"
+	if pct >= 90 {
+		return base + " bg-gradient-to-r from-red-500 to-red-400"
+	} else if pct >= 70 {
+		return base + " bg-gradient-to-r from-amber-500 to-amber-400"
+	}
+	return base + " bg-gradient-to-r from-emerald-500 to-teal-400"
+}
+
+func barColorClass(value, avgLimit int64) string {
+	base := "bg-gradient-to-t"
+	if value > avgLimit * 2 {
+		return base + " from-rose-500 to-rose-400"
+	} else if value > avgLimit {
+		return base + " from-amber-500 to-amber-400"
+	}
+	return base + " from-bao-accent to-violet-400"
+}
+
+func getMaxValue(data []UsageDataPoint) int64 {
+	var max int64 = 0
+	for _, d := range data {
+		if d.Value > max {
+			max = d.Value
+		}
+	}
+	if max == 0 {
+		return 100
+	}
+	return max
+}
+
+func getPeakValue(data []UsageDataPoint) int64 {
+	return getMaxValue(data)
+}
+
+func getBarHeight(value int64, data []UsageDataPoint) int64 {
+	max := getMaxValue(data)
+	if max == 0 {
+		return 0
+	}
+	return min(100, value*100/max)
+}
+
+func avgDaily(total int64, start, end time.Time) int64 {
+	days := int64(end.Sub(start).Hours() / 24)
+	if days <= 0 {
+		days = 1
+	}
+	return total / days
+}
+
+func daysRemaining(end time.Time) string {
+	days := int(end.Sub(time.Now()).Hours() / 24)
+	if days < 0 {
+		return "0"
+	}
+	return fmt.Sprintf("%d", days)
+}
+
+func usageChange(current, limit int64) string {
+	if limit <= 0 {
+		return ""
+	}
+	pct := float64(current) / float64(limit) * 100
+	return fmt.Sprintf("%.0f%% of limit", pct)
+}
+

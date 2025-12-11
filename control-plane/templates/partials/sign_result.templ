@@ -1,0 +1,120 @@
+package partials
+
+// SignResult renders the result of a signing operation.
+templ SignResult(signature, publicKey string, keyVersion int, err error) {
+	if err != nil {
+		<div class="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+			<div class="flex items-start gap-3">
+				<span class="text-xl text-red-400">✕</span>
+				<div class="flex-1 min-w-0">
+					<p class="font-medium text-red-400">Signing failed</p>
+					<p class="text-sm text-bao-muted mt-1 break-words">
+						{ err.Error() }
+					</p>
+				</div>
+			</div>
+		</div>
+	} else {
+		<div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-4">
+			<div class="flex items-center gap-3">
+				<span class="text-xl text-emerald-400">✓</span>
+				<p class="font-medium text-emerald-400">Signature created successfully</p>
+			</div>
+			
+			<div class="space-y-3">
+				<!-- Signature -->
+				<div>
+					<label class="block text-xs text-bao-muted mb-1">Signature (base64)</label>
+					<div class="flex items-center gap-2 group">
+						<code class="flex-1 px-3 py-2 bg-bao-bg border border-bao-border rounded-lg text-sm font-mono text-bao-text break-all">
+							{ signature }
+						</code>
+						<button onclick={ copySignature(signature) }
+								class="p-2 text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors shrink-0"
+								title="Copy signature">
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+							</svg>
+						</button>
+					</div>
+				</div>
+				
+				<!-- Public Key -->
+				<div>
+					<label class="block text-xs text-bao-muted mb-1">Public Key (hex)</label>
+					<div class="flex items-center gap-2 group">
+						<code class="flex-1 px-3 py-2 bg-bao-bg border border-bao-border rounded-lg text-sm font-mono text-bao-text break-all">
+							{ truncateForDisplay(publicKey) }
+						</code>
+						<button onclick={ copySignature(publicKey) }
+								class="p-2 text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors shrink-0"
+								title="Copy public key">
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+							</svg>
+						</button>
+					</div>
+				</div>
+				
+				<!-- Key Version -->
+				<div class="flex items-center gap-4 text-xs text-bao-muted pt-2 border-t border-bao-border/50">
+					<span>Key version: <span class="text-bao-text">v{ formatKeyVersion(keyVersion) }</span></span>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// SignTestToast renders a toast notification for quick sign test results.
+templ SignTestToast(success bool, message string) {
+	if success {
+		<div class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl backdrop-blur-lg bg-emerald-500/90 border border-emerald-400/50 text-white min-w-[300px]"
+			 x-data="{ show: true }"
+			 x-show="show"
+			 x-init="setTimeout(() => { show = false; setTimeout(() => $el.remove(), 200) }, 4000)"
+			 x-transition>
+			<span class="text-lg">✓</span>
+			<div class="flex-1">
+				<p class="font-medium text-sm">Signature created</p>
+				<p class="text-xs text-white/80 mt-0.5">{ message }</p>
+			</div>
+		</div>
+	} else {
+		<div class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl backdrop-blur-lg bg-red-500/90 border border-red-400/50 text-white min-w-[300px]"
+			 x-data="{ show: true }"
+			 x-show="show"
+			 x-init="setTimeout(() => { show = false; setTimeout(() => $el.remove(), 200) }, 4000)"
+			 x-transition>
+			<span class="text-lg">✕</span>
+			<div class="flex-1">
+				<p class="font-medium text-sm">Signing failed</p>
+				<p class="text-xs text-white/80 mt-0.5">{ message }</p>
+			</div>
+		</div>
+	}
+}
+
+script copySignature(text string) {
+	navigator.clipboard.writeText(text);
+}
+
+func truncateForDisplay(s string) string {
+	if len(s) > 60 {
+		return s[:30] + "..." + s[len(s)-20:]
+	}
+	return s
+}
+
+func formatKeyVersion(v int) string {
+	s := ""
+	n := v
+	if n == 0 {
+		return "0"
+	}
+	for n > 0 {
+		s = string(rune('0'+n%10)) + s
+		n /= 10
+	}
+	return s
+}
+

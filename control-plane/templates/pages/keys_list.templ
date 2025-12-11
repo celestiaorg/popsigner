@@ -1,0 +1,257 @@
+package pages
+
+import (
+	"encoding/hex"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/Bidon15/banhbaoring/control-plane/internal/models"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
+)
+
+// KeysPageData contains the data for the keys list page.
+type KeysPageData struct {
+	UserName     string
+	UserEmail    string
+	AvatarURL    string
+	OrgName      string
+	OrgPlan      string
+	Keys         []*models.Key
+	Namespaces   []*models.Namespace
+	SearchQuery  string
+	NamespaceID  string
+}
+
+// KeysListPage renders the keys management page.
+templ KeysListPage(data KeysPageData) {
+	@layouts.Dashboard("Keys", layouts.DashboardData{
+		UserName:   data.UserName,
+		UserEmail:  data.UserEmail,
+		AvatarURL:  data.AvatarURL,
+		OrgName:    data.OrgName,
+		OrgPlan:    data.OrgPlan,
+		ActivePath: "/keys",
+	}) {
+		<div class="space-y-6">
+			<!-- Header -->
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+				<div>
+					<h1 class="text-2xl font-heading font-bold text-bao-text">Keys</h1>
+					<p class="text-bao-muted">Manage your cryptographic keys</p>
+				</div>
+				<div class="flex gap-3">
+					<button hx-get="/keys/workers/new"
+							hx-target="#modal-content"
+							@click="$dispatch('modal-open')"
+							class="px-4 py-2.5 border border-bao-accent/50 text-bao-accent rounded-xl hover:bg-bao-accent/10 transition-colors flex items-center gap-2">
+						<span>⚡</span>
+						<span class="hidden sm:inline">Create Workers</span>
+					</button>
+					<button hx-get="/keys/new"
+							hx-target="#modal-content"
+							@click="$dispatch('modal-open')"
+							class="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-medium rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-shadow flex items-center gap-2">
+						<span>+</span>
+						<span>Create Key</span>
+					</button>
+				</div>
+			</div>
+			
+			<!-- Filters -->
+			<div class="flex flex-col sm:flex-row gap-4">
+				<div class="relative flex-1">
+					<input type="search"
+						   name="q"
+						   value={ data.SearchQuery }
+						   placeholder="Search keys by name or address..."
+						   hx-get="/keys"
+						   hx-trigger="keyup changed delay:300ms, search"
+						   hx-target="#keys-list"
+						   hx-include="[name='namespace']"
+						   hx-push-url="true"
+						   class="w-full px-4 py-2.5 pl-10 bg-bao-card/60 border border-bao-border rounded-xl text-bao-text placeholder-bao-muted/50 focus:border-bao-accent focus:outline-none focus:ring-1 focus:ring-bao-accent/50 transition-colors"/>
+					<svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-bao-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+					</svg>
+				</div>
+				
+				<select name="namespace"
+						hx-get="/keys"
+						hx-trigger="change"
+						hx-target="#keys-list"
+						hx-include="[name='q']"
+						hx-push-url="true"
+						class="px-4 py-2.5 bg-bao-card/60 border border-bao-border rounded-xl text-bao-text focus:border-bao-accent focus:outline-none focus:ring-1 focus:ring-bao-accent/50 min-w-[160px] cursor-pointer">
+					<option value="">All Namespaces</option>
+					for _, ns := range data.Namespaces {
+						<option value={ ns.ID.String() } selected?={ ns.ID.String() == data.NamespaceID }>
+							{ ns.Name }
+						</option>
+					}
+				</select>
+			</div>
+			
+			<!-- Keys List -->
+			<div id="keys-list">
+				@KeysList(data.Keys, data.Namespaces)
+			</div>
+		</div>
+	}
+}
+
+// KeysList renders just the keys list (for HTMX partial updates).
+templ KeysList(keys []*models.Key, namespaces []*models.Namespace) {
+	if len(keys) == 0 {
+		@components.Card("", components.CardDefault) {
+			@components.EmptyState("🔑", "No keys yet", "Create your first cryptographic key to get started with signing.") {
+				<button hx-get="/keys/new"
+						hx-target="#modal-content"
+						@click="$dispatch('modal-open')"
+						class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-medium rounded-xl shadow-lg hover:shadow-amber-500/30 transition-shadow">
+					Create Key
+				</button>
+			}
+		}
+	} else {
+		<div class="space-y-3">
+			for _, key := range keys {
+				@KeyCard(key, getNamespaceName(key.NamespaceID, namespaces))
+			}
+		</div>
+	}
+}
+
+// KeyCard renders a single key card.
+templ KeyCard(key *models.Key, namespaceName string) {
+	<div id={ "key-" + key.ID.String() }
+		 class="group bg-bao-card/60 backdrop-blur-sm border-l-4 border-l-emerald-500 border border-bao-border rounded-xl p-5 hover:border-bao-accent/30 hover:shadow-lg hover:shadow-black/10 transition-all duration-300">
+		<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+			<div class="flex-1 min-w-0">
+				<div class="flex items-center gap-3 mb-2">
+					<h3 class="text-lg font-heading font-semibold text-bao-text truncate flex items-center gap-2">
+						<span class="text-xl">🔑</span>
+						{ key.Name }
+					</h3>
+					<span class="text-xs text-bao-accent bg-bao-accent/10 px-2.5 py-1 rounded-full font-medium shrink-0">
+						{ namespaceName }
+					</span>
+					if key.Exportable {
+						<span class="text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full" title="Exportable">
+							📤
+						</span>
+					}
+				</div>
+				<p class="font-mono text-sm text-bao-muted truncate mb-1" title={ key.Address }>
+					{ key.Address }
+				</p>
+				<div class="flex items-center gap-4 text-xs text-bao-muted/70">
+					<span title="Algorithm">
+						{ string(key.Algorithm) }
+					</span>
+					<span>•</span>
+					<span title={ key.CreatedAt.Format(time.RFC3339) }>
+						Created { keysFormatTimeAgo(key.CreatedAt) }
+					</span>
+				</div>
+			</div>
+			
+			<div class="flex items-center gap-2 shrink-0">
+				<button onclick={ copyToClipboard(key.Address) }
+						class="p-2.5 text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors"
+						title="Copy address">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+					</svg>
+				</button>
+				<a href={ templ.SafeURL("/keys/" + key.ID.String()) }
+				   hx-get={ "/keys/" + key.ID.String() }
+				   hx-target="#main-content"
+				   hx-push-url="true"
+				   class="px-3.5 py-2 text-sm text-bao-accent hover:text-bao-text hover:bg-bao-accent/10 rounded-lg transition-colors">
+					View
+				</a>
+				<button hx-post={ "/keys/" + key.ID.String() + "/sign-test" }
+						hx-target="#toast-container"
+						hx-swap="innerHTML"
+						class="px-3.5 py-2 text-sm text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-lg transition-colors">
+					Sign Test
+				</button>
+			</div>
+		</div>
+	</div>
+}
+
+// Helper to copy text to clipboard using script.
+script copyToClipboard(text string) {
+	navigator.clipboard.writeText(text).then(() => {
+		// Show brief notification
+		const container = document.getElementById('toast-container');
+		if (container) {
+			container.innerHTML = `
+				<div class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl backdrop-blur-lg bg-emerald-500/90 border border-emerald-400/50 text-white min-w-[200px]"
+					 x-data="{ show: true }"
+					 x-show="show"
+					 x-init="setTimeout(() => { show = false; setTimeout(() => $el.remove(), 200) }, 2000)"
+					 x-transition>
+					<span>✓</span>
+					<span class="text-sm font-medium">Copied!</span>
+				</div>
+			`;
+		}
+	});
+}
+
+// Helper functions.
+func keysFormatTimeAgo(t time.Time) string {
+	now := time.Now()
+	diff := now.Sub(t)
+	
+	switch {
+	case diff < time.Minute:
+		return "just now"
+	case diff < time.Hour:
+		mins := int(diff.Minutes())
+		if mins == 1 {
+			return "1 minute ago"
+		}
+		return keysFormatInt(mins) + " minutes ago"
+	case diff < 24*time.Hour:
+		hours := int(diff.Hours())
+		if hours == 1 {
+			return "1 hour ago"
+		}
+		return keysFormatInt(hours) + " hours ago"
+	case diff < 7*24*time.Hour:
+		days := int(diff.Hours() / 24)
+		if days == 1 {
+			return "yesterday"
+		}
+		return keysFormatInt(days) + " days ago"
+	default:
+		return t.Format("Jan 2, 2006")
+	}
+}
+
+func keysFormatInt(n int) string {
+	if n < 10 {
+		return string(rune('0' + n))
+	}
+	return keysFormatInt(n/10) + string(rune('0'+n%10))
+}
+
+func getNamespaceName(nsID uuid.UUID, namespaces []*models.Namespace) string {
+	for _, ns := range namespaces {
+		if ns.ID == nsID {
+			return ns.Name
+		}
+	}
+	return "default"
+}
+
+func formatHex(b []byte) string {
+	return hex.EncodeToString(b)
+}
+
+

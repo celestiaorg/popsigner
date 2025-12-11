@@ -1,0 +1,93 @@
+package partials
+
+import (
+	"github.com/Bidon15/banhbaoring/control-plane/internal/models"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
+)
+
+// KeyNewModal renders the create new key modal.
+templ KeyNewModal(namespaces []*models.Namespace) {
+	@components.Modal("Create New Key", components.ModalSizeMedium) {
+		<form hx-post="/keys"
+			  hx-target="#keys-list"
+			  hx-swap="innerHTML"
+			  @htmx:after-request="if(event.detail.successful) $dispatch('modal-close')">
+			<div class="space-y-5">
+				<!-- Key Name -->
+				<div>
+					<label class="block text-sm font-medium text-bao-text mb-2">Key Name</label>
+					<input type="text" name="name" required
+						   autocomplete="off"
+						   class="w-full px-4 py-2.5 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted/50 focus:border-bao-accent focus:outline-none focus:ring-1 focus:ring-bao-accent/50 transition-colors"
+						   placeholder="e.g., sequencer-mainnet"/>
+					<p class="mt-1.5 text-xs text-bao-muted">
+						Use a descriptive name to identify this key
+					</p>
+				</div>
+				
+				<!-- Namespace -->
+				<div>
+					<label class="block text-sm font-medium text-bao-text mb-2">Namespace</label>
+					<select name="namespace_id" required
+							class="w-full px-4 py-2.5 bg-bao-bg border border-bao-border rounded-xl text-bao-text focus:border-bao-accent focus:outline-none focus:ring-1 focus:ring-bao-accent/50 cursor-pointer transition-colors">
+						for i, ns := range namespaces {
+							<option value={ ns.ID.String() } selected?={ i == 0 }>
+								{ ns.Name }
+								if ns.Description != nil {
+									{ " - " + *ns.Description }
+								}
+							</option>
+						}
+					</select>
+					<p class="mt-1.5 text-xs text-bao-muted">
+						Keys are organized by namespace (e.g., production, staging)
+					</p>
+				</div>
+				
+				<!-- Algorithm (read-only for now) -->
+				<div>
+					<label class="block text-sm font-medium text-bao-text mb-2">Algorithm</label>
+					<div class="flex items-center gap-3 px-4 py-2.5 bg-bao-border/30 border border-bao-border rounded-xl">
+						<span class="text-bao-text">secp256k1</span>
+						<span class="text-xs text-bao-muted bg-bao-border/50 px-2 py-0.5 rounded">
+							Ethereum / Bitcoin compatible
+						</span>
+					</div>
+					<input type="hidden" name="algorithm" value="secp256k1"/>
+				</div>
+				
+				<!-- Exportable Option -->
+				<div class="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+					<label class="flex items-start gap-3 cursor-pointer">
+						<input type="checkbox" name="exportable" value="true"
+							   class="mt-0.5 w-4 h-4 rounded border-bao-border bg-bao-bg text-bao-accent focus:ring-bao-accent focus:ring-offset-0 cursor-pointer"/>
+						<div>
+							<span class="text-sm font-medium text-bao-text flex items-center gap-2">
+								Allow export
+								<span class="text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+									⚠️ Less secure
+								</span>
+							</span>
+							<p class="mt-1 text-xs text-bao-muted">
+								Enables exporting the private key. Only enable if you need to migrate keys elsewhere.
+							</p>
+						</div>
+					</label>
+				</div>
+			</div>
+			
+			@components.ModalFooter() {
+				<button type="button" @click="$dispatch('modal-close')"
+						class="px-4 py-2.5 text-sm font-medium text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-xl transition-colors">
+					Cancel
+				</button>
+				<button type="submit"
+						class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-medium rounded-xl shadow-lg hover:shadow-amber-500/30 transition-shadow">
+					Create Key
+				</button>
+			}
+		</form>
+	}
+}
+
+

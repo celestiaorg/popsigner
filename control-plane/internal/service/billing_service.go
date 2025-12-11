@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v76"
+	billingportalsession "github.com/stripe/stripe-go/v76/billingportal/session"
+	checkoutsession "github.com/stripe/stripe-go/v76/checkout/session"
 	"github.com/stripe/stripe-go/v76/customer"
 	"github.com/stripe/stripe-go/v76/invoice"
 	"github.com/stripe/stripe-go/v76/paymentmethod"
@@ -49,6 +51,21 @@ type BillingService interface {
 
 	// Webhooks
 	HandleWebhook(ctx context.Context, payload []byte, signature string) error
+
+	// Portal and Checkout
+	CreatePortalSession(ctx context.Context, orgID uuid.UUID, returnURL string) (string, error)
+	CreateCheckoutSession(ctx context.Context, orgID uuid.UUID, plan, returnURL string) (string, error)
+
+	// Configuration
+	GetPublicKey() string
+
+	// Setup Intent (updated signature)
+	CreateSetupIntentWithSecret(ctx context.Context, orgID uuid.UUID) (*SetupIntentInfo, error)
+	ConfirmSetupIntent(ctx context.Context, orgID uuid.UUID, setupIntentID string) error
+
+	// Time series data
+	GetSignaturesTimeSeries(ctx context.Context, orgID uuid.UUID, start, end time.Time) ([]TimeSeriesPoint, error)
+	GetAPICallsTimeSeries(ctx context.Context, orgID uuid.UUID, start, end time.Time) ([]TimeSeriesPoint, error)
 }
 
 // SubscriptionInfo represents subscription details returned by the API.
@@ -65,10 +82,35 @@ type SubscriptionInfo struct {
 type UsageInfo struct {
 	Signatures      int64     `json:"signatures"`
 	SignaturesLimit int64     `json:"signatures_limit"`
+	SignaturesMonth int64     `json:"signatures_month"`
 	Keys            int       `json:"keys"`
 	KeysLimit       int       `json:"keys_limit"`
+	TeamMembers     int       `json:"team_members"`
+	Namespaces      int       `json:"namespaces"`
 	PeriodStart     time.Time `json:"period_start"`
 	PeriodEnd       time.Time `json:"period_end"`
+}
+
+// SetupIntentInfo contains the client secret for Stripe SetupIntent.
+type SetupIntentInfo struct {
+	ID           string `json:"id"`
+	ClientSecret string `json:"client_secret"`
+}
+
+// TimeSeriesPoint represents a single data point in a time series.
+type TimeSeriesPoint struct {
+	Date  time.Time `json:"date"`
+	Value int64     `json:"value"`
+}
+
+// InvoiceInfo represents invoice information for display.
+type InvoiceInfo struct {
+	ID          string    `json:"id"`
+	Date        time.Time `json:"date"`
+	Description string    `json:"description"`
+	Amount      int64     `json:"amount"`
+	Paid        bool      `json:"paid"`
+	DownloadURL string    `json:"download_url"`
 }
 
 type billingService struct {
@@ -546,6 +588,175 @@ func (s *billingService) getOrgIDFromCustomer(ctx context.Context, customerID st
 		return uuid.Nil, err
 	}
 	return org.ID, nil
+}
+
+// CreatePortalSession creates a Stripe billing portal session.
+func (s *billingService) CreatePortalSession(ctx context.Context, orgID uuid.UUID, returnURL string) (string, error) {
+	org, err := s.orgRepo.GetByID(ctx, orgID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get organization: %w", err)
+	}
+
+	if org.StripeCustomerID == nil || *org.StripeCustomerID == "" {
+		return "", fmt.Errorf("no Stripe customer ID for organization")
+	}
+
+	params := &stripe.BillingPortalSessionParams{
+		Customer:  org.StripeCustomerID,
+		ReturnURL: stripe.String(returnURL),
+	}
+
+	session, err := billingportalsession.New(params)
+	if err != nil {
+		return "", fmt.Errorf("failed to create portal session: %w", err)
+	}
+
+	return session.URL, nil
+}
+
+// CreateCheckoutSession creates a Stripe checkout session for plan upgrade.
+func (s *billingService) CreateCheckoutSession(ctx context.Context, orgID uuid.UUID, plan, returnURL string) (string, error) {
+	org, err := s.orgRepo.GetByID(ctx, orgID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get organization: %w", err)
+	}
+
+	priceID := s.planToPriceID(plan)
+	if priceID == "" {
+		return "", fmt.Errorf("invalid plan: %s", plan)
+	}
+
+	var customerID *string
+	if org.StripeCustomerID != nil && *org.StripeCustomerID != "" {
+		customerID = org.StripeCustomerID
+	}
+
+	params := &stripe.CheckoutSessionParams{
+		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				Price:    stripe.String(priceID),
+				Quantity: stripe.Int64(1),
+			},
+		},
+		SuccessURL: stripe.String(returnURL + "?success=true"),
+		CancelURL:  stripe.String(returnURL + "?canceled=true"),
+	}
+
+	if customerID != nil {
+		params.Customer = customerID
+	}
+
+	session, err := checkoutsession.New(params)
+	if err != nil {
+		return "", fmt.Errorf("failed to create checkout session: %w", err)
+	}
+
+	return session.URL, nil
+}
+
+// GetPublicKey returns the Stripe publishable key.
+func (s *billingService) GetPublicKey() string {
+	if s.config != nil {
+		return s.config.PublishableKey
+	}
+	return ""
+}
+
+// CreateSetupIntentWithSecret creates a SetupIntent and returns its client secret.
+func (s *billingService) CreateSetupIntentWithSecret(ctx context.Context, orgID uuid.UUID) (*SetupIntentInfo, error) {
+	org, err := s.orgRepo.GetByID(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization: %w", err)
+	}
+
+	if org.StripeCustomerID == nil || *org.StripeCustomerID == "" {
+		return nil, fmt.Errorf("no Stripe customer ID for organization")
+	}
+
+	params := &stripe.SetupIntentParams{
+		Customer: org.StripeCustomerID,
+	}
+
+	si, err := setupintent.New(params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create setup intent: %w", err)
+	}
+
+	return &SetupIntentInfo{
+		ID:           si.ID,
+		ClientSecret: si.ClientSecret,
+	}, nil
+}
+
+// ConfirmSetupIntent confirms a SetupIntent and sets the payment method as default.
+func (s *billingService) ConfirmSetupIntent(ctx context.Context, orgID uuid.UUID, setupIntentID string) error {
+	org, err := s.orgRepo.Get(ctx, orgID)
+	if err != nil {
+		return fmt.Errorf("failed to get organization: %w", err)
+	}
+
+	if org.StripeCustomerID == nil || *org.StripeCustomerID == "" {
+		return fmt.Errorf("no Stripe customer ID for organization")
+	}
+
+	// Get the setup intent to find the payment method
+	si, err := setupintent.Get(setupIntentID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to get setup intent: %w", err)
+	}
+
+	if si.PaymentMethod == nil {
+		return fmt.Errorf("no payment method attached to setup intent")
+	}
+
+	// Set as default payment method
+	return s.SetDefaultPaymentMethod(ctx, orgID, si.PaymentMethod.ID)
+}
+
+// GetSignaturesTimeSeries returns signature usage time series data.
+func (s *billingService) GetSignaturesTimeSeries(ctx context.Context, orgID uuid.UUID, start, end time.Time) ([]TimeSeriesPoint, error) {
+	// TODO: Implement actual time series query
+	var result []TimeSeriesPoint
+	current := start
+	for current.Before(end) {
+		result = append(result, TimeSeriesPoint{
+			Date:  current,
+			Value: 0,
+		})
+		current = current.AddDate(0, 0, 1)
+	}
+	return result, nil
+}
+
+// GetAPICallsTimeSeries returns API calls time series data.
+func (s *billingService) GetAPICallsTimeSeries(ctx context.Context, orgID uuid.UUID, start, end time.Time) ([]TimeSeriesPoint, error) {
+	// TODO: Implement actual time series query
+	var result []TimeSeriesPoint
+	current := start
+	for current.Before(end) {
+		result = append(result, TimeSeriesPoint{
+			Date:  current,
+			Value: 0,
+		})
+		current = current.AddDate(0, 0, 1)
+	}
+	return result, nil
+}
+
+// planToPriceID converts a plan name to a Stripe price ID.
+func (s *billingService) planToPriceID(plan string) string {
+	if s.config == nil {
+		return ""
+	}
+	switch plan {
+	case "pro":
+		return s.config.ProPriceID
+	case "enterprise":
+		return s.config.EnterprisePriceID
+	default:
+		return ""
+	}
 }
 
 // Compile-time check to ensure billingService implements BillingService.

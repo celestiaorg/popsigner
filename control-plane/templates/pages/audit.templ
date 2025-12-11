@@ -1,0 +1,369 @@
+package pages
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/Bidon15/banhbaoring/control-plane/internal/models"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
+)
+
+// AuditPageData contains all data for the audit log page.
+type AuditPageData struct {
+	layouts.DashboardData
+	Logs       []*models.AuditLog
+	NextCursor string
+	Filters    AuditFilters
+}
+
+// AuditFilters contains the current filter state.
+type AuditFilters struct {
+	Event  string
+	Period string
+	Actor  string
+}
+
+// AuditPage renders the audit log page.
+templ AuditPage(data AuditPageData) {
+	@layouts.Dashboard("Audit Log", data.DashboardData) {
+		<div class="space-y-6">
+			<!-- Page Header -->
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+				<div>
+					<h1 class="text-2xl font-heading font-bold text-bao-text">Audit Log</h1>
+					<p class="text-bao-muted mt-1">Track all activity in your organization</p>
+				</div>
+				<button hx-get="/audit/export"
+						class="inline-flex items-center gap-2 px-4 py-2 border border-bao-border text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-xl transition-all duration-200">
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+					</svg>
+					Export CSV
+				</button>
+			</div>
+			
+			<!-- Filters -->
+			<div class="flex flex-wrap items-center gap-4 p-4 bg-bao-card/40 rounded-xl border border-bao-border/50">
+				<div class="flex items-center gap-2">
+					<label class="text-sm text-bao-muted">Event:</label>
+					<select name="event"
+							hx-get="/audit"
+							hx-trigger="change"
+							hx-target="#audit-list"
+							hx-include="[name='period'],[name='actor']"
+							class="px-3 py-2 bg-bao-bg border border-bao-border rounded-lg text-bao-text text-sm focus:outline-none focus:ring-2 focus:ring-bao-accent/50 focus:border-bao-accent">
+						<option value="" selected?={ data.Filters.Event == "" }>All Events</option>
+						<optgroup label="Key Events">
+							<option value="key.created" selected?={ data.Filters.Event == "key.created" }>Key Created</option>
+							<option value="key.signed" selected?={ data.Filters.Event == "key.signed" }>Key Signed</option>
+							<option value="key.deleted" selected?={ data.Filters.Event == "key.deleted" }>Key Deleted</option>
+							<option value="key.exported" selected?={ data.Filters.Event == "key.exported" }>Key Exported</option>
+						</optgroup>
+						<optgroup label="Auth Events">
+							<option value="auth.login" selected?={ data.Filters.Event == "auth.login" }>Login</option>
+							<option value="auth.logout" selected?={ data.Filters.Event == "auth.logout" }>Logout</option>
+							<option value="auth.api_key_used" selected?={ data.Filters.Event == "auth.api_key_used" }>API Key Used</option>
+						</optgroup>
+						<optgroup label="Member Events">
+							<option value="member.invited" selected?={ data.Filters.Event == "member.invited" }>Member Invited</option>
+							<option value="member.joined" selected?={ data.Filters.Event == "member.joined" }>Member Joined</option>
+							<option value="member.removed" selected?={ data.Filters.Event == "member.removed" }>Member Removed</option>
+						</optgroup>
+					</select>
+				</div>
+				
+				<div class="flex items-center gap-2">
+					<label class="text-sm text-bao-muted">Period:</label>
+					<select name="period"
+							hx-get="/audit"
+							hx-trigger="change"
+							hx-target="#audit-list"
+							hx-include="[name='event'],[name='actor']"
+							class="px-3 py-2 bg-bao-bg border border-bao-border rounded-lg text-bao-text text-sm focus:outline-none focus:ring-2 focus:ring-bao-accent/50 focus:border-bao-accent">
+						<option value="7d" selected?={ data.Filters.Period == "7d" || data.Filters.Period == "" }>Last 7 days</option>
+						<option value="30d" selected?={ data.Filters.Period == "30d" }>Last 30 days</option>
+						<option value="90d" selected?={ data.Filters.Period == "90d" }>Last 90 days</option>
+					</select>
+				</div>
+				
+				<div class="flex items-center gap-2">
+					<label class="text-sm text-bao-muted">Actor:</label>
+					<select name="actor"
+							hx-get="/audit"
+							hx-trigger="change"
+							hx-target="#audit-list"
+							hx-include="[name='event'],[name='period']"
+							class="px-3 py-2 bg-bao-bg border border-bao-border rounded-lg text-bao-text text-sm focus:outline-none focus:ring-2 focus:ring-bao-accent/50 focus:border-bao-accent">
+						<option value="" selected?={ data.Filters.Actor == "" }>All Actors</option>
+						<option value="user" selected?={ data.Filters.Actor == "user" }>Users</option>
+						<option value="api_key" selected?={ data.Filters.Actor == "api_key" }>API Keys</option>
+						<option value="system" selected?={ data.Filters.Actor == "system" }>System</option>
+					</select>
+				</div>
+				
+				<button hx-get="/audit"
+						hx-target="#audit-list"
+						class="ml-auto text-sm text-bao-accent hover:text-bao-text transition-colors">
+					Clear Filters
+				</button>
+			</div>
+			
+			<!-- Audit Table -->
+			<div id="audit-list">
+				@AuditList(data.Logs, data.NextCursor)
+			</div>
+		</div>
+	}
+}
+
+// AuditList renders the audit log table (for HTMX partial updates).
+templ AuditList(logs []*models.AuditLog, nextCursor string) {
+	@components.Card("", components.CardDefault) {
+		if len(logs) > 0 {
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="text-left text-bao-muted border-b border-bao-border">
+							<th class="pb-3 font-medium">Time</th>
+							<th class="pb-3 font-medium">Event</th>
+							<th class="pb-3 font-medium">Resource</th>
+							<th class="pb-3 font-medium">Actor</th>
+							<th class="pb-3 font-medium">IP Address</th>
+							<th class="pb-3 font-medium"></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, log := range logs {
+							<tr class="border-b border-bao-border/50 hover:bg-bao-card/50 transition-colors group">
+								<td class="py-4">
+									<span class="text-bao-muted" title={ log.CreatedAt.Format(time.RFC3339) }>
+										{ formatTimeAgo(log.CreatedAt) }
+									</span>
+								</td>
+								<td class="py-4">
+									<span class={ eventBadgeClass(string(log.Event)) }>
+										{ eventIcon(string(log.Event)) }
+										{ string(log.Event) }
+									</span>
+								</td>
+								<td class="py-4 text-bao-text">
+									if log.ResourceType != nil {
+										<span class="font-mono text-xs bg-bao-bg px-2 py-1 rounded">
+											{ string(*log.ResourceType) }
+										</span>
+									} else {
+										<span class="text-bao-muted">—</span>
+									}
+								</td>
+								<td class="py-4">
+									<span class={ actorBadgeClass(string(log.ActorType)) }>
+										{ string(log.ActorType) }
+									</span>
+								</td>
+								<td class="py-4 font-mono text-xs text-bao-muted">
+									if log.IPAddress != nil {
+										{ log.IPAddress.String() }
+									} else {
+										—
+									}
+								</td>
+								<td class="py-4 text-right">
+									<button hx-get={ "/audit/" + log.ID.String() }
+											hx-target="#modal-content"
+											@click="$dispatch('modal-open')"
+											class="opacity-0 group-hover:opacity-100 text-bao-accent hover:text-bao-text text-sm transition-all">
+										Details
+									</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			
+			if nextCursor != "" {
+				<div class="mt-6 text-center">
+					<button hx-get={ "/audit?cursor=" + nextCursor }
+							hx-target="#audit-list"
+							hx-swap="innerHTML"
+							hx-include="[name='event'],[name='period'],[name='actor']"
+							class="inline-flex items-center gap-2 px-4 py-2 text-sm text-bao-accent hover:text-bao-text hover:bg-bao-accent/10 rounded-lg transition-colors">
+						<svg class="w-4 h-4 animate-spin hidden htmx-request:block" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+						</svg>
+						Load more...
+					</button>
+				</div>
+			}
+		} else {
+			@components.EmptyState("📜", "No audit logs found", "Activity logs will appear here as events occur in your organization.") {}
+		}
+	}
+}
+
+// AuditDetailModal renders the audit log detail modal.
+templ AuditDetailModal(log *models.AuditLog) {
+	@components.Modal("Audit Log Details", components.ModalSizeMedium) {
+		<div class="space-y-4">
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<label class="text-xs text-bao-muted uppercase tracking-wider">Event</label>
+					<p class="mt-1">
+						<span class={ eventBadgeClass(string(log.Event)) }>
+							{ eventIcon(string(log.Event)) } { string(log.Event) }
+						</span>
+					</p>
+				</div>
+				<div>
+					<label class="text-xs text-bao-muted uppercase tracking-wider">Time</label>
+					<p class="mt-1 text-bao-text">{ log.CreatedAt.Format("Jan 2, 2006 3:04 PM") }</p>
+				</div>
+				<div>
+					<label class="text-xs text-bao-muted uppercase tracking-wider">Actor Type</label>
+					<p class="mt-1">
+						<span class={ actorBadgeClass(string(log.ActorType)) }>{ string(log.ActorType) }</span>
+					</p>
+				</div>
+				<div>
+					<label class="text-xs text-bao-muted uppercase tracking-wider">IP Address</label>
+					<p class="mt-1 font-mono text-sm text-bao-text">
+						if log.IPAddress != nil {
+							{ log.IPAddress.String() }
+						} else {
+							—
+						}
+					</p>
+				</div>
+				if log.ResourceType != nil {
+					<div>
+						<label class="text-xs text-bao-muted uppercase tracking-wider">Resource Type</label>
+						<p class="mt-1 text-bao-text">{ string(*log.ResourceType) }</p>
+					</div>
+				}
+				if log.ResourceID != nil {
+					<div>
+						<label class="text-xs text-bao-muted uppercase tracking-wider">Resource ID</label>
+						<p class="mt-1 font-mono text-xs text-bao-text">{ log.ResourceID.String() }</p>
+					</div>
+				}
+			</div>
+			
+			if log.UserAgent != nil && *log.UserAgent != "" {
+				<div>
+					<label class="text-xs text-bao-muted uppercase tracking-wider">User Agent</label>
+					<p class="mt-1 text-sm text-bao-muted break-all">{ *log.UserAgent }</p>
+				</div>
+			}
+			
+			if len(log.Metadata) > 0 && string(log.Metadata) != "null" && string(log.Metadata) != "{}" {
+				<div>
+					<label class="text-xs text-bao-muted uppercase tracking-wider">Metadata</label>
+					<pre class="mt-1 p-3 bg-bao-bg rounded-lg text-xs text-bao-muted overflow-x-auto">{ string(log.Metadata) }</pre>
+				</div>
+			}
+		</div>
+		
+		@components.ModalFooter() {
+			<button @click="$dispatch('modal-close')" 
+					class="px-4 py-2 text-sm font-medium text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors">
+				Close
+			</button>
+		}
+	}
+}
+
+func eventBadgeClass(event string) string {
+	base := "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full"
+	
+	switch {
+	case len(event) >= 3 && event[:3] == "key":
+		return base + " bg-violet-500/10 text-violet-400"
+	case len(event) >= 4 && event[:4] == "auth":
+		return base + " bg-blue-500/10 text-blue-400"
+	case len(event) >= 6 && event[:6] == "member":
+		return base + " bg-emerald-500/10 text-emerald-400"
+	case len(event) >= 7 && event[:7] == "billing":
+		return base + " bg-amber-500/10 text-amber-400"
+	case len(event) >= 7 && event[:7] == "webhook":
+		return base + " bg-rose-500/10 text-rose-400"
+	default:
+		return base + " bg-bao-border/30 text-bao-muted"
+	}
+}
+
+func eventIcon(event string) string {
+	switch event {
+	case "key.created":
+		return "🔑"
+	case "key.signed":
+		return "✍️"
+	case "key.deleted":
+		return "🗑️"
+	case "key.exported":
+		return "📤"
+	case "auth.login":
+		return "🔓"
+	case "auth.logout":
+		return "🔒"
+	case "auth.api_key_used":
+		return "🔗"
+	case "member.invited":
+		return "📧"
+	case "member.joined":
+		return "👋"
+	case "member.removed":
+		return "👤"
+	default:
+		return "📋"
+	}
+}
+
+func actorBadgeClass(actorType string) string {
+	base := "inline-flex items-center px-2 py-0.5 text-xs font-medium rounded"
+	
+	switch actorType {
+	case "user":
+		return base + " bg-blue-500/10 text-blue-400"
+	case "api_key":
+		return base + " bg-violet-500/10 text-violet-400"
+	case "system":
+		return base + " bg-slate-500/10 text-slate-400"
+	default:
+		return base + " bg-bao-border/30 text-bao-muted"
+	}
+}
+
+func formatTimeAgo(t time.Time) string {
+	now := time.Now()
+	diff := now.Sub(t)
+	
+	switch {
+	case diff < time.Minute:
+		return "just now"
+	case diff < time.Hour:
+		mins := int(diff.Minutes())
+		if mins == 1 {
+			return "1 min ago"
+		}
+		return fmt.Sprintf("%d mins ago", mins)
+	case diff < 24*time.Hour:
+		hours := int(diff.Hours())
+		if hours == 1 {
+			return "1 hour ago"
+		}
+		return fmt.Sprintf("%d hours ago", hours)
+	case diff < 48*time.Hour:
+		return "yesterday"
+	default:
+		days := int(diff.Hours() / 24)
+		if days < 7 {
+			return fmt.Sprintf("%d days ago", days)
+		}
+		return t.Format("Jan 2")
+	}
+}
+
+
+

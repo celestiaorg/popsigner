@@ -1,0 +1,182 @@
+package partials
+
+import (
+	"github.com/Bidon15/banhbaoring/control-plane/internal/models"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
+)
+
+// WorkerKeysModal renders the batch worker keys creation wizard.
+templ WorkerKeysModal(namespaces []*models.Namespace, limits *models.PlanLimits, currentKeyCount int) {
+	@components.Modal("Create Worker Keys", components.ModalSizeLarge) {
+		<form hx-post="/keys/workers"
+			  hx-target="#keys-list"
+			  hx-swap="innerHTML"
+			  @htmx:after-request="if(event.detail.successful) $dispatch('modal-close')"
+			  x-data="{ count: 5, prefix: 'worker' }">
+			
+			<!-- Header Info -->
+			<div class="mb-6 p-4 bg-gradient-to-r from-bao-accent/10 to-transparent border border-bao-accent/20 rounded-xl">
+				<div class="flex items-center gap-3">
+					<span class="text-2xl">⚡</span>
+					<div>
+						<h4 class="font-medium text-bao-text">Batch Key Creation</h4>
+						<p class="text-sm text-bao-muted">Create multiple keys at once for parallel worker deployment</p>
+					</div>
+				</div>
+			</div>
+			
+			<div class="space-y-5">
+				<!-- Key Prefix -->
+				<div>
+					<label class="block text-sm font-medium text-bao-text mb-2">Key Name Prefix</label>
+					<input type="text" name="prefix" required
+						   x-model="prefix"
+						   autocomplete="off"
+						   class="w-full px-4 py-2.5 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted/50 focus:border-bao-accent focus:outline-none focus:ring-1 focus:ring-bao-accent/50 transition-colors"
+						   placeholder="e.g., worker"/>
+					<p class="mt-1.5 text-xs text-bao-muted">
+						Keys will be named: <span class="font-mono text-bao-accent" x-text="prefix + '-1, ' + prefix + '-2, ' + prefix + '-3...'"></span>
+					</p>
+				</div>
+				
+				<!-- Number of Keys -->
+				<div>
+					<label class="block text-sm font-medium text-bao-text mb-2">
+						Number of Keys
+						<span class="text-bao-muted font-normal ml-2">(max 100 per batch)</span>
+					</label>
+					<div class="flex items-center gap-4">
+						<input type="range" name="count_range" 
+							   min="1" max="100" 
+							   x-model="count"
+							   class="flex-1 h-2 bg-bao-border rounded-full appearance-none cursor-pointer accent-bao-accent"/>
+						<input type="number" name="count" 
+							   min="1" max="100" required
+							   x-model="count"
+							   class="w-20 px-3 py-2 bg-bao-bg border border-bao-border rounded-xl text-bao-text text-center focus:border-bao-accent focus:outline-none focus:ring-1 focus:ring-bao-accent/50 transition-colors"/>
+					</div>
+					if limits.Keys > 0 {
+						<p class="mt-2 text-xs text-bao-muted">
+							Your plan allows <span class="text-bao-accent font-medium">{ formatLimit(limits.Keys) }</span> keys. 
+							Currently using <span class="text-bao-text">{ formatLimit(currentKeyCount) }</span>.
+						</p>
+					}
+				</div>
+				
+				<!-- Namespace -->
+				<div>
+					<label class="block text-sm font-medium text-bao-text mb-2">Namespace</label>
+					<select name="namespace_id" required
+							class="w-full px-4 py-2.5 bg-bao-bg border border-bao-border rounded-xl text-bao-text focus:border-bao-accent focus:outline-none focus:ring-1 focus:ring-bao-accent/50 cursor-pointer transition-colors">
+						for i, ns := range namespaces {
+							<option value={ ns.ID.String() } selected?={ i == 0 }>
+								{ ns.Name }
+							</option>
+						}
+					</select>
+				</div>
+				
+				<!-- Exportable Option -->
+				<div class="p-4 bg-bao-border/20 border border-bao-border rounded-xl">
+					<label class="flex items-start gap-3 cursor-pointer">
+						<input type="checkbox" name="exportable" value="true"
+							   class="mt-0.5 w-4 h-4 rounded border-bao-border bg-bao-bg text-bao-accent focus:ring-bao-accent focus:ring-offset-0 cursor-pointer"/>
+						<div>
+							<span class="text-sm font-medium text-bao-text">Allow export for all keys</span>
+							<p class="mt-1 text-xs text-bao-muted">
+								Enable if you need to migrate worker keys elsewhere
+							</p>
+						</div>
+					</label>
+				</div>
+				
+				<!-- Preview -->
+				<div class="p-4 bg-bao-bg/50 border border-bao-border rounded-xl">
+					<h4 class="text-sm font-medium text-bao-muted mb-3">Preview</h4>
+					<div class="flex flex-wrap gap-2">
+						<template x-for="i in Math.min(count, 5)" :key="i">
+							<span class="px-2.5 py-1 bg-bao-card border border-bao-border rounded-lg text-xs font-mono text-bao-text"
+								  x-text="prefix + '-' + i">
+							</span>
+						</template>
+						<span x-show="count > 5" class="px-2.5 py-1 text-xs text-bao-muted">
+							... and <span x-text="count - 5"></span> more
+						</span>
+					</div>
+				</div>
+			</div>
+			
+			@components.ModalFooter() {
+				<button type="button" @click="$dispatch('modal-close')"
+						class="px-4 py-2.5 text-sm font-medium text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-xl transition-colors">
+					Cancel
+				</button>
+				<button type="submit"
+						class="px-5 py-2.5 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-medium rounded-xl shadow-lg hover:shadow-amber-500/30 transition-shadow flex items-center gap-2">
+					<span>⚡</span>
+					<span>Create <span x-text="count"></span> Keys</span>
+				</button>
+			}
+		</form>
+	}
+}
+
+// WorkerKeysResult renders the result of batch key creation.
+templ WorkerKeysResult(created int, failed int, errors []string) {
+	<div class="space-y-4">
+		if created > 0 {
+			<div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+				<div class="flex items-center gap-3">
+					<span class="text-2xl">✓</span>
+					<div>
+						<p class="font-medium text-emerald-400">
+							Successfully created { formatLimit(created) } keys
+						</p>
+						if failed > 0 {
+							<p class="text-sm text-bao-muted mt-1">
+								{ formatLimit(failed) } keys failed to create
+							</p>
+						}
+					</div>
+				</div>
+			</div>
+		} else {
+			<div class="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+				<div class="flex items-center gap-3">
+					<span class="text-2xl">✕</span>
+					<div>
+						<p class="font-medium text-red-400">
+							Failed to create keys
+						</p>
+						if len(errors) > 0 {
+							<p class="text-sm text-bao-muted mt-1">
+								{ errors[0] }
+							</p>
+						}
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+// Helper to format limits.
+func formatLimit(n int) string {
+	if n < 0 {
+		return "unlimited"
+	}
+	return formatIntToString(n)
+}
+
+func formatIntToString(n int) string {
+	s := ""
+	for n > 0 {
+		s = string(rune('0'+n%10)) + s
+		n /= 10
+	}
+	if s == "" {
+		return "0"
+	}
+	return s
+}
+

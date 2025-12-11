@@ -1,0 +1,380 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
+	"time"
+)
+
+// SubscriptionInfo contains subscription details for billing page.
+type SubscriptionInfo struct {
+	Plan              string
+	Price             string
+	CardLast4         string
+	CardBrand         string
+	BillingEmail      string
+	NextBillingDate   time.Time
+	CancelAtPeriodEnd bool
+}
+
+// Invoice represents a billing invoice.
+type Invoice struct {
+	ID          string
+	Date        time.Time
+	Description string
+	Amount      int64 // in cents
+	Paid        bool
+	DownloadURL string
+}
+
+// BillingPageData contains all data for the billing page.
+type BillingPageData struct {
+	layouts.DashboardData
+	Subscription *SubscriptionInfo
+	Usage        *UsageInfo
+	Invoices     []*Invoice
+}
+
+// UsageInfo contains usage data for the billing page.
+type UsageInfo struct {
+	Keys              int64
+	KeysLimit         int64
+	Signatures        int64
+	SignaturesLimit   int64
+	TeamMembers       int64
+	TeamMembersLimit  int64
+	Namespaces        int64
+	NamespacesLimit   int64
+}
+
+// BillingPage renders the billing settings page.
+templ BillingPage(data BillingPageData) {
+	@layouts.Dashboard("Billing", data.DashboardData) {
+		<div class="space-y-6">
+			<!-- Page Header -->
+			<div class="flex items-center justify-between">
+				<div>
+					<h1 class="text-2xl font-heading font-bold text-bao-text">Billing</h1>
+					<p class="text-bao-muted mt-1">Manage your subscription and payment methods</p>
+				</div>
+			</div>
+			
+			<!-- Current Plan Card -->
+			@components.Card("Current Plan", components.CardHighlight) {
+				<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+					<div class="flex-1">
+						<div class="flex items-center gap-4 mb-6">
+							<div class={ planIconClasses(data.Subscription.Plan) }>
+								@planIcon(data.Subscription.Plan)
+							</div>
+							<div>
+								<h3 class="text-2xl font-heading font-bold text-bao-text uppercase tracking-wide">
+									{ data.Subscription.Plan } Plan
+								</h3>
+								<p class="text-bao-muted">
+									if data.Subscription.Plan == "free" {
+										Free forever · No credit card required
+									} else {
+										${ data.Subscription.Price }/month · Renews { data.Subscription.NextBillingDate.Format("Jan 2, 2006") }
+									}
+								</p>
+							</div>
+						</div>
+						
+						<!-- Usage Bars -->
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							@UsageBar("Keys", data.Usage.Keys, data.Usage.KeysLimit, "🔑")
+							@UsageBar("Signatures", data.Usage.Signatures, data.Usage.SignaturesLimit, "✍️")
+							@UsageBar("Team Members", data.Usage.TeamMembers, data.Usage.TeamMembersLimit, "👥")
+							@UsageBar("Namespaces", data.Usage.Namespaces, data.Usage.NamespacesLimit, "📁")
+						</div>
+					</div>
+					
+					<div class="flex flex-col gap-3 lg:ml-8">
+						if data.Subscription.Plan != "enterprise" {
+							<button hx-get="/settings/billing/upgrade"
+									hx-target="#modal-content"
+									@click="$dispatch('modal-open')"
+									class="px-6 py-3 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-semibold rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-200">
+								⚡ Upgrade Plan
+							</button>
+						}
+						if data.Subscription.Plan != "free" {
+							<button hx-post="/settings/billing/portal"
+									class="px-6 py-3 border border-bao-border text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-xl transition-all duration-200">
+								Manage in Stripe →
+							</button>
+						}
+					</div>
+				</div>
+			}
+			
+			<!-- Payment Method -->
+			@components.Card("Payment Method", components.CardDefault) {
+				<div class="space-y-4">
+					if data.Subscription.CardLast4 != "" {
+						<!-- Has card on file -->
+						<div class="flex items-center gap-4 p-4 border border-emerald-500/30 bg-emerald-500/5 rounded-xl">
+							<div class="w-12 h-8 bg-gradient-to-br from-slate-700 to-slate-900 rounded-md flex items-center justify-center">
+								@cardBrandIcon(data.Subscription.CardBrand)
+							</div>
+							<div class="flex-1">
+								<p class="font-medium text-bao-text">{ data.Subscription.CardBrand } ending in { data.Subscription.CardLast4 }</p>
+								<p class="text-sm text-bao-muted">Billing to { data.Subscription.BillingEmail }</p>
+							</div>
+							<button hx-get="/settings/billing/card"
+									hx-target="#modal-content"
+									@click="$dispatch('modal-open')"
+									class="px-4 py-2 text-sm text-bao-accent hover:text-bao-text hover:bg-bao-accent/10 rounded-lg transition-colors">
+								Change
+							</button>
+						</div>
+					} else {
+						<!-- No card on file -->
+						<div class="flex items-center gap-4 p-4 border border-dashed border-bao-border rounded-xl">
+							<div class="w-12 h-8 border border-bao-border rounded-md flex items-center justify-center text-bao-muted">
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+								</svg>
+							</div>
+							<div class="flex-1">
+								<p class="font-medium text-bao-text">No payment method</p>
+								<p class="text-sm text-bao-muted">Add a card to upgrade your plan</p>
+							</div>
+							<button hx-get="/settings/billing/card"
+									hx-target="#modal-content"
+									@click="$dispatch('modal-open')"
+									class="px-4 py-2 text-sm bg-bao-accent/10 text-bao-accent hover:bg-bao-accent/20 rounded-lg transition-colors">
+								Add Card
+							</button>
+						</div>
+					}
+				</div>
+			}
+			
+			<!-- Invoices -->
+			@components.Card("Invoices", components.CardDefault) {
+				if len(data.Invoices) > 0 {
+					<div class="overflow-x-auto">
+						<table class="w-full">
+							<thead>
+								<tr class="text-left text-sm text-bao-muted border-b border-bao-border">
+									<th class="pb-3 font-medium">Date</th>
+									<th class="pb-3 font-medium">Description</th>
+									<th class="pb-3 font-medium text-right">Amount</th>
+									<th class="pb-3 font-medium">Status</th>
+									<th class="pb-3 font-medium"></th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, inv := range data.Invoices {
+									<tr class="border-b border-bao-border/50 hover:bg-bao-card/50 transition-colors">
+										<td class="py-4 text-bao-text">{ inv.Date.Format("Jan 2, 2006") }</td>
+										<td class="py-4 text-bao-muted">{ inv.Description }</td>
+										<td class="py-4 text-bao-text font-mono text-right">{ formatAmount(inv.Amount) }</td>
+										<td class="py-4">
+											if inv.Paid {
+												<span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-400 rounded-full">
+													<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+														<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+													</svg>
+													Paid
+												</span>
+											} else {
+												<span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-amber-500/10 text-amber-400 rounded-full">
+													Pending
+												</span>
+											}
+										</td>
+										<td class="py-4 text-right">
+											<a href={ templ.SafeURL(inv.DownloadURL) } 
+											   target="_blank"
+											   class="text-sm text-bao-accent hover:text-bao-text transition-colors">
+												Download PDF
+											</a>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				} else {
+					@components.EmptyState("📋", "No invoices yet", "Your invoices will appear here once you upgrade to a paid plan.") {}
+				}
+			}
+		</div>
+	}
+}
+
+// UsageBar renders a usage progress bar.
+templ UsageBar(label string, current, limit int64, icon string) {
+	<div class="p-4 bg-bao-bg/50 rounded-xl border border-bao-border/50">
+		<div class="flex justify-between items-center mb-2">
+			<span class="text-sm text-bao-muted flex items-center gap-2">
+				<span>{ icon }</span>
+				{ label }
+			</span>
+			<span class="text-sm font-medium text-bao-text">
+				{ formatNumber(current) }
+				if limit > 0 {
+					<span class="text-bao-muted">/</span>{ formatNumber(limit) }
+				} else {
+					<span class="text-bao-muted ml-1">(unlimited)</span>
+				}
+			</span>
+		</div>
+		<div class="h-2 bg-bao-border rounded-full overflow-hidden">
+			if limit > 0 {
+				<div class={ usageBarColor(current, limit) }
+					 style={ fmt.Sprintf("width: %d%%", min(100, current*100/limit)) }></div>
+			} else {
+				<div class="h-full w-full bg-gradient-to-r from-emerald-500/50 to-emerald-400/30 rounded-full"></div>
+			}
+		</div>
+	</div>
+}
+
+// UpgradeModal renders the plan upgrade modal.
+templ UpgradeModal(currentPlan string) {
+	@components.Modal("Upgrade Your Plan", components.ModalSizeLarge) {
+		<div class="space-y-6">
+			<p class="text-bao-muted">Choose the plan that works best for your team.</p>
+			
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<!-- Pro Plan -->
+				<div class={ "p-6 rounded-xl border transition-all cursor-pointer hover:scale-[1.02]", planCardClasses("pro", currentPlan) }
+					 @click="selectedPlan = 'pro'">
+					<div class="flex items-center gap-3 mb-4">
+						<span class="text-2xl">🚀</span>
+						<div>
+							<h4 class="font-heading font-bold text-bao-text">Pro</h4>
+							<p class="text-2xl font-bold text-bao-accent">$49<span class="text-sm text-bao-muted font-normal">/month</span></p>
+						</div>
+					</div>
+					<ul class="space-y-2 text-sm text-bao-muted">
+						<li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> 25 keys</li>
+						<li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> 500K signatures/month</li>
+						<li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> 10 team members</li>
+						<li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> 90 day audit retention</li>
+					</ul>
+				</div>
+				
+				<!-- Enterprise Plan -->
+				<div class={ "p-6 rounded-xl border transition-all cursor-pointer hover:scale-[1.02]", planCardClasses("enterprise", currentPlan) }
+					 @click="selectedPlan = 'enterprise'">
+					<div class="flex items-center gap-3 mb-4">
+						<span class="text-2xl">💎</span>
+						<div>
+							<h4 class="font-heading font-bold text-bao-text">Enterprise</h4>
+							<p class="text-lg font-bold text-bao-accent">Custom pricing</p>
+						</div>
+					</div>
+					<ul class="space-y-2 text-sm text-bao-muted">
+						<li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Unlimited keys</li>
+						<li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Unlimited signatures</li>
+						<li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Unlimited team members</li>
+						<li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> 1 year audit retention</li>
+						<li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Priority support</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		
+		@components.ModalFooter() {
+			<button @click="$dispatch('modal-close')" 
+					class="px-4 py-2 text-sm font-medium text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors">
+				Cancel
+			</button>
+			<button hx-post="/settings/billing/upgrade"
+					@click="$dispatch('modal-close')"
+					class="px-6 py-2 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-semibold rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all">
+				Upgrade Now
+			</button>
+		}
+	}
+}
+
+func planIconClasses(plan string) string {
+	base := "w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
+	switch plan {
+	case "pro":
+		return base + " bg-gradient-to-br from-violet-500 to-purple-600"
+	case "enterprise":
+		return base + " bg-gradient-to-br from-amber-400 to-rose-500"
+	default:
+		return base + " bg-gradient-to-br from-slate-600 to-slate-700"
+	}
+}
+
+templ planIcon(plan string) {
+	switch plan {
+	case "pro":
+		🚀
+	case "enterprise":
+		💎
+	default:
+		🆓
+	}
+}
+
+templ cardBrandIcon(brand string) {
+	switch brand {
+	case "visa":
+		<span class="text-white font-bold text-xs">VISA</span>
+	case "mastercard":
+		<span class="text-white font-bold text-xs">MC</span>
+	case "amex":
+		<span class="text-white font-bold text-xs">AMEX</span>
+	default:
+		<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+		</svg>
+	}
+}
+
+func usageBarColor(current, limit int64) string {
+	if limit <= 0 {
+		return "h-full rounded-full bg-emerald-500/50"
+	}
+	pct := float64(current) / float64(limit) * 100
+	base := "h-full rounded-full transition-all duration-500"
+	if pct >= 90 {
+		return base + " bg-gradient-to-r from-red-500 to-red-400"
+	} else if pct >= 70 {
+		return base + " bg-gradient-to-r from-amber-500 to-amber-400"
+	}
+	return base + " bg-gradient-to-r from-emerald-500 to-emerald-400"
+}
+
+func planCardClasses(plan, currentPlan string) string {
+	base := "border-bao-border bg-bao-card/50"
+	if plan == currentPlan {
+		return base + " ring-2 ring-bao-accent border-bao-accent"
+	}
+	return base + " hover:border-bao-accent/50"
+}
+
+func formatAmount(cents int64) string {
+	dollars := float64(cents) / 100
+	return fmt.Sprintf("$%.2f", dollars)
+}
+
+func formatNumber(n int64) string {
+	if n >= 1000000 {
+		return fmt.Sprintf("%.1fM", float64(n)/1000000)
+	}
+	if n >= 1000 {
+		return fmt.Sprintf("%.1fK", float64(n)/1000)
+	}
+	return fmt.Sprintf("%d", n)
+}
+
+func min(a, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+

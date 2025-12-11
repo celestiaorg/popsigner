@@ -1,0 +1,136 @@
+package pages
+
+import (
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
+)
+
+// SignupPage renders the signup/registration page.
+templ SignupPage(errorMsg string, formValues SignupFormValues) {
+	@layouts.Auth("Sign Up") {
+		<!-- Error message -->
+		if errorMsg != "" {
+			<div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3">
+				<span class="text-red-400 text-lg">⚠</span>
+				<p class="text-red-400 text-sm">{ errorMsg }</p>
+			</div>
+		}
+		
+		<h2 class="text-2xl font-heading font-bold text-bao-text mb-2">Create your account</h2>
+		<p class="text-bao-muted text-sm mb-6">Start managing your keys securely in minutes</p>
+		
+		<!-- OAuth Buttons -->
+		<div class="space-y-3 mb-6">
+			@OAuthButton("github", "Sign up with GitHub")
+			@OAuthButton("google", "Sign up with Google")
+			@OAuthButton("discord", "Sign up with Discord")
+		</div>
+		
+		<!-- Divider -->
+		<div class="relative my-6">
+			<div class="absolute inset-0 flex items-center">
+				<div class="w-full border-t border-bao-border"></div>
+			</div>
+			<div class="relative flex justify-center text-sm">
+				<span class="px-4 bg-bao-card text-bao-muted">or sign up with email</span>
+			</div>
+		</div>
+		
+		<!-- Registration Form -->
+		<form action="/signup" method="POST" class="space-y-4">
+			<div>
+				<label for="name" class="block text-sm font-medium text-bao-text mb-1.5">Full Name</label>
+				<input 
+					type="text" 
+					id="name" 
+					name="name" 
+					required
+					autocomplete="name"
+					value={ formValues.Name }
+					class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors"
+					placeholder="John Doe"
+				/>
+			</div>
+			
+			<div>
+				<label for="email" class="block text-sm font-medium text-bao-text mb-1.5">Email</label>
+				<input 
+					type="email" 
+					id="email" 
+					name="email" 
+					required
+					autocomplete="email"
+					value={ formValues.Email }
+					class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors"
+					placeholder="you@example.com"
+				/>
+			</div>
+			
+			<div>
+				<label for="password" class="block text-sm font-medium text-bao-text mb-1.5">Password</label>
+				<input 
+					type="password" 
+					id="password" 
+					name="password" 
+					required
+					autocomplete="new-password"
+					minlength="8"
+					class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors"
+					placeholder="••••••••"
+				/>
+				<p class="mt-1.5 text-xs text-bao-muted">Must be at least 8 characters</p>
+			</div>
+			
+			<div>
+				<label for="password_confirm" class="block text-sm font-medium text-bao-text mb-1.5">Confirm Password</label>
+				<input 
+					type="password" 
+					id="password_confirm" 
+					name="password_confirm" 
+					required
+					autocomplete="new-password"
+					class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors"
+					placeholder="••••••••"
+				/>
+			</div>
+			
+			<!-- Terms Agreement -->
+			<div class="flex items-start gap-3 pt-2">
+				<input 
+					type="checkbox" 
+					id="terms" 
+					name="terms" 
+					required
+					class="mt-1 h-4 w-4 rounded border-bao-border bg-bao-bg text-bao-accent focus:ring-bao-accent focus:ring-offset-bao-bg"
+				/>
+				<label for="terms" class="text-sm text-bao-muted">
+					I agree to the 
+					<a href="/terms" class="text-bao-accent hover:text-amber-300 transition-colors">Terms of Service</a>
+					and 
+					<a href="/privacy" class="text-bao-accent hover:text-amber-300 transition-colors">Privacy Policy</a>
+				</label>
+			</div>
+			
+			<div class="pt-2">
+				@components.Button(components.ButtonPrimary, components.ButtonSizeLarge, false) {
+					<span class="w-full text-center">Create Account</span>
+				}
+			</div>
+		</form>
+		
+		<p class="mt-6 text-center text-sm text-bao-muted">
+			Already have an account?
+			<a href="/login" class="text-bao-accent hover:text-amber-300 font-medium transition-colors">
+				Sign in
+			</a>
+		</p>
+	}
+}
+
+// SignupFormValues holds form values for re-rendering on error.
+type SignupFormValues struct {
+	Name  string
+	Email string
+}
+
+

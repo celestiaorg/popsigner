@@ -1,0 +1,288 @@
+package pages
+
+import (
+	"github.com/Bidon15/banhbaoring/control-plane/internal/models"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
+	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
+	"strings"
+)
+
+// APIKeysPageData contains all data for the API keys settings page.
+type APIKeysPageData struct {
+	layouts.DashboardData
+	APIKeys     []*models.APIKey
+	CanCreate   bool
+}
+
+// SettingsAPIKeysPage renders the API keys settings page.
+templ SettingsAPIKeysPage(data APIKeysPageData) {
+	@layouts.Dashboard("API Keys", data.DashboardData) {
+		<div class="space-y-6">
+			<!-- Page Header -->
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+				<div>
+					<h1 class="text-2xl font-heading font-bold text-bao-text">API Keys</h1>
+					<p class="text-bao-muted mt-1">Manage programmatic access to the API</p>
+				</div>
+				if data.CanCreate {
+					<button hx-get="/settings/api-keys/new"
+							hx-target="#modal-content"
+							@click="$dispatch('modal-open')"
+							class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-semibold rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-[1.02] transition-all duration-200">
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+						</svg>
+						Create API Key
+					</button>
+				}
+			</div>
+			
+			<!-- Warning Banner -->
+			<div class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+				<div class="flex items-start gap-3">
+					<span class="text-amber-400 text-xl">⚠️</span>
+					<div>
+						<p class="font-medium text-amber-400">Keep your API keys secure</p>
+						<p class="text-sm text-bao-muted mt-1">
+							API keys grant access to your organization's resources. Never share them publicly or commit them to version control.
+						</p>
+					</div>
+				</div>
+			</div>
+			
+			<!-- API Keys List -->
+			<div id="api-keys-list">
+				@APIKeysList(data.APIKeys)
+			</div>
+			
+			<!-- Usage Examples -->
+			@components.Card("Usage Examples", components.CardFlat) {
+				<div class="space-y-4">
+					<div>
+						<p class="text-sm font-medium text-bao-text mb-2">cURL</p>
+						<pre class="p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto"><code>curl -H "Authorization: Bearer bbr_live_xxxxx" \
+     https://api.banhbaoring.io/v1/keys</code></pre>
+					</div>
+					<div>
+						<p class="text-sm font-medium text-bao-text mb-2">Go SDK</p>
+						<pre class="p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto"><code>client := banhbaoring.NewClient("bbr_live_xxxxx")
+keys, err := client.Keys.List(ctx)</code></pre>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+// APIKeysList renders the list of API keys (for HTMX partial updates).
+templ APIKeysList(keys []*models.APIKey) {
+	@components.Card("", components.CardDefault) {
+		if len(keys) > 0 {
+			<div class="space-y-4">
+				for _, key := range keys {
+					<div class="flex items-center justify-between p-4 bg-bao-bg/50 rounded-xl border border-bao-border/50 group hover:border-bao-accent/30 transition-colors">
+						<div class="flex items-center gap-4 min-w-0">
+							<div class={ apiKeyIconClass(key) }>
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+								</svg>
+							</div>
+							<div class="min-w-0">
+								<div class="flex items-center gap-2">
+									<p class="font-medium text-bao-text truncate">{ key.Name }</p>
+									if !key.IsValid() {
+										<span class="px-2 py-0.5 text-xs font-medium bg-red-500/10 text-red-400 rounded">Revoked</span>
+									} else if key.ExpiresAt != nil {
+										<span class="px-2 py-0.5 text-xs font-medium bg-amber-500/10 text-amber-400 rounded">
+											Expires { key.ExpiresAt.Format("Jan 2") }
+										</span>
+									}
+								</div>
+								<div class="flex items-center gap-3 mt-1">
+									<p class="text-sm font-mono text-bao-muted">{ key.KeyPrefix }...</p>
+									<span class="text-bao-border">·</span>
+									<p class="text-sm text-bao-muted">
+										Created { key.CreatedAt.Format("Jan 2, 2006") }
+									</p>
+									if key.LastUsedAt != nil {
+										<span class="text-bao-border">·</span>
+										<p class="text-sm text-bao-muted">
+											Last used { key.LastUsedAt.Format("Jan 2") }
+										</p>
+									}
+								</div>
+								<!-- Scopes -->
+								<div class="flex flex-wrap gap-1.5 mt-2">
+									for _, scope := range key.Scopes {
+										<span class="px-2 py-0.5 text-xs font-medium bg-bao-border/30 text-bao-muted rounded">
+											{ scope }
+										</span>
+									}
+								</div>
+							</div>
+						</div>
+						
+						if key.IsValid() {
+							<div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+								<button hx-delete={ "/settings/api-keys/" + key.ID.String() }
+										hx-confirm="Are you sure you want to revoke this API key? This action cannot be undone."
+										hx-target="#api-keys-list"
+										hx-swap="outerHTML"
+										class="px-3 py-1.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors">
+									Revoke
+								</button>
+							</div>
+						}
+					</div>
+				}
+			</div>
+		} else {
+			@components.EmptyState("🔗", "No API keys yet", "Create an API key to access the BanhBaoRing API programmatically.") {
+				<button hx-get="/settings/api-keys/new"
+						hx-target="#modal-content"
+						@click="$dispatch('modal-open')"
+						class="px-4 py-2 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-semibold rounded-xl shadow-lg hover:shadow-amber-500/30 transition-all">
+					Create API Key
+				</button>
+			}
+		}
+	}
+}
+
+// CreateAPIKeyModal renders the create API key modal.
+templ CreateAPIKeyModal() {
+	@components.Modal("Create API Key", components.ModalSizeMedium) {
+		<form hx-post="/settings/api-keys"
+			  hx-target="#api-key-result"
+			  hx-swap="innerHTML"
+			  class="space-y-6"
+			  x-data="{ scopes: [] }">
+			
+			<div id="api-key-result">
+				<div>
+					<label for="name" class="block text-sm font-medium text-bao-text mb-2">
+						Key Name
+					</label>
+					<input type="text"
+						   id="name"
+						   name="name"
+						   placeholder="Production server"
+						   required
+						   class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder:text-bao-muted/50 focus:outline-none focus:ring-2 focus:ring-bao-accent/50 focus:border-bao-accent transition-all"/>
+					<p class="mt-1 text-xs text-bao-muted">A descriptive name to identify this key</p>
+				</div>
+				
+				<div class="mt-6">
+					<label class="block text-sm font-medium text-bao-text mb-3">
+						Permissions
+					</label>
+					<div class="grid grid-cols-2 gap-3">
+						@scopeCheckbox("keys:read", "Read Keys", "View keys and public addresses")
+						@scopeCheckbox("keys:write", "Write Keys", "Create, update, and delete keys")
+						@scopeCheckbox("keys:sign", "Sign", "Sign messages with keys")
+						@scopeCheckbox("audit:read", "Read Audit", "View audit logs")
+						@scopeCheckbox("billing:read", "Read Billing", "View billing information")
+						@scopeCheckbox("webhooks:write", "Manage Webhooks", "Create and delete webhooks")
+					</div>
+				</div>
+				
+				<div class="mt-6">
+					<label for="expires" class="block text-sm font-medium text-bao-text mb-2">
+						Expiration (Optional)
+					</label>
+					<select id="expires"
+							name="expires"
+							class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text focus:outline-none focus:ring-2 focus:ring-bao-accent/50 focus:border-bao-accent transition-all">
+						<option value="">Never expires</option>
+						<option value="30d">30 days</option>
+						<option value="90d">90 days</option>
+						<option value="1y">1 year</option>
+					</select>
+				</div>
+				
+				@components.ModalFooter() {
+					<button type="button"
+							@click="$dispatch('modal-close')"
+							class="px-4 py-2 text-sm font-medium text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors">
+						Cancel
+					</button>
+					<button type="submit"
+							class="px-6 py-2 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-semibold rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all">
+						Create Key
+					</button>
+				}
+			</div>
+		</form>
+	}
+}
+
+// APIKeyCreatedResult renders the result after creating an API key.
+templ APIKeyCreatedResult(name, key string) {
+	<div class="space-y-6">
+		<div class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+			<div class="flex items-start gap-3">
+				<span class="text-emerald-400 text-xl">✓</span>
+				<div>
+					<p class="font-medium text-emerald-400">API Key Created Successfully</p>
+					<p class="text-sm text-bao-muted mt-1">
+						Make sure to copy your key now. You won't be able to see it again!
+					</p>
+				</div>
+			</div>
+		</div>
+		
+		<div>
+			<label class="block text-sm font-medium text-bao-text mb-2">
+				{ name }
+			</label>
+			<div class="flex items-center gap-2">
+				<input type="text"
+					   value={ key }
+					   readonly
+					   id="new-api-key"
+					   class="flex-1 px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text font-mono text-sm"/>
+				<button type="button"
+						onclick="navigator.clipboard.writeText(document.getElementById('new-api-key').value); this.innerHTML = '✓ Copied'"
+						class="px-4 py-3 bg-bao-accent/10 text-bao-accent hover:bg-bao-accent/20 rounded-xl transition-colors">
+					Copy
+				</button>
+			</div>
+		</div>
+		
+		@components.ModalFooter() {
+			<button type="button"
+					@click="$dispatch('modal-close'); htmx.trigger('#main-content', 'refresh')"
+					class="px-6 py-2 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-semibold rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all">
+				Done
+			</button>
+		}
+	</div>
+}
+
+templ scopeCheckbox(scope, label, description string) {
+	<label class="flex items-start gap-3 p-3 bg-bao-bg/50 rounded-xl border border-bao-border/50 cursor-pointer hover:border-bao-accent/30 transition-colors has-[:checked]:border-bao-accent has-[:checked]:bg-bao-accent/5">
+		<input type="checkbox" 
+			   name="scopes" 
+			   value={ scope }
+			   class="mt-0.5 w-4 h-4 rounded border-bao-border text-bao-accent focus:ring-bao-accent focus:ring-offset-bao-bg"/>
+		<div>
+			<p class="text-sm font-medium text-bao-text">{ label }</p>
+			<p class="text-xs text-bao-muted">{ description }</p>
+		</div>
+	</label>
+}
+
+func apiKeyIconClass(key *models.APIKey) string {
+	base := "w-12 h-12 rounded-xl flex items-center justify-center"
+	if !key.IsValid() {
+		return base + " bg-red-500/10 text-red-400"
+	}
+	// Check for wildcard or sign scope
+	for _, s := range key.Scopes {
+		if s == "*" || strings.Contains(s, "sign") {
+			return base + " bg-amber-500/10 text-amber-400"
+		}
+	}
+	return base + " bg-bao-accent/10 text-bao-accent"
+}
+
