@@ -2,9 +2,39 @@
 
 ## Overview
 
-Implement the OpenBao deployment logic in the Cluster controller. This includes StatefulSet creation, auto-unseal configuration, plugin registration, and health monitoring.
+Implement the OpenBao deployment logic in the Cluster controller. This agent **leverages OpenBao's official Helm chart** as a subchart for battle-tested deployment, while our operator handles plugin registration, integration, and orchestration.
 
 > **Requires:** Agent 13A (Operator Foundation) complete
+
+---
+
+## Deployment Strategy
+
+### Why Use OpenBao's Helm Chart?
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Full Custom** | Total control | High maintenance, reinventing wheel |
+| **OpenBao Helm Subchart** ✅ | Battle-tested, maintained by OpenBao team | Less flexibility |
+| **Hybrid (Recommended)** | Best of both - use Helm for core, operator for customization | Slightly more complex |
+
+**Our approach:** Use OpenBao Helm chart for core deployment, operator handles:
+- secp256k1 plugin registration
+- Integration with Control Plane  
+- Tenant namespace provisioning
+- Backup/restore coordination
+
+### Scalability
+
+The design supports horizontal scaling:
+
+| Component | Scaling Method | Notes |
+|-----------|---------------|-------|
+| **OpenBao** | StatefulSet replicas (3, 5, 7) | Raft consensus requires odd numbers |
+| **API** | HPA (min 2, max 10+) | CPU-based autoscaling |
+| **Dashboard** | Deployment replicas | Stateless, scale freely |
+| **PostgreSQL** | Read replicas | Primary + replicas for HA |
+| **Redis** | Cluster mode (3+ nodes) | Sharding for high throughput |
 
 ---
 
@@ -12,13 +42,96 @@ Implement the OpenBao deployment logic in the Cluster controller. This includes 
 
 - Agent 13A completed (CRDs and controller stubs exist)
 - Understanding of OpenBao/Vault architecture
-- Familiarity with Kubernetes StatefulSets
+- Familiarity with Kubernetes StatefulSets and Helm
+
+---
+
+## Helm-Based Deployment Option
+
+For production, consider using Helm SDK to deploy OpenBao's official chart:
+
+```go
+// internal/helm/openbao.go
+package helm
+
+import (
+    "context"
+    "fmt"
+
+    "helm.sh/helm/v3/pkg/action"
+    "helm.sh/helm/v3/pkg/chart/loader"
+    
+    banhbaoringv1 "github.com/Bidon15/banhbaoring/operator/api/v1"
+)
+
+const (
+    OpenBaoChartRepo = "https://openbao.github.io/openbao-helm"
+    OpenBaoChartName = "openbao"
+)
+
+// DeployOpenBao uses Helm SDK to deploy OpenBao's official chart
+func DeployOpenBao(ctx context.Context, cluster *banhbaoringv1.BanhBaoRingCluster) error {
+    cfg := new(action.Configuration)
+    // Initialize Helm action config...
+    
+    install := action.NewInstall(cfg)
+    install.ReleaseName = fmt.Sprintf("%s-openbao", cluster.Name)
+    install.Namespace = cluster.Namespace
+    install.CreateNamespace = false
+    
+    // Build values from cluster spec
+    values := buildOpenBaoValues(cluster)
+    
+    chart, err := loader.Load(OpenBaoChartName)
+    if err != nil {
+        return err
+    }
+    
+    _, err = install.Run(chart, values)
+    return err
+}
+
+func buildOpenBaoValues(cluster *banhbaoringv1.BanhBaoRingCluster) map[string]interface{} {
+    spec := cluster.Spec.OpenBao
+    
+    return map[string]interface{}{
+        "server": map[string]interface{}{
+            "ha": map[string]interface{}{
+                "enabled":  spec.Replicas > 1,
+                "replicas": spec.Replicas,
+                "raft": map[string]interface{}{
+                    "enabled": true,
+                },
+            },
+            "dataStorage": map[string]interface{}{
+                "size":         spec.Storage.Size.String(),
+                "storageClass": spec.Storage.StorageClass,
+            },
+            "extraVolumes": []map[string]interface{}{
+                {"type": "emptyDir", "name": "plugins"},
+            },
+            "extraInitContainers": []map[string]interface{}{
+                // Plugin download init container
+            },
+        },
+        "injector": map[string]interface{}{
+            "enabled": false, // We don't need the injector
+        },
+    }
+}
+```
+
+**Decision Point:** The operator can either:
+1. Use Helm SDK (above) - Recommended for production
+2. Use raw K8s resources (below) - More control, useful for learning
+
+For initial development, we'll implement raw K8s resources to understand the deployment deeply, then optionally migrate to Helm SDK.
 
 ---
 
 ## Deliverables
 
-### 1. OpenBao Resource Builder
+### 1. OpenBao Resource Builder (Raw K8s Approach)
 
 ```go
 // internal/resources/openbao/statefulset.go

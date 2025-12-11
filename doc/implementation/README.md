@@ -397,9 +397,21 @@ Phase 9.4 - Release:
 
 **Subtotal: 4 agents**
 
+### Kubernetes Operator (Phase 9)
+
+| Phase   | Agents       | Description                       |
+| ------- | ------------ | --------------------------------- |
+| **9.0** | 1 (blocking) | Agent 13A - Operator Foundation   |
+| **9.1** | 2 parallel   | 13B, 13C - OpenBao + Data Layer   |
+| **9.2** | 2 parallel   | 13D, 13E - Apps + Tenant          |
+| **9.3** | 2 parallel   | 13F, 13G - Backup + Monitoring    |
+| **9.4** | 1            | 13H - Helm Chart                  |
+
+**Subtotal: 8 agents**
+
 ---
 
-**Total: 33 agents** across Core Library + Control Plane + SDKs + Dashboard
+**Total: 41 agents** across Core Library + Control Plane + SDKs + Dashboard + Operator
 
 ---
 
@@ -515,6 +527,35 @@ Phase 9.4 - Release:
 - [IMPL_12B_DASHBOARD_AUTH.md](./IMPL_12B_DASHBOARD_AUTH.md) - Auth & Onboarding
 - [IMPL_12C_DASHBOARD_KEYS.md](./IMPL_12C_DASHBOARD_KEYS.md) - Keys Management
 - [IMPL_12D_DASHBOARD_SETTINGS.md](./IMPL_12D_DASHBOARD_SETTINGS.md) - Settings & Billing
+
+---
+
+## Kubernetes Operator Documents
+
+> **PRD:** [`doc/product/PRD_OPERATOR.md`](../product/PRD_OPERATOR.md)
+
+### Agent 13A: Operator Foundation
+
+- [IMPL_13A_OPERATOR_FOUNDATION.md](./IMPL_13A_OPERATOR_FOUNDATION.md) - CRDs, controller stubs, Kubebuilder
+
+### Phase 9.1: Core Controllers
+
+- [IMPL_13B_OPERATOR_OPENBAO.md](./IMPL_13B_OPERATOR_OPENBAO.md) - OpenBao deployment & auto-unseal
+- [IMPL_13C_OPERATOR_DATALAYER.md](./IMPL_13C_OPERATOR_DATALAYER.md) - PostgreSQL & Redis
+
+### Phase 9.2: App & Tenant Controllers
+
+- [IMPL_13D_OPERATOR_APPS.md](./IMPL_13D_OPERATOR_APPS.md) - API & Dashboard deployments
+- [IMPL_13E_OPERATOR_TENANT.md](./IMPL_13E_OPERATOR_TENANT.md) - Multi-tenant provisioning
+
+### Phase 9.3: Supporting Controllers
+
+- [IMPL_13F_OPERATOR_BACKUP.md](./IMPL_13F_OPERATOR_BACKUP.md) - Backup & Restore
+- [IMPL_13G_OPERATOR_MONITORING.md](./IMPL_13G_OPERATOR_MONITORING.md) - Prometheus & Grafana
+
+### Phase 9.4: Release
+
+- [IMPL_13H_OPERATOR_HELM.md](./IMPL_13H_OPERATOR_HELM.md) - Helm chart & CI/CD
 
 ---
 

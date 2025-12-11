@@ -34,7 +34,38 @@ Rollup operators deploying their own key infrastructure face:
 
 **BanhBaoRing Operator:** One YAML, one command, full stack. Your rollup's keys are secure in 5 minutes.
 
-### 1.3 One-Command Deployment Goal
+### 1.5 OpenBao Deployment Strategy
+
+The operator leverages **OpenBao's official Helm chart** for battle-tested OpenBao deployment:
+
+| Responsibility | Owner |
+|---------------|-------|
+| OpenBao StatefulSet, Raft storage, auto-unseal | OpenBao Helm chart |
+| secp256k1 plugin registration | BanhBaoRing Operator |
+| Tenant namespace provisioning | BanhBaoRing Operator |
+| Control Plane & Dashboard integration | BanhBaoRing Operator |
+| Backup/restore coordination | BanhBaoRing Operator |
+
+This hybrid approach gives us production-grade OpenBao while maintaining full control over our customizations.
+
+### 1.6 Scalability & High Availability
+
+The system scales horizontally to handle increased load:
+
+| Component | Scaling Method | Limits | Notes |
+|-----------|---------------|--------|-------|
+| **OpenBao** | StatefulSet replicas | 3, 5, 7 (odd) | Raft consensus |
+| **Control Plane API** | HPA (CPU-based) | 2 → 100+ pods | Stateless, scales freely |
+| **Web Dashboard** | Deployment replicas | 2 → 10+ pods | Stateless |
+| **PostgreSQL** | Read replicas | 1 primary + N replicas | HA with streaming replication |
+| **Redis** | Cluster mode | 3 → 6+ shards | Automatic sharding |
+
+**Signing Throughput:**
+- Single OpenBao node: ~1,000 signs/sec
+- 3-node cluster: ~2,500 signs/sec (one leader handles writes)
+- Horizontal scaling for API allows more concurrent requests
+
+### 1.7 One-Command Deployment Goal
 ```bash
 # Install operator
 kubectl apply -f https://banhbaoring.io/install/operator.yaml
@@ -199,18 +230,6 @@ spec:
       webhookSecretRef:
         name: stripe-secrets
         key: webhook-secret
-    crypto:
-      enabled: true
-      networks:
-        - name: ethereum
-          rpcUrl: https://eth-mainnet.g.alchemy.com/v2/xxx
-        - name: base
-          rpcUrl: https://mainnet.base.org
-        - name: celestia
-          rpcUrl: https://rpc.celestia.network
-      walletSecretRef:
-        name: crypto-wallet
-        key: private-key
 
 status:
   phase: Running  # Pending, Initializing, Running, Degraded, Failed
