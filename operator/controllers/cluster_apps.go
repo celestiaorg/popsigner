@@ -47,8 +47,18 @@ func (r *ClusterReconciler) reconcileAPI(ctx context.Context, cluster *banhbaori
 }
 
 // reconcileDashboard handles Dashboard resources.
+// NOTE: The dashboard is integrated into the control-plane. This function
+// is kept for backwards compatibility but is typically not needed when
+// dashboard.replicas is 0. The control-plane serves both API and dashboard.
 func (r *ClusterReconciler) reconcileDashboard(ctx context.Context, cluster *banhbaoringv1.BanhBaoRingCluster) error {
 	log := log.FromContext(ctx)
+
+	// Skip if dashboard replicas is 0 (dashboard is integrated into control-plane)
+	if cluster.Spec.Dashboard.Replicas == 0 {
+		log.Info("Dashboard replicas is 0, skipping (dashboard is served by control-plane)")
+		return nil
+	}
+
 	log.Info("Reconciling Dashboard")
 
 	// 1. Create/update Deployment
@@ -84,7 +94,13 @@ func (r *ClusterReconciler) isAPIReady(ctx context.Context, cluster *banhbaoring
 }
 
 // isDashboardReady checks if Dashboard pods are ready.
+// Returns true if dashboard is disabled (replicas=0) or all pods are ready.
 func (r *ClusterReconciler) isDashboardReady(ctx context.Context, cluster *banhbaoringv1.BanhBaoRingCluster) bool {
+	// Dashboard is disabled (served by control-plane)
+	if cluster.Spec.Dashboard.Replicas == 0 {
+		return true
+	}
+
 	name := resources.ResourceName(cluster.Name, constants.ComponentDashboard)
 
 	deployment := &appsv1.Deployment{}
@@ -152,6 +168,22 @@ func (r *ClusterReconciler) updateAPIStatus(ctx context.Context, cluster *banhba
 
 // updateDashboardStatus updates the cluster status with Dashboard info.
 func (r *ClusterReconciler) updateDashboardStatus(ctx context.Context, cluster *banhbaoringv1.BanhBaoRingCluster) error {
+	// Dashboard is disabled/integrated into control-plane
+	if cluster.Spec.Dashboard.Replicas == 0 {
+		cluster.Status.Dashboard = banhbaoringv1.ComponentStatus{
+			Ready:   true,
+			Message: "Integrated into control-plane",
+		}
+		conditions.SetCondition(&cluster.Status.Conditions, conditions.TypeDashboardReady,
+			metav1.ConditionTrue, conditions.ReasonReady, "Dashboard is served by control-plane")
+
+		// Dashboard endpoint is same as API when integrated
+		if cluster.Spec.Domain != "" {
+			cluster.Status.Endpoints.Dashboard = fmt.Sprintf("https://api.%s", cluster.Spec.Domain)
+		}
+		return nil
+	}
+
 	name := resources.ResourceName(cluster.Name, constants.ComponentDashboard)
 
 	deployment := &appsv1.Deployment{}

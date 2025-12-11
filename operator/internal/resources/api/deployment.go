@@ -29,6 +29,12 @@ func Deployment(cluster *banhbaoringv1.BanhBaoRingCluster) *appsv1.Deployment {
 		version = constants.DefaultAPIVersion
 	}
 
+	// Use custom image if specified, otherwise use default
+	image := spec.Image
+	if image == "" {
+		image = APIImage
+	}
+
 	labels := constants.Labels(cluster.Name, constants.ComponentAPI, version)
 
 	replicas := spec.Replicas
@@ -55,7 +61,7 @@ func Deployment(cluster *banhbaoringv1.BanhBaoRingCluster) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  "api",
-							Image: fmt.Sprintf("%s:%s", APIImage, version),
+							Image: fmt.Sprintf("%s:%s", image, version),
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: APIPort, Protocol: corev1.ProtocolTCP},
 							},
@@ -92,16 +98,33 @@ func Deployment(cluster *banhbaoringv1.BanhBaoRingCluster) *appsv1.Deployment {
 }
 
 // buildEnv creates environment variables for the API container.
+// Uses BANHBAO_ prefix as expected by the control-plane's viper config.
 func buildEnv(cluster *banhbaoringv1.BanhBaoRingCluster) []corev1.EnvVar {
 	dbSecret := fmt.Sprintf("%s-postgres-credentials", cluster.Name)
-	redisSecret := fmt.Sprintf("%s-redis-connection", cluster.Name)
 	openbaoSvc := fmt.Sprintf("%s-openbao-active", cluster.Name)
+	postgresSvc := fmt.Sprintf("%s-postgres", cluster.Name)
+	redisSvc := fmt.Sprintf("%s-redis", cluster.Name)
 
 	return []corev1.EnvVar{
-		{Name: "DATABASE_URL", ValueFrom: secretRef(dbSecret, "url")},
-		{Name: "REDIS_URL", ValueFrom: secretRef(redisSecret, "url")},
-		{Name: "OPENBAO_ADDR", Value: fmt.Sprintf("https://%s:8200", openbaoSvc)},
-		{Name: "OPENBAO_TOKEN", ValueFrom: secretRef(cluster.Name+"-openbao-root", "token")},
+		// Database config (BANHBAO_ prefix for viper)
+		{Name: "BANHBAO_DATABASE_HOST", Value: postgresSvc},
+		{Name: "BANHBAO_DATABASE_PORT", Value: "5432"},
+		{Name: "BANHBAO_DATABASE_USER", ValueFrom: secretRef(dbSecret, "username")},
+		{Name: "BANHBAO_DATABASE_PASSWORD", ValueFrom: secretRef(dbSecret, "password")},
+		{Name: "BANHBAO_DATABASE_DATABASE", ValueFrom: secretRef(dbSecret, "database")},
+		{Name: "BANHBAO_DATABASE_SSL_MODE", Value: "disable"},
+		// Redis config
+		{Name: "BANHBAO_REDIS_HOST", Value: redisSvc},
+		{Name: "BANHBAO_REDIS_PORT", Value: "6379"},
+		// OpenBao config
+		{Name: "BANHBAO_OPENBAO_ADDRESS", Value: fmt.Sprintf("https://%s:8200", openbaoSvc)},
+		{Name: "BANHBAO_OPENBAO_TOKEN", ValueFrom: secretRef(cluster.Name+"-openbao-root", "token")},
+		// OAuth config (from oauth-credentials secret)
+		{Name: "BANHBAO_AUTH_OAUTH_GITHUB_ID", ValueFrom: secretRefOptional("oauth-credentials", "github-client-id")},
+		{Name: "BANHBAO_AUTH_OAUTH_GITHUB_SECRET", ValueFrom: secretRefOptional("oauth-credentials", "github-client-secret")},
+		{Name: "BANHBAO_AUTH_OAUTH_GOOGLE_ID", ValueFrom: secretRefOptional("oauth-credentials", "google-client-id")},
+		{Name: "BANHBAO_AUTH_OAUTH_GOOGLE_SECRET", ValueFrom: secretRefOptional("oauth-credentials", "google-client-secret")},
+		{Name: "BANHBAO_AUTH_OAUTH_CALLBACK_URL", Value: fmt.Sprintf("https://%s", cluster.Spec.Domain)},
 	}
 }
 
@@ -111,6 +134,18 @@ func secretRef(name, key string) *corev1.EnvVarSource {
 		SecretKeyRef: &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{Name: name},
 			Key:                  key,
+		},
+	}
+}
+
+// secretRefOptional creates an optional secret key reference for environment variables.
+func secretRefOptional(name, key string) *corev1.EnvVarSource {
+	optional := true
+	return &corev1.EnvVarSource{
+		SecretKeyRef: &corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{Name: name},
+			Key:                  key,
+			Optional:             &optional,
 		},
 	}
 }

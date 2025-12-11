@@ -29,6 +29,12 @@ func Deployment(cluster *banhbaoringv1.BanhBaoRingCluster) *appsv1.Deployment {
 		version = constants.DefaultDashboardVersion
 	}
 
+	// Use custom image if specified, otherwise use default
+	image := spec.Image
+	if image == "" {
+		image = DashboardImage
+	}
+
 	labels := constants.Labels(cluster.Name, constants.ComponentDashboard, version)
 
 	replicas := spec.Replicas
@@ -57,7 +63,7 @@ func Deployment(cluster *banhbaoringv1.BanhBaoRingCluster) *appsv1.Deployment {
 					Containers: []corev1.Container{
 						{
 							Name:  "dashboard",
-							Image: fmt.Sprintf("%s:%s", DashboardImage, version),
+							Image: fmt.Sprintf("%s:%s", image, version),
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: DashboardPort, Protocol: corev1.ProtocolTCP},
 							},
