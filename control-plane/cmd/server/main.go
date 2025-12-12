@@ -20,6 +20,7 @@ import (
 	"github.com/Bidon15/banhbaoring/control-plane/internal/database"
 	"github.com/Bidon15/banhbaoring/control-plane/internal/middleware"
 	"github.com/Bidon15/banhbaoring/control-plane/internal/models"
+	"github.com/Bidon15/banhbaoring/control-plane/internal/openbao"
 	"github.com/Bidon15/banhbaoring/control-plane/internal/pkg/response"
 	"github.com/Bidon15/banhbaoring/control-plane/internal/repository"
 	"github.com/Bidon15/banhbaoring/control-plane/internal/service"
@@ -77,9 +78,16 @@ func main() {
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db.Pool())
 	sessionRepo := repository.NewSessionRepository(db.Pool())
+	orgRepo := repository.NewOrgRepository(db.Pool())
+	keyRepo := repository.NewKeyRepository(db.Pool())
 
-	// Initialize OAuth service
+	// Initialize OpenBao client
+	baoClient := openbao.NewClient(&cfg.OpenBao)
+	logger.Info("OpenBao client initialized", slog.String("address", cfg.OpenBao.Address))
+
+	// Initialize services
 	oauthSvc := service.NewOAuthService(&cfg.Auth, userRepo, sessionRepo)
+	keySvc := service.NewKeyService(keyRepo, orgRepo, nil, nil, baoClient)
 
 	logger.Info("OAuth providers configured",
 		slog.Any("providers", oauthSvc.GetSupportedProviders()),
@@ -114,8 +122,8 @@ func main() {
 	r.Get("/dashboard", dashboardHandler(sessionRepo, userRepo))
 
 	// Protected dashboard pages
-	r.Get("/keys", keysListHandler(sessionRepo, userRepo))
-	r.Post("/keys", keysCreateHandler(sessionRepo, userRepo))
+	r.Get("/keys", keysListHandler(sessionRepo, userRepo, orgRepo, keyRepo))
+	r.Post("/keys", keysCreateHandler(sessionRepo, userRepo, orgRepo, keySvc))
 	r.Get("/keys/new", keysNewHandler(sessionRepo, userRepo))
 	r.Get("/settings/api-keys", settingsAPIKeysHandler(sessionRepo, userRepo))
 	r.Get("/settings/profile", settingsProfileHandler(sessionRepo, userRepo))
@@ -467,22 +475,38 @@ func buildDashboardData(user *models.User, activePath string) layouts.DashboardD
 }
 
 // keysListHandler serves the keys list page.
-func keysListHandler(sessionRepo repository.SessionRepository, userRepo repository.UserRepository) http.HandlerFunc {
+func keysListHandler(sessionRepo repository.SessionRepository, userRepo repository.UserRepository, orgRepo repository.OrgRepository, keyRepo repository.KeyRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := getAuthenticatedUser(w, r, sessionRepo, userRepo)
 		if user == nil {
 			return
 		}
 
+		// Ensure user has an org
+		org, _ := ensureUserHasOrg(r.Context(), user, orgRepo)
+
 		dashData := buildDashboardData(user, "/keys")
+		if org != nil {
+			dashData.OrgName = org.Name
+			dashData.OrgPlan = string(org.Plan)
+		}
+
+		// Fetch keys and namespaces
+		var keys []*models.Key
+		var namespaces []*models.Namespace
+		if org != nil {
+			keys, _ = keyRepo.ListByOrg(r.Context(), org.ID)
+			namespaces, _ = orgRepo.ListNamespaces(r.Context(), org.ID)
+		}
+
 		data := pages.KeysPageData{
 			UserName:   dashData.UserName,
 			UserEmail:  dashData.UserEmail,
 			AvatarURL:  dashData.AvatarURL,
 			OrgName:    dashData.OrgName,
 			OrgPlan:    dashData.OrgPlan,
-			Keys:       []*models.Key{},       // TODO: Fetch from repository
-			Namespaces: []*models.Namespace{}, // TODO: Fetch from repository
+			Keys:       keys,
+			Namespaces: namespaces,
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -512,7 +536,7 @@ func keysNewHandler(sessionRepo repository.SessionRepository, userRepo repositor
 }
 
 // keysCreateHandler handles the POST request to create a new key.
-func keysCreateHandler(sessionRepo repository.SessionRepository, userRepo repository.UserRepository) http.HandlerFunc {
+func keysCreateHandler(sessionRepo repository.SessionRepository, userRepo repository.UserRepository, orgRepo repository.OrgRepository, keySvc service.KeyService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := getAuthenticatedUser(w, r, sessionRepo, userRepo)
 		if user == nil {
@@ -527,7 +551,7 @@ func keysCreateHandler(sessionRepo repository.SessionRepository, userRepo reposi
 		}
 
 		name := r.FormValue("name")
-		algorithm := r.FormValue("algorithm")
+		exportable := r.FormValue("exportable") == "true"
 
 		if name == "" {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -535,25 +559,56 @@ func keysCreateHandler(sessionRepo repository.SessionRepository, userRepo reposi
 			return
 		}
 
-		// TODO: Actually create the key in OpenBao and database
-		// For now, just log and return success message
-		slog.Info("Key creation requested",
+		// Ensure user has an org and get default namespace
+		org, err := ensureUserHasOrg(r.Context(), user, orgRepo)
+		if err != nil || org == nil {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write([]byte(`<div class="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400">Failed to get organization</div>`))
+			return
+		}
+
+		// Get default namespace
+		namespaces, _ := orgRepo.ListNamespaces(r.Context(), org.ID)
+		if len(namespaces) == 0 {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write([]byte(`<div class="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400">No namespace found</div>`))
+			return
+		}
+		defaultNS := namespaces[0]
+
+		// Create key via KeyService
+		key, err := keySvc.Create(r.Context(), service.CreateKeyRequest{
+			OrgID:       org.ID,
+			NamespaceID: defaultNS.ID,
+			Name:        name,
+			Exportable:  exportable,
+		})
+		if err != nil {
+			slog.Error("Failed to create key", slog.String("error", err.Error()))
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write([]byte(fmt.Sprintf(`<div class="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400">Failed to create key: %s</div>`, err.Error())))
+			return
+		}
+
+		slog.Info("Key created successfully",
 			slog.String("user_id", user.ID.String()),
+			slog.String("key_id", key.ID.String()),
 			slog.String("name", name),
-			slog.String("algorithm", algorithm),
+			slog.String("address", key.Address),
 		)
 
-		// Return success response for HTMX
+		// Return success response - reload the keys list
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("HX-Trigger", "modal-close")
+		w.Header().Set("HX-Refresh", "true")
 		w.Write([]byte(fmt.Sprintf(`
 			<div class="p-6 text-center">
 				<div class="text-4xl mb-4">✅</div>
 				<h3 class="text-xl font-heading font-bold text-bao-text mb-2">Key Created!</h3>
-				<p class="text-bao-muted mb-4">Your key "%s" has been created successfully.</p>
-				<p class="text-sm text-amber-400">Note: Full OpenBao integration coming soon.</p>
+				<p class="text-bao-muted mb-2">Your key "%s" has been created.</p>
+				<p class="font-mono text-sm text-bao-accent break-all">%s</p>
 			</div>
-		`, name)))
+		`, name, key.Address)))
 	}
 }
 
@@ -617,4 +672,39 @@ func docsHandler() http.HandlerFunc {
 		// For now, redirect to GitHub docs or show a simple page
 		http.Redirect(w, r, "https://github.com/Bidon15/banhbaoring#readme", http.StatusFound)
 	}
+}
+
+// ensureUserHasOrg ensures the user has at least one organization.
+// If the user has no orgs, it creates a default "Personal" org.
+func ensureUserHasOrg(ctx context.Context, user *models.User, orgRepo repository.OrgRepository) (*models.Organization, error) {
+	// Check if user already has orgs
+	orgs, err := orgRepo.ListUserOrgs(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+	if len(orgs) > 0 {
+		return orgs[0], nil
+	}
+
+	// Create default org
+	name := "Personal"
+	if user.Name != nil && *user.Name != "" {
+		name = *user.Name + "'s Workspace"
+	}
+
+	org := &models.Organization{
+		Name: name,
+	}
+
+	if err := orgRepo.Create(ctx, org, user.ID); err != nil {
+		return nil, fmt.Errorf("failed to create default org: %w", err)
+	}
+
+	slog.Info("Created default organization for user",
+		slog.String("user_id", user.ID.String()),
+		slog.String("org_id", org.ID.String()),
+		slog.String("org_name", org.Name),
+	)
+
+	return org, nil
 }
