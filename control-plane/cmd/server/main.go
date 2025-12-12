@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
 
 	"github.com/Bidon15/banhbaoring/control-plane/internal/config"
 	"github.com/Bidon15/banhbaoring/control-plane/internal/database"
@@ -125,6 +126,8 @@ func main() {
 	r.Get("/keys", keysListHandler(sessionRepo, userRepo, orgRepo, keyRepo))
 	r.Post("/keys", keysCreateHandler(sessionRepo, userRepo, orgRepo, keySvc))
 	r.Get("/keys/new", keysNewHandler(sessionRepo, userRepo))
+	r.Get("/keys/{id}", keyViewHandler(sessionRepo, userRepo, keyRepo))
+	r.Post("/keys/{id}/sign-test", keySignHandler(sessionRepo, userRepo, keyRepo, keySvc))
 	r.Get("/settings/api-keys", settingsAPIKeysHandler(sessionRepo, userRepo))
 	r.Get("/settings/profile", settingsProfileHandler(sessionRepo, userRepo))
 	r.Get("/docs", docsHandler())
@@ -609,6 +612,128 @@ func keysCreateHandler(sessionRepo repository.SessionRepository, userRepo reposi
 				<p class="font-mono text-sm text-bao-accent break-all">%s</p>
 			</div>
 		`, name, key.Address)))
+	}
+}
+
+// keyViewHandler displays the details of a specific key.
+func keyViewHandler(sessionRepo repository.SessionRepository, userRepo repository.UserRepository, keyRepo repository.KeyRepository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := getAuthenticatedUser(w, r, sessionRepo, userRepo)
+		if user == nil {
+			return
+		}
+
+		keyID := chi.URLParam(r, "id")
+		if keyID == "" {
+			http.Error(w, "Key ID required", http.StatusBadRequest)
+			return
+		}
+
+		keyUUID, err := uuid.Parse(keyID)
+		if err != nil {
+			http.Error(w, "Invalid key ID", http.StatusBadRequest)
+			return
+		}
+
+		key, err := keyRepo.GetByID(r.Context(), keyUUID)
+		if err != nil || key == nil {
+			http.Error(w, "Key not found", http.StatusNotFound)
+			return
+		}
+
+		dashData := buildDashboardData(user, "/keys")
+
+		data := pages.KeyDetailData{
+			UserName:  dashData.UserName,
+			UserEmail: dashData.UserEmail,
+			AvatarURL: dashData.AvatarURL,
+			OrgName:   dashData.OrgName,
+			OrgPlan:   dashData.OrgPlan,
+			Key:       key,
+			Namespace: "default", // TODO: fetch actual namespace name
+			SigningStats: &pages.SigningStats{
+				Labels:    []string{},
+				Values:    []int{},
+				Total:     0,
+				AvgPerDay: 0,
+			},
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		pages.KeyDetailPage(data).Render(r.Context(), w)
+	}
+}
+
+// keySignHandler handles signing a test message with a key.
+func keySignHandler(sessionRepo repository.SessionRepository, userRepo repository.UserRepository, keyRepo repository.KeyRepository, keySvc service.KeyService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := getAuthenticatedUser(w, r, sessionRepo, userRepo)
+		if user == nil {
+			return
+		}
+
+		keyID := chi.URLParam(r, "id")
+		if keyID == "" {
+			http.Error(w, "Key ID required", http.StatusBadRequest)
+			return
+		}
+
+		keyUUID, err := uuid.Parse(keyID)
+		if err != nil {
+			http.Error(w, "Invalid key ID", http.StatusBadRequest)
+			return
+		}
+
+		key, err := keyRepo.GetByID(r.Context(), keyUUID)
+		if err != nil || key == nil {
+			http.Error(w, "Key not found", http.StatusNotFound)
+			return
+		}
+
+		// Parse form data
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Failed to parse form", http.StatusBadRequest)
+			return
+		}
+
+		message := r.FormValue("data")
+		if message == "" {
+			message = "Hello, BanhBaoRing!"
+		}
+
+		// Sign the message using KeyService (orgID, keyID, data, prehashed)
+		signResp, err := keySvc.Sign(r.Context(), key.OrgID, key.ID, []byte(message), false)
+		if err != nil {
+			slog.Error("Failed to sign message", slog.String("error", err.Error()))
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write([]byte(fmt.Sprintf(`<div class="p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400">Sign failed: %s</div>`, err.Error())))
+			return
+		}
+
+		// Return the signature result
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write([]byte(fmt.Sprintf(`
+			<div class="mt-4 p-4 space-y-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+				<div class="flex items-center gap-2 text-emerald-400">
+					<span class="text-xl">✅</span>
+					<span class="font-medium">Signature Generated</span>
+				</div>
+				<div class="space-y-3">
+					<div>
+						<p class="text-xs text-bao-muted mb-1">Message</p>
+						<p class="font-mono text-sm text-bao-text bg-bao-bg p-3 rounded-lg break-all">%s</p>
+					</div>
+					<div>
+						<p class="text-xs text-bao-muted mb-1">Signature (base64)</p>
+						<p class="font-mono text-xs text-bao-accent bg-bao-bg p-3 rounded-lg break-all">%s</p>
+					</div>
+					<div>
+						<p class="text-xs text-bao-muted mb-1">Public Key (hex)</p>
+						<p class="font-mono text-xs text-bao-text bg-bao-bg p-3 rounded-lg break-all">%s</p>
+					</div>
+				</div>
+			</div>
+		`, message, signResp.Signature, signResp.PublicKey)))
 	}
 }
 
