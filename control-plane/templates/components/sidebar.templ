@@ -109,10 +109,6 @@ templ Sidebar(data SidebarData) {
 // SidebarLink renders a navigation link in the sidebar.
 templ SidebarLink(href, icon, label, activePath string) {
 	<a href={ templ.SafeURL(href) }
-	   hx-get={ href }
-	   hx-target="#main-content"
-	   hx-push-url="true"
-	   hx-swap="innerHTML show:window:top"
 	   class={ sidebarLinkClasses(href, activePath) }>
 		<span class="text-base">{ icon }</span>
 		<span class="text-sm">{ label }</span>

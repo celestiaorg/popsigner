@@ -19,7 +19,7 @@ serves as the bridge between customer applications and the underlying OpenBao in
 | User Type             | Description                                                    |
 | --------------------- | -------------------------------------------------------------- |
 | **Rollup Developers** | Building sovereign rollups on Celestia, need secure key signing for sequencers, provers, and bridge operators |
-| **Rollup Operators**  | Running production rollups, need HSM-level security without the complexity for their DA layer keys |
+| **Rollup Operators**  | Running production rollups, need lowest latency signing without tedious setup for their DA layer keys |
 
 ### 1.4 The Pain We Solve
 
@@ -647,5 +647,5 @@ results, err := client.Keys.SignBatch(ctx, banhbaoring.SignBatchRequest{
 | ----------------------------- | -------------------------------------- | -------- |
 | **Multi-Chain Keys**          | Support for Ethereum, Solana keys      | Medium   |
 | **Key Ceremony**              | Multi-party key generation             | Medium   |
-| **Hardware Security Modules** | HSM-backed key storage                 | High     |
+| **Hardware Security Modules** | Optional HSM-backed key storage        | Medium   |
 | **Geo-Redundancy**            | Multi-region deployment                | Medium   |

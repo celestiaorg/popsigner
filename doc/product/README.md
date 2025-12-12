@@ -6,7 +6,7 @@
 
 ## Product Overview
 
-BanhBaoRing is a complete key management SaaS platform for Celestia and Cosmos ecosystems, providing HSM-level security without the complexity.
+BanhBaoRing is the fastest remote signing platform for Celestia and Cosmos rollups. POP-based, sub-100ms latency, built on OpenBao. Deploy in minutes.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -114,10 +114,10 @@ User-facing web application for key management.
 - Billing (Stripe)
 
 **USPs:**
-- 🔓 No vendor lock-in - 100% open source (OpenBao)
-- 🧩 Plugin architecture - secp256k1 today, your algorithm tomorrow
-- ⚡ High performance - 100+ signs/sec with parallel workers
-- 🚀 5-minute setup - No local keyring configuration hell
+- ⚡ **Lowest latency** - POP-based signing. Sub-100ms. The fastest remote signer.
+- 🚀 **Deploy in minutes** - Sign up → Create key → First signature in under 5 minutes.
+- 🔓 **No vendor lock-in** - 100% open source. Built on OpenBao. Self-host or use our cloud.
+- 🧩 **Plugin architecture** - secp256k1 today, your algorithm tomorrow.
 
 **Timeline:** ~7 weeks
 
@@ -171,8 +171,8 @@ spec:
 
 | User Segment          | The Pain                                              | BanhBaoRing Solution                    |
 |-----------------------|-------------------------------------------------------|----------------------------------------|
-| **Rollup Developers** | Sequencer keys in config files, no rotation, no audit | HSM-level security, zero-downtime rotation |
-| **Rollup Operators**  | Bridge keys on single server, compliance nightmares   | Full audit trail, disaster recovery    |
+| **Rollup Developers** | Slow remote signers, vendor lock-in, no secp256k1     | POP-based, sub-100ms, plugin architecture |
+| **Rollup Operators**  | Tedious local setup, low performance, config hell     | Deploy in minutes, 100+ signs/sec       |
 
 ### The Pain We Solve
 

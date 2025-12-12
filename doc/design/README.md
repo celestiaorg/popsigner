@@ -24,7 +24,7 @@ This directory contains all design-related documentation for the BanhBaoRing pla
 **BanhBaoRing** - Named after the distinctive "ring ring!" of Vietnamese bánh bao street vendors. That familiar sound means something trusted and good is coming.
 
 ### Tagline
-> **"Ring ring! Secure keys, delivered."**
+> **"Ring ring! The fastest remote signer."**
 
 ### Value Proposition (3-Second Pitch)
 
@@ -34,7 +34,7 @@ This directory contains all design-related documentation for the BanhBaoRing pla
 - 🐢 **Low performance** - Can't handle 100+ signs/sec
 - 😫 **Tedious local setup** - Config files, passphrases, backup stress
 
-**BanhBaoRing:** Open source. Plugin architecture. 100+ signs/sec. 5-minute setup. No lock-in.
+**BanhBaoRing:** POP-based. Sub-100ms latency. Deploy in minutes. Built on OpenBao. Open source.
 
 ---
 

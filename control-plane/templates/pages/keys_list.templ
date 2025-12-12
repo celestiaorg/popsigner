@@ -166,9 +166,6 @@ templ KeyCard(key *models.Key, namespaceName string) {
 					</svg>
 				</button>
 				<a href={ templ.SafeURL("/keys/" + key.ID.String()) }
-				   hx-get={ "/keys/" + key.ID.String() }
-				   hx-target="#main-content"
-				   hx-push-url="true"
 				   class="px-3.5 py-2 text-sm text-bao-accent hover:text-bao-text hover:bg-bao-accent/10 rounded-lg transition-colors">
 					View
 				</a>

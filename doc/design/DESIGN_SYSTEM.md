@@ -31,11 +31,11 @@ BanhBaoRing brings that same trusted, convenient experience to key management: *
 
 | Context | Tagline |
 |---------|---------|
-| **Hero** | Ring ring! Secure keys, delivered. |
-| **Sub-hero** | Open source. Customizable. Fast. No more local keyring pain. |
-| **Technical** | Plugin-based key management for Celestia & Cosmos. 100+ signs/sec. |
-| **One-liner** | The open-source key management platform for sovereign rollups. |
-| **Anti-lock-in** | No vendor lock-in. Self-host or use our cloud. Your keys, your rules. |
+| **Hero** | Ring ring! The fastest remote signer. |
+| **Sub-hero** | POP-based. Sub-100ms latency. Deploy in minutes. Built on OpenBao. |
+| **Technical** | Lowest latency signing for Celestia & Cosmos. 100+ signs/sec. Open source. |
+| **One-liner** | The fastest open-source key management for sovereign rollups. |
+| **Speed-first** | POP-based signing. Your keys, closest to your infra. Milliseconds, not seconds. |
 
 ---
 
@@ -80,11 +80,11 @@ BanhBaoRing brings that same trusted, convenient experience to key management: *
 
 | USP | Description | Icon |
 |-----|-------------|------|
-| **No Vendor Lock-in** | 100% open source (OpenBao). Self-host or use our cloud. | 🔓 |
+| **Lowest Latency** | POP-based signing. Sub-100ms signatures. The fastest remote signer. | ⚡ |
+| **Deploy in Minutes** | Sign up → Create key → First signature in under 5 minutes. | 🚀 |
+| **No Vendor Lock-in** | 100% open source. Built on OpenBao. Self-host or use our cloud. | 🔓 |
 | **Plugin Architecture** | secp256k1 today, your custom algorithm tomorrow. | 🧩 |
-| **High Performance** | 100+ signs/sec. Parallel workers for Celestia DA. | ⚡ |
-| **5-Minute Setup** | Sign up → Create key → First signature. No local config. | 🚀 |
-| **HSM-Level Security** | Keys never leave the vault. Full audit trail. | 🔐 |
+| **Vault-Grade Security** | Keys never leave OpenBao. Full audit trail. | 🔐 |
 | **Drop-in SDK** | One line of Go/Rust. Works with Cosmos SDK keyring interface. | 🔗 |
 
 ---
@@ -239,16 +239,16 @@ BanhBaoRing brings that same trusted, convenient experience to key management: *
 │                                                                             │
 │                      🔔 Ring ring!                                          │
 │                                                                             │
-│               Secure keys, delivered.                                       │
+│               The fastest remote signer.                                    │
 │                                                                             │
-│      The key management platform for sovereign rollups.                     │
-│      HSM-level security. 5 minutes to first signature.                      │
+│      POP-based key management for sovereign rollups.                        │
+│      Sub-100ms latency. Deploy in minutes. Built on OpenBao.                │
 │                                                                             │
 │          ┌─────────────────────────────────────────────┐                    │
 │          │  ▶  Get Started Free                        │                    │
 │          └─────────────────────────────────────────────┘                    │
 │                                                                             │
-│           "Trusted by 50+ rollups on Celestia"                              │
+│           "The fastest signer for Celestia rollups"                         │
 │                                                                             │
 │         [Rollup Logo 1]  [Rollup Logo 2]  [Rollup Logo 3]                  │
 │                                                                             │
@@ -301,24 +301,24 @@ BanhBaoRing brings that same trusted, convenient experience to key management: *
 │   │                                                                     │   │
 │   │     sig, _ := client.Keys.Sign(ctx, "sequencer", txBytes)           │   │
 │   │                                                                     │   │
-│   │     // That's it. Keys never touched. Signature returned.           │   │
+│   │     // Sub-100ms. Keys never touched. Signature returned.           │   │
 │   │                                                                     │   │
 │   └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 │   ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐              │
-│   │  🔓 Open Source │ │  🧩 Plugins     │ │  ⚡ Fast        │              │
+│   │  ⚡ POP-Based   │ │  🚀 Deploy Fast │ │  🔓 Open Source │              │
 │   │                 │ │                 │ │                 │              │
-│   │  100% OpenBao   │ │  secp256k1 now  │ │  100+ signs/sec │              │
-│   │  Self-host or   │ │  Your algo next │ │  Parallel batch │              │
-│   │  use our cloud  │ │                 │ │                 │              │
+│   │  Lowest latency │ │  5 min to first │ │  Built on       │              │
+│   │  Sub-100ms      │ │  signature      │ │  OpenBao        │              │
+│   │  signing        │ │                 │ │                 │              │
 │   └─────────────────┘ └─────────────────┘ └─────────────────┘              │
 │                                                                             │
 │                        ┌─────────────────┐                                  │
-│                        │  🚀 Easy Setup  │                                  │
+│                        │  🧩 Plugins     │                                  │
 │                        │                 │                                  │
-│                        │  5 minutes to   │                                  │
-│                        │  first signature│                                  │
-│                        │  No local config│                                  │
+│                        │  secp256k1 now  │                                  │
+│                        │  Your algo next │                                  │
+│                        │                 │                                  │
 │                        └─────────────────┘                                  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -356,24 +356,24 @@ BanhBaoRing brings that same trusted, convenient experience to key management: *
 │                         Everything you need                                 │
 │                                                                             │
 │   ┌─────────────────────────┐    ┌─────────────────────────┐               │
-│   │ 🔓 No Vendor Lock-in    │    │ 🧩 Plugin Architecture  │               │
+│   │ ⚡ POP-Based Signing    │    │ 🚀 Deploy in Minutes    │               │
 │   │                         │    │                         │               │
-│   │ 100% open source.       │    │ secp256k1 built-in.     │               │
+│   │ Lowest latency.         │    │ 5 min to first sig.     │               │
+│   │ Sub-100ms. 100+ TPS.    │    │ No local config pain.   │               │
+│   └─────────────────────────┘    └─────────────────────────┘               │
+│                                                                             │
+│   ┌─────────────────────────┐    ┌─────────────────────────┐               │
+│   │ 🔓 100% Open Source     │    │ 🧩 Plugin Architecture  │               │
+│   │                         │    │                         │               │
+│   │ Built on OpenBao.       │    │ secp256k1 built-in.     │               │
 │   │ Self-host or use cloud. │    │ Add your own algorithms.│               │
 │   └─────────────────────────┘    └─────────────────────────┘               │
 │                                                                             │
 │   ┌─────────────────────────┐    ┌─────────────────────────┐               │
-│   │ ⚡ High Performance     │    │ 🚀 5-Minute Setup       │               │
-│   │                         │    │                         │               │
-│   │ 100+ signs/sec.         │    │ No local config files.  │               │
-│   │ Parallel batch signing. │    │ Sign up → First sig.    │               │
-│   └─────────────────────────┘    └─────────────────────────┘               │
-│                                                                             │
-│   ┌─────────────────────────┐    ┌─────────────────────────┐               │
-│   │ 🔐 HSM-Level Security   │    │ 📊 Full Audit Trail     │               │
+│   │ 🔐 Vault-Grade Security │    │ 📊 Full Audit Trail     │               │
 │   │                         │    │                         │               │
 │   │ Keys never leave vault. │    │ Every signature logged. │               │
-│   │ OpenBao Transit engine. │    │ Compliance ready.       │               │
+│   │ Powered by OpenBao.     │    │ Compliance ready.       │               │
 │   └─────────────────────────┘    └─────────────────────────┘               │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -530,9 +530,9 @@ BanhBaoRing brings that same trusted, convenient experience to key management: *
   hover:shadow-lg hover:shadow-purple-500/10
   transition-all duration-300
 ">
-  <div class="text-3xl mb-4">🔐</div>
-  <h3 class="text-xl font-semibold text-white mb-2">HSM-Level Security</h3>
-  <p class="text-gray-400">Keys never leave the vault. Zero key exposure.</p>
+  <div class="text-3xl mb-4">⚡</div>
+  <h3 class="text-xl font-semibold text-white mb-2">Lowest Latency Signing</h3>
+  <p class="text-gray-400">POP-based. Sub-100ms. The fastest remote signer.</p>
 </div>
 
 <!-- Key card (dashboard) -->

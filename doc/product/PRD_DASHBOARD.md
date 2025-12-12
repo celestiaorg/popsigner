@@ -23,11 +23,11 @@
 
 | USP                           | For Rollup Teams                                                 |
 | ----------------------------- | ---------------------------------------------------------------- |
-| 🔓 **No Vendor Lock-in**      | 100% open source (OpenBao). Self-host or use our cloud.          |
+| ⚡ **Lowest Latency**         | POP-based signing. Sub-100ms. The fastest remote signer.         |
+| 🚀 **Deploy in Minutes**      | Sign up → Create key → First signature in under 5 minutes.       |
+| 🔓 **No Vendor Lock-in**      | 100% open source. Built on OpenBao. Self-host or use our cloud.  |
 | 🧩 **Plugin Architecture**    | secp256k1 built-in. Add your own algorithms via plugins.         |
-| ⚡ **High Performance**       | 100+ signs/sec. Parallel batch signing for Celestia DA workers.  |
-| 🚀 **5-Minute Setup**         | Sign up → Create key → First signature. No local config files.   |
-| 🔐 **HSM-Level Security**     | Keys never leave the vault. Full audit trail.                    |
+| 🔐 **Vault-Grade Security**   | Keys never leave OpenBao. Full audit trail.                      |
 | 🔗 **Drop-in SDK**            | One line of Go/Rust. Cosmos SDK keyring interface compatible.    |
 
 ---
