@@ -489,7 +489,7 @@ func keysListHandler(sessionRepo repository.SessionRepository, userRepo reposito
 	}
 }
 
-// keysNewHandler returns the create key modal content.
+// keysNewHandler returns the create key modal content for HTMX, or redirects for direct access.
 func keysNewHandler(sessionRepo repository.SessionRepository, userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := getAuthenticatedUser(w, r, sessionRepo, userRepo)
@@ -497,9 +497,16 @@ func keysNewHandler(sessionRepo repository.SessionRepository, userRepo repositor
 			return
 		}
 
-		// Return the modal content for HTMX
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		pages.CreateKeyModal().Render(r.Context(), w)
+		// Check if this is an HTMX request
+		if r.Header.Get("HX-Request") == "true" {
+			// Return the modal content for HTMX
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			pages.CreateKeyModal().Render(r.Context(), w)
+			return
+		}
+
+		// For direct navigation, redirect to /keys (the modal should be opened via button)
+		http.Redirect(w, r, "/keys", http.StatusFound)
 	}
 }
 
