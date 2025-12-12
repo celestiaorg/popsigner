@@ -159,7 +159,7 @@ func setDefaults(v *viper.Viper) {
 	// OpenBao defaults
 	v.SetDefault("openbao.address", "http://localhost:8200")
 	v.SetDefault("openbao.namespace", "")
-	v.SetDefault("openbao.secp256k1_path", "transit") // Use standard transit engine
+	v.SetDefault("openbao.secp256k1_path", "secp256k1") // Use secp256k1 plugin
 
 	// Auth defaults (OAuth-only, no email/password)
 	v.SetDefault("auth.jwt_expiry", "24h")

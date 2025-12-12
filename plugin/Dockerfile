@@ -13,8 +13,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the plugin binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+# Build the plugin binary (arm64 for Scaleway K8s)
+ARG TARGETARCH=arm64
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
     -ldflags="-w -s" \
     -o /banhbaoring-secp256k1 \
     ./cmd/plugin

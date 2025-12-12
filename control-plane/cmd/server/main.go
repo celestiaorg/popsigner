@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"log/slog"
@@ -643,8 +644,8 @@ func keyViewHandler(sessionRepo repository.SessionRepository, userRepo repositor
 
 		dashData := buildDashboardData(user, "/keys")
 
-		// Generate Celestia address from key ID (placeholder until secp256k1 is available)
-		celestiaAddr := deriveCelestiaAddress(key.ID.String())
+		// Generate Celestia address from the key's hex address
+		celestiaAddr := deriveCelestiaAddress(key.Address)
 
 		data := pages.KeyDetailData{
 			UserName:        dashData.UserName,
@@ -803,33 +804,88 @@ func docsHandler() http.HandlerFunc {
 	}
 }
 
-// deriveCelestiaAddress generates a Celestia bech32 address from a key identifier.
-// This is a placeholder until proper secp256k1 key derivation is implemented.
-func deriveCelestiaAddress(keyID string) string {
-	// For now, create a deterministic "celestia1..." address from the key ID
-	// In production, this would derive from the actual secp256k1 public key
-	// using RIPEMD160(SHA256(pubkey)) and bech32 encoding
-	
-	// Generate a simple hash-like address suffix
-	addrSuffix := ""
-	for i, c := range keyID {
-		if i >= 38 {
-			break
-		}
-		if c >= 'a' && c <= 'z' {
-			addrSuffix += string(c)
-		} else if c >= '0' && c <= '9' {
-			// Convert digits to letters for bech32 compatibility
-			addrSuffix += string('a' + (c - '0'))
-		}
+// deriveCelestiaAddress converts a hex address (from OpenBao) to Celestia bech32 format.
+// The hex address is RIPEMD160(SHA256(compressed_pubkey)) - 20 bytes.
+func deriveCelestiaAddress(hexAddr string) string {
+	// Decode hex address to bytes
+	addrBytes, err := hex.DecodeString(hexAddr)
+	if err != nil || len(addrBytes) != 20 {
+		// Fallback for invalid addresses
+		return "celestia1" + hexAddr[:38]
 	}
 	
-	// Pad to 38 chars if needed
-	for len(addrSuffix) < 38 {
-		addrSuffix += "q"
+	// Convert to bech32 with "celestia" prefix
+	celestiaAddr, err := bech32Encode("celestia", addrBytes)
+	if err != nil {
+		return "celestia1" + hexAddr[:38]
 	}
 	
-	return "celestia1" + addrSuffix[:38]
+	return celestiaAddr
+}
+
+// bech32Encode encodes data to bech32 format with the given human-readable prefix.
+func bech32Encode(hrp string, data []byte) (string, error) {
+	// Convert 8-bit data to 5-bit groups
+	converted := make([]byte, 0, len(data)*8/5+1)
+	acc := 0
+	bits := 0
+	for _, b := range data {
+		acc = (acc << 8) | int(b)
+		bits += 8
+		for bits >= 5 {
+			bits -= 5
+			converted = append(converted, byte((acc>>bits)&0x1f))
+		}
+	}
+	if bits > 0 {
+		converted = append(converted, byte((acc<<(5-bits))&0x1f))
+	}
+	
+	// Create checksum
+	values := append(expandHRP(hrp), converted...)
+	values = append(values, 0, 0, 0, 0, 0, 0)
+	polymod := bech32Polymod(values) ^ 1
+	checksum := make([]byte, 6)
+	for i := 0; i < 6; i++ {
+		checksum[i] = byte((polymod >> (5 * (5 - i))) & 0x1f)
+	}
+	
+	// Encode to charset
+	charset := "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
+	result := hrp + "1"
+	for _, b := range converted {
+		result += string(charset[b])
+	}
+	for _, b := range checksum {
+		result += string(charset[b])
+	}
+	
+	return result, nil
+}
+
+func expandHRP(hrp string) []byte {
+	result := make([]byte, len(hrp)*2+1)
+	for i, c := range hrp {
+		result[i] = byte(c >> 5)
+		result[i+len(hrp)+1] = byte(c & 0x1f)
+	}
+	result[len(hrp)] = 0
+	return result
+}
+
+func bech32Polymod(values []byte) int {
+	gen := []int{0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3}
+	chk := 1
+	for _, v := range values {
+		b := chk >> 25
+		chk = ((chk & 0x1ffffff) << 5) ^ int(v)
+		for i := 0; i < 5; i++ {
+			if (b>>i)&1 == 1 {
+				chk ^= gen[i]
+			}
+		}
+	}
+	return chk
 }
 
 // ensureUserHasOrg ensures the user has at least one organization.
