@@ -94,7 +94,8 @@ func Load() (*Config, error) {
 	v.AddConfigPath("/etc/popsigner")
 
 	// Enable environment variable override
-	// TODO: Change to POPSIGNER when operator is updated
+	// Internal: Uses BANHBAO_ prefix for operator compatibility
+	// The operator uses banhbaoring.io CRDs - full migration to popsigner.com CRDs is v1.1
 	v.SetEnvPrefix("BANHBAO")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
