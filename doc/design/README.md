@@ -24,17 +24,17 @@ This directory contains all design-related documentation for the BanhBaoRing pla
 **BanhBaoRing** - Named after the distinctive "ring ring!" of Vietnamese bánh bao street vendors. That familiar sound means something trusted and good is coming.
 
 ### Tagline
-> **"Ring ring! The fastest remote signer."**
+> **"Ring ring! Sign where your infra lives."**
 
 ### Value Proposition (3-Second Pitch)
 
 **The Pain:**
 - 🔒 **Vendor lock-in** - Stuck with AWS KMS or expensive enterprise vaults
 - 🧩 **No customizability** - Need secp256k1? "Not supported."
-- 🐢 **Low performance** - Can't handle 100+ signs/sec
+- 🌍 **Remote signers are... remote** - Your vault is across the world from your nodes
 - 😫 **Tedious local setup** - Config files, passphrases, backup stress
 
-**BanhBaoRing:** POP-based. Sub-100ms latency. Deploy in minutes. Built on OpenBao. Open source.
+**BanhBaoRing:** Point of Presence deployment. Your keys, next to your nodes. Same datacenter. Built on OpenBao.
 
 ---
 

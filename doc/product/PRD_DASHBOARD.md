@@ -23,7 +23,7 @@
 
 | USP                           | For Rollup Teams                                                 |
 | ----------------------------- | ---------------------------------------------------------------- |
-| ⚡ **Lowest Latency**         | POP-based signing. Sub-100ms. The fastest remote signer.         |
+| 📍 **Point of Presence**      | Deploy next to your nodes. Same region, same datacenter.         |
 | 🚀 **Deploy in Minutes**      | Sign up → Create key → First signature in under 5 minutes.       |
 | 🔓 **No Vendor Lock-in**      | 100% open source. Built on OpenBao. Self-host or use our cloud.  |
 | 🧩 **Plugin Architecture**    | secp256k1 built-in. Add your own algorithms via plugins.         |

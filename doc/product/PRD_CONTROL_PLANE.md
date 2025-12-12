@@ -19,7 +19,7 @@ serves as the bridge between customer applications and the underlying OpenBao in
 | User Type             | Description                                                    |
 | --------------------- | -------------------------------------------------------------- |
 | **Rollup Developers** | Building sovereign rollups on Celestia, need secure key signing for sequencers, provers, and bridge operators |
-| **Rollup Operators**  | Running production rollups, need lowest latency signing without tedious setup for their DA layer keys |
+| **Rollup Operators**  | Running production rollups, need Point of Presence signing next to their nodes for DA layer keys |
 
 ### 1.4 The Pain We Solve
 

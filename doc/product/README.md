@@ -6,7 +6,7 @@
 
 ## Product Overview
 
-BanhBaoRing is the fastest remote signing platform for Celestia and Cosmos rollups. POP-based, sub-100ms latency, built on OpenBao. Deploy in minutes.
+BanhBaoRing is the Point of Presence signing platform for Celestia and Cosmos rollups. Deploy next to your nodes. Same region, same datacenter. Built on OpenBao. Open source.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -114,7 +114,7 @@ User-facing web application for key management.
 - Billing (Stripe)
 
 **USPs:**
-- ⚡ **Lowest latency** - POP-based signing. Sub-100ms. The fastest remote signer.
+- 📍 **Point of Presence** - Deploy next to your nodes. Same region, same datacenter. Zero network hops.
 - 🚀 **Deploy in minutes** - Sign up → Create key → First signature in under 5 minutes.
 - 🔓 **No vendor lock-in** - 100% open source. Built on OpenBao. Self-host or use our cloud.
 - 🧩 **Plugin architecture** - secp256k1 today, your algorithm tomorrow.
@@ -171,8 +171,8 @@ spec:
 
 | User Segment          | The Pain                                              | BanhBaoRing Solution                    |
 |-----------------------|-------------------------------------------------------|----------------------------------------|
-| **Rollup Developers** | Slow remote signers, vendor lock-in, no secp256k1     | POP-based, sub-100ms, plugin architecture |
-| **Rollup Operators**  | Tedious local setup, low performance, config hell     | Deploy in minutes, 100+ signs/sec       |
+| **Rollup Developers** | Remote signers are remote, vendor lock-in, no secp256k1 | POP deployment, same datacenter, plugins |
+| **Rollup Operators**  | Tedious local setup, vault far from nodes, config hell  | Deploy in minutes, next to your infra    |
 
 ### The Pain We Solve
 

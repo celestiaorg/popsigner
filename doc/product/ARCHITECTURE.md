@@ -4,7 +4,7 @@
 
 This document describes the technical architecture for the OpenBao Keyring Backend, a custom `keyring.Keyring` implementation that delegates cryptographic operations to a **custom secp256k1 OpenBao plugin** for maximum security.
 
-> **🎯 Target Users:** Rollup developers and operators building on Celestia who need the fastest, lowest-latency remote signing for their sequencers, provers, and bridge operators.
+> **🎯 Target Users:** Rollup developers and operators building on Celestia who need Point of Presence signing - deployed next to their nodes - for their sequencers, provers, and bridge operators.
 
 ### ⚠️ CRITICAL: Celestia Fork Dependencies
 
