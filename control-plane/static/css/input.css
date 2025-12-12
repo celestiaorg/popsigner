@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 /* ============================================
-   BanhBaoRing Dashboard Styles
-   Dark trading terminal aesthetic
+   BanhBaoRing Design System
+   Dark mode with purple (#a855f7) + orange (#f97316) accents
    ============================================ */
 
 @layer base {
@@ -13,16 +13,35 @@
     scroll-behavior: smooth;
   }
 
-  /* Selection color - orange accent */
+  /* Selection color - purple accent */
   ::selection {
-    background-color: rgba(255, 106, 0, 0.3);
+    background-color: rgba(168, 85, 247, 0.3);
     color: #ffffff;
   }
 
-  /* Focus visible styles */
+  /* Focus visible styles - purple */
   :focus-visible {
-    outline: 2px solid #FF6A00;
+    outline: 2px solid #a855f7;
     outline-offset: 2px;
+  }
+
+  /* Custom scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0c0a14;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #4a3f5c;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6b5b8a;
   }
 }
 
@@ -33,31 +52,32 @@
 
   /* Terminal-style card */
   .terminal-card {
-    @apply bg-terminal-card border border-terminal-border rounded-lg p-6;
-    @apply hover:border-terminal-border-highlight transition-all duration-200;
+    @apply bg-terminal-card/80 backdrop-blur-sm border border-terminal-border rounded-xl p-6;
+    @apply hover:border-purple-500/30 transition-all duration-300;
   }
 
-  /* CTA Button - Primary */
+  /* CTA Button - Primary (Purple to Orange gradient) */
   .btn-cta {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3;
-    @apply bg-terminal-accent text-terminal-bg font-display font-semibold;
-    @apply rounded-lg transition-all duration-200;
-    @apply hover:bg-terminal-accent-hover hover:shadow-glow-orange;
-    @apply focus:outline-none focus:ring-2 focus:ring-terminal-accent focus:ring-offset-2 focus:ring-offset-terminal-bg;
+    @apply bg-gradient-to-r from-purple-500 to-orange-500 text-white font-display font-semibold;
+    @apply rounded-xl transition-all duration-200;
+    @apply hover:shadow-lg hover:shadow-purple-500/25 hover:scale-[1.02];
+    @apply active:scale-[0.98];
+    @apply focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-terminal-bg;
   }
 
   /* CTA Button - Secondary/Ghost */
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3;
     @apply border border-terminal-border text-terminal-text font-display font-medium;
-    @apply rounded-lg transition-all duration-200;
-    @apply hover:border-terminal-accent hover:text-terminal-accent;
-    @apply focus:outline-none focus:ring-2 focus:ring-terminal-accent/50;
+    @apply rounded-xl transition-all duration-200;
+    @apply hover:border-purple-500/50 hover:text-purple-300;
+    @apply focus:outline-none focus:ring-2 focus:ring-purple-500/50;
   }
 
   /* Code block terminal style */
   .code-terminal {
-    @apply bg-terminal-bg border border-terminal-border rounded-lg;
+    @apply bg-terminal-bg border border-terminal-border rounded-xl;
     @apply font-mono text-sm overflow-x-auto;
   }
 
@@ -73,8 +93,8 @@
 
   /* Feature icon container */
   .feature-icon {
-    @apply w-12 h-12 rounded-lg bg-terminal-elevated border border-terminal-border;
-    @apply flex items-center justify-center text-terminal-accent text-xl;
+    @apply w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20;
+    @apply flex items-center justify-center text-purple-400 text-xl;
   }
 
   /* Status LED indicator */
@@ -83,20 +103,30 @@
     box-shadow: 0 0 6px currentColor;
   }
 
+  .status-led-purple {
+    @apply bg-purple-500;
+    box-shadow: 0 0 6px rgba(168, 85, 247, 0.8);
+  }
+
   .status-led-teal {
     @apply bg-terminal-teal;
     box-shadow: 0 0 6px rgba(0, 240, 209, 0.8);
   }
 
   .status-led-orange {
-    @apply bg-terminal-accent;
-    box-shadow: 0 0 6px rgba(255, 106, 0, 0.8);
+    @apply bg-orange-500;
+    box-shadow: 0 0 6px rgba(249, 115, 22, 0.8);
   }
 
   /* Glowing borders */
+  .glow-border-purple {
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.3),
+                0 0 15px -3px rgba(168, 85, 247, 0.2);
+  }
+
   .glow-border-orange {
-    box-shadow: 0 0 0 1px rgba(255, 106, 0, 0.3),
-                0 0 15px -3px rgba(255, 106, 0, 0.2);
+    box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.3),
+                0 0 15px -3px rgba(249, 115, 22, 0.2);
   }
 
   .glow-border-teal {
@@ -104,11 +134,11 @@
                 0 0 15px -3px rgba(0, 240, 209, 0.2);
   }
 
-  /* Terminal grid background */
+  /* Terminal grid background - purple tinted */
   .terminal-grid-bg {
     background-image:
-      linear-gradient(to right, rgba(42, 42, 48, 0.3) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(42, 42, 48, 0.3) 1px, transparent 1px);
+      linear-gradient(to right, rgba(74, 63, 92, 0.3) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(74, 63, 92, 0.3) 1px, transparent 1px);
     background-size: 60px 60px;
   }
 
@@ -333,22 +363,34 @@
 }
 
 @layer utilities {
-  /* Text gradient utility - orange */
+  /* Text gradient utility - purple to orange */
   .text-gradient {
-    @apply bg-gradient-to-r from-terminal-accent via-orange-400 to-terminal-accent bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-purple-400 via-orange-400 to-purple-400 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-purple {
+    @apply bg-gradient-to-r from-purple-400 to-purple-500 bg-clip-text text-transparent;
   }
 
   .text-gradient-orange {
-    @apply bg-gradient-to-r from-terminal-accent via-orange-400 to-terminal-accent bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent;
   }
 
   /* Glow effects */
+  .glow-purple {
+    box-shadow: 0 0 20px -5px rgba(168, 85, 247, 0.4);
+  }
+
+  .glow-purple-lg {
+    box-shadow: 0 0 40px -10px rgba(168, 85, 247, 0.5);
+  }
+
   .glow-orange {
-    box-shadow: 0 0 20px -5px rgba(255, 106, 0, 0.4);
+    box-shadow: 0 0 20px -5px rgba(249, 115, 22, 0.4);
   }
 
   .glow-orange-lg {
-    box-shadow: 0 0 40px -10px rgba(255, 106, 0, 0.5);
+    box-shadow: 0 0 40px -10px rgba(249, 115, 22, 0.5);
   }
 
   .glow-teal {
@@ -365,7 +407,7 @@
     display: none;
   }
 
-  /* Animation delays */
+  /* Animation delays for staggered effects */
   .animation-delay-100 {
     animation-delay: 100ms;
   }
@@ -385,7 +427,18 @@
   /* Backdrop blur fallback */
   @supports not (backdrop-filter: blur(12px)) {
     .backdrop-blur-lg {
-      background-color: rgba(12, 12, 12, 0.98);
+      background-color: rgba(12, 10, 20, 0.98);
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-slide-up,
+    .animate-bounce {
+      animation: none;
+      opacity: 1;
+      transform: none;
     }
   }
 }

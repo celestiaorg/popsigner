@@ -12,14 +12,13 @@ import "html/template"
 
 // codeSnippet returns the code example as raw HTML
 func codeSnippet() template.HTML {
-	return template.HTML(`<div class="text-terminal-muted">// Initialize client</div>
-<div><span class="text-terminal-teal">client</span> := banhbaoring.<span class="text-terminal-accent">NewClient</span>(apiKey)</div>
-<div class="h-4"></div>
-<div class="text-terminal-muted">// Sign a message - that's it!</div>
-<div><span class="text-terminal-teal">sig</span>, err := client.<span class="text-terminal-accent">Sign</span>(ctx, &amp;SignRequest{</div>
-<div class="pl-4">KeyID:   <span class="text-green-400">"key_abc123"</span>,</div>
-<div class="pl-4">Message: txBytes,</div>
-<div>})</div>`)
+	return template.HTML(`<span class="text-terminal-dim">// Initialize client - one line</span>
+<span class="text-purple-300">client</span> := banhbaoring.<span class="text-orange-400">NewClient</span>(<span class="text-green-400">"bbr_xxx"</span>)
+
+<span class="text-terminal-dim">// Sign a transaction - that's it!</span>
+<span class="text-purple-300">sig</span>, _ := client.Keys.<span class="text-orange-400">Sign</span>(ctx, <span class="text-green-400">"sequencer"</span>, txBytes)
+
+<span class="text-terminal-dim">// Same region. Zero hops. Keys never touched.</span>`)
 }
 
 // Solution renders the solution section with code example
@@ -44,7 +43,7 @@ func Solution() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"py-20 px-4 sm:px-6 lg:px-8 bg-terminal-card/30\"><div class=\"max-w-6xl mx-auto\"><div class=\"grid lg:grid-cols-2 gap-12 items-center\"><!-- Left: Code example --><div class=\"order-2 lg:order-1\"><div class=\"code-terminal\"><div class=\"flex items-center gap-2 px-4 py-3 border-b border-terminal-border\"><div class=\"flex gap-1.5\"><span class=\"w-3 h-3 rounded-full bg-red-500/80\"></span> <span class=\"w-3 h-3 rounded-full bg-yellow-500/80\"></span> <span class=\"w-3 h-3 rounded-full bg-green-500/80\"></span></div><span class=\"text-xs text-terminal-dim ml-2 font-mono\">main.go</span></div><div class=\"p-4 overflow-x-auto text-sm font-mono leading-6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden\"><!-- Background gradient --><div class=\"absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-orange-500/5 pointer-events-none\"></div><div class=\"relative max-w-6xl mx-auto\"><div class=\"text-center mb-16\"><span class=\"inline-block text-sm font-semibold text-purple-400 uppercase tracking-wider mb-3\">The Solution</span><h2 class=\"text-3xl md:text-4xl lg:text-5xl font-display font-bold text-terminal-text mb-4\">BanhBaoRing fixes <span class=\"bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent\">all of it</span>.</h2><p class=\"section-subheading mx-auto\">Open source key management designed for rollup developers.</p></div><div class=\"grid lg:grid-cols-2 gap-12 items-center\"><!-- Left: Code example --><div class=\"order-2 lg:order-1\"><div class=\"relative group\"><!-- Glow effect --><div class=\"absolute -inset-4 bg-gradient-to-r from-purple-500/10 to-orange-500/10 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity\"></div><div class=\"relative code-terminal rounded-xl overflow-hidden\"><div class=\"flex items-center gap-2 px-4 py-3 border-b border-terminal-border bg-terminal-card/50\"><div class=\"flex gap-1.5\"><span class=\"w-3 h-3 rounded-full bg-red-500/80\"></span> <span class=\"w-3 h-3 rounded-full bg-yellow-500/80\"></span> <span class=\"w-3 h-3 rounded-full bg-green-500/80\"></span></div><span class=\"text-xs text-terminal-dim ml-2 font-mono\">main.go</span><div class=\"ml-auto\"><button class=\"text-xs text-terminal-muted hover:text-terminal-text px-2 py-1 rounded hover:bg-terminal-border/30 transition-colors\" onclick=\"navigator.clipboard.writeText(this.closest('.code-terminal').querySelector('code').textContent)\">📋 Copy</button></div></div><div class=\"p-6 overflow-x-auto\"><pre class=\"text-sm font-mono leading-7\"><code>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -52,27 +51,27 @@ func Solution() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div></div><!-- Right: Solution cards --><div class=\"order-1 lg:order-2\"><h2 class=\"section-heading mb-4\">Built for developers</h2><p class=\"section-subheading mb-8\">BanhBaoRing is designed from the ground up for speed, security, and simplicity.</p><div class=\"space-y-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</code></pre></div></div></div></div><!-- Right: 4 USPs Grid --><div class=\"order-1 lg:order-2 grid grid-cols-1 sm:grid-cols-2 gap-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SolutionCard("unlock", "Open Source", "Full transparency. Audit the code, self-host, or contribute.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = USPCard("📍", "Point of Presence", "Deploy next to your nodes. Same region, same datacenter. Zero network hops.", "purple").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SolutionCard("plugin", "Plugin Architecture", "Extend functionality with custom plugins for any use case.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = USPCard("🚀", "Deploy in Minutes", "Sign up → Create key → First signature in under 5 minutes.", "orange").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SolutionCard("bolt", "100+ Signs/sec", "Parallel signing with OpenBao for maximum throughput.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = USPCard("🔓", "No Vendor Lock-in", "100% open source. Built on OpenBao. Self-host or use our cloud.", "teal").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SolutionCard("rocket", "5-Minute Setup", "Kubernetes operator or Docker Compose. Production-ready fast.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = USPCard("🧩", "Plugin Architecture", "secp256k1 today. Your custom algorithm tomorrow.", "pink").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div></div></div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div></div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -80,7 +79,7 @@ func Solution() templ.Component {
 	})
 }
 
-func SolutionCard(icon, title, description string) templ.Component {
+func USPCard(emoji, title, description, color string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -101,41 +100,86 @@ func SolutionCard(icon, title, description string) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"flex gap-4 items-start p-4 rounded-lg hover:bg-terminal-card/50 transition-colors\"><div class=\"feature-icon shrink-0\">")
+		var templ_7745c5c3_Var3 = []any{"group p-5 rounded-xl border transition-all duration-300 hover:scale-[1.02] " + uspCardBorder(color)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = solutionIcon(icon).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div><h3 class=\"font-display font-semibold text-terminal-text mb-1\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(title)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/solution.templ`, Line: 64, Col: 73}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</h3><p class=\"text-sm text-terminal-muted\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(description)
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var3).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/solution.templ`, Line: 65, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/solution.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 = []any{"w-12 h-12 rounded-lg flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform " + uspCardIconBg(color)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var5...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var5).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/solution.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(emoji)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/solution.templ`, Line: 78, Col: 10}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><h3 class=\"text-base font-display font-semibold text-terminal-text mb-2\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/solution.templ`, Line: 80, Col: 82}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</h3><p class=\"text-sm text-terminal-muted leading-relaxed\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var9 string
+		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(description)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/solution.templ`, Line: 81, Col: 70}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -143,51 +187,34 @@ func SolutionCard(icon, title, description string) templ.Component {
 	})
 }
 
-func solutionIcon(name string) templ.Component {
-	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
-			return templ_7745c5c3_CtxErr
-		}
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-		if !templ_7745c5c3_IsBuffer {
-			defer func() {
-				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err == nil {
-					templ_7745c5c3_Err = templ_7745c5c3_BufErr
-				}
-			}()
-		}
-		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
-		switch name {
-		case "unlock":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z\"></path></svg>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case "plugin":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z\"></path></svg>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case "bolt":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 10V3L4 14h7v7l9-11h-7z\"></path></svg>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		case "rocket":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z\"></path></svg>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		return nil
-	})
+func uspCardBorder(color string) string {
+	switch color {
+	case "purple":
+		return "bg-purple-500/5 border-purple-500/20 hover:border-purple-500/50 hover:bg-purple-500/10"
+	case "orange":
+		return "bg-orange-500/5 border-orange-500/20 hover:border-orange-500/50 hover:bg-orange-500/10"
+	case "teal":
+		return "bg-teal-500/5 border-teal-500/20 hover:border-teal-500/50 hover:bg-teal-500/10"
+	case "pink":
+		return "bg-pink-500/5 border-pink-500/20 hover:border-pink-500/50 hover:bg-pink-500/10"
+	default:
+		return "bg-terminal-card border-terminal-border hover:border-purple-500/50"
+	}
+}
+
+func uspCardIconBg(color string) string {
+	switch color {
+	case "purple":
+		return "bg-purple-500/10 border border-purple-500/20"
+	case "orange":
+		return "bg-orange-500/10 border border-orange-500/20"
+	case "teal":
+		return "bg-teal-500/10 border border-teal-500/20"
+	case "pink":
+		return "bg-pink-500/10 border border-pink-500/20"
+	default:
+		return "bg-terminal-border/50 border border-terminal-border"
+	}
 }
 
 var _ = templruntime.GeneratedTemplate

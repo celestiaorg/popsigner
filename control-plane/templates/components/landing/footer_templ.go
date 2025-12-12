@@ -30,7 +30,7 @@ func Footer() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<footer class=\"py-12 px-4 sm:px-6 lg:px-8 border-t border-terminal-border\"><div class=\"max-w-6xl mx-auto\"><div class=\"grid md:grid-cols-4 gap-8 mb-8\"><!-- Brand --><div class=\"md:col-span-1\"><a href=\"/\" class=\"flex items-center gap-2 mb-4\"><span class=\"text-2xl\">&#128276;</span> <span class=\"font-display font-bold text-terminal-text\">BanhBaoRing</span></a><p class=\"text-sm text-terminal-muted\">Open source key management for the decentralized web.</p></div><!-- Product --><div><h4 class=\"font-display font-semibold text-terminal-text mb-4\">Product</h4><ul class=\"space-y-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<footer class=\"py-16 px-4 sm:px-6 lg:px-8 border-t border-terminal-border bg-terminal-card/30\"><div class=\"max-w-6xl mx-auto\"><div class=\"grid md:grid-cols-5 gap-8 mb-12\"><!-- Brand --><div class=\"md:col-span-2\"><a href=\"/\" class=\"flex items-center gap-2.5 mb-4 group\"><span class=\"text-3xl group-hover:scale-110 transition-transform\">🔔</span> <span class=\"text-xl font-display font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent\">BanhBaoRing</span></a><p class=\"text-sm text-terminal-muted mb-6 max-w-xs\">Point of Presence key management for sovereign rollups. Secure keys, delivered right to your infrastructure.</p><!-- Newsletter signup hint --><div class=\"flex items-center gap-2 text-xs text-terminal-dim\"><span class=\"text-purple-400\">📍</span> <span>Deploy next to your nodes</span></div></div><!-- Product --><div><h4 class=\"font-display font-semibold text-terminal-text mb-4 text-sm uppercase tracking-wider\">Product</h4><ul class=\"space-y-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -50,7 +50,35 @@ func Footer() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</ul></div><!-- Company --><div><h4 class=\"font-display font-semibold text-terminal-text mb-4\">Company</h4><ul class=\"space-y-2\">")
+		templ_7745c5c3_Err = FooterLink("Status", "/status").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</ul></div><!-- Developers --><div><h4 class=\"font-display font-semibold text-terminal-text mb-4 text-sm uppercase tracking-wider\">Developers</h4><ul class=\"space-y-3\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FooterLink("Getting Started", "/docs/quickstart").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FooterLink("SDK (Go)", "/docs/sdk-go").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FooterLink("SDK (Rust)", "/docs/sdk-rust").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FooterLink("GitHub", "https://github.com/Bidon15/banhbaoring").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = FooterLink("Changelog", "/changelog").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</ul></div><!-- Company --><div><h4 class=\"font-display font-semibold text-terminal-text mb-4 text-sm uppercase tracking-wider\">Company</h4><ul class=\"space-y-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -62,31 +90,19 @@ func Footer() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FooterLink("Careers", "/careers").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
 		templ_7745c5c3_Err = FooterLink("Contact", "/contact").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</ul></div><!-- Legal --><div><h4 class=\"font-display font-semibold text-terminal-text mb-4\">Legal</h4><ul class=\"space-y-2\">")
+		templ_7745c5c3_Err = FooterLink("Privacy", "/privacy").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FooterLink("Privacy Policy", "/privacy").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FooterLink("Terms", "/terms").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FooterLink("Terms of Service", "/terms").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = FooterLink("Security", "/security").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</ul></div></div><!-- Bottom bar --><div class=\"pt-8 border-t border-terminal-border flex flex-col sm:flex-row items-center justify-between gap-4\"><p class=\"text-sm text-terminal-dim\">&copy; 2024 BanhBaoRing. Open source under MIT License.</p><div class=\"flex items-center gap-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</ul></div></div><!-- Bottom bar --><div class=\"pt-8 border-t border-terminal-border flex flex-col sm:flex-row items-center justify-between gap-4\"><p class=\"text-sm text-terminal-dim\">&copy; 2025 BanhBaoRing. Open source under MIT License.</p><div class=\"flex items-center gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -138,7 +154,7 @@ func FooterLink(label, href string) templ.Component {
 		var templ_7745c5c3_Var3 templ.SafeURL
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/footer.templ`, Line: 69, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/footer.templ`, Line: 78, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -151,7 +167,7 @@ func FooterLink(label, href string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/footer.templ`, Line: 70, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/footer.templ`, Line: 79, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -193,7 +209,7 @@ func SocialLink(name, href string) templ.Component {
 		var templ_7745c5c3_Var6 templ.SafeURL
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/footer.templ`, Line: 76, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/footer.templ`, Line: 85, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -206,7 +222,7 @@ func SocialLink(name, href string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/footer.templ`, Line: 78, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/footer.templ`, Line: 87, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
