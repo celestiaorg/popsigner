@@ -584,6 +584,70 @@ Phase 9.4 - Release:
 
 ---
 
+## Phase 14: POPSigner Rebrand
+
+> **Breaking Change Release** - No backward compatibility
+
+Rename BanhBaoRing → POPSigner across the entire codebase.
+
+### Master Document
+
+- [IMPL_14_POPSIGNER_REBRAND.md](./IMPL_14_POPSIGNER_REBRAND.md) - Overview, release process
+
+### Stage 1: Core Library & CLI (5 parallel agents)
+
+| Agent | Document | Scope |
+|-------|----------|-------|
+| 14A | [IMPL_14A_REBRAND_CORE_LIBRARY.md](./IMPL_14A_REBRAND_CORE_LIBRARY.md) | Package rename: `banhbaoring` → `popsigner` |
+| 14B | [IMPL_14B_REBRAND_CLI.md](./IMPL_14B_REBRAND_CLI.md) | CLI: `banhbao` → `popsigner` |
+| 14C | [IMPL_14C_REBRAND_SDK_GO.md](./IMPL_14C_REBRAND_SDK_GO.md) | SDK-Go rebrand |
+| 14D | [IMPL_14D_REBRAND_SDK_RUST.md](./IMPL_14D_REBRAND_SDK_RUST.md) | SDK-Rust rebrand |
+| 14E | [IMPL_14E_REBRAND_PLUGIN.md](./IMPL_14E_REBRAND_PLUGIN.md) | Plugin binary rename |
+
+### Stage 2: Web Application (3 parallel agents)
+
+| Agent | Document | Scope |
+|-------|----------|-------|
+| 14F | [IMPL_14F_REBRAND_WEBAPP_LANDING.md](./IMPL_14F_REBRAND_WEBAPP_LANDING.md) | Landing page templates |
+| 14G | [IMPL_14G_REBRAND_WEBAPP_DASHBOARD.md](./IMPL_14G_REBRAND_WEBAPP_DASHBOARD.md) | Dashboard & auth templates |
+| 14H | [IMPL_14H_REBRAND_WEBAPP_CONFIG.md](./IMPL_14H_REBRAND_WEBAPP_CONFIG.md) | Config & static assets |
+
+### Stage 3: Kubernetes Operator (1 agent, after Stage 1)
+
+| Agent | Document | Scope |
+|-------|----------|-------|
+| 14I | [IMPL_14I_REBRAND_OPERATOR.md](./IMPL_14I_REBRAND_OPERATOR.md) | CRDs, Helm chart, controllers |
+
+### Execution
+
+```
+Stage 1 (parallel):
+┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
+│ 14A  │ │ 14B  │ │ 14C  │ │ 14D  │ │ 14E  │
+│ Core │ │ CLI  │ │SDK-Go│ │Rust  │ │Plugin│
+└──────┘ └──────┘ └──────┘ └──────┘ └──────┘
+
+Stage 2 (parallel):
+┌──────┐ ┌──────┐ ┌──────┐
+│ 14F  │ │ 14G  │ │ 14H  │
+│Landing│ │Dashbd│ │Config│
+└──────┘ └──────┘ └──────┘
+
+Stage 3 (after Stage 1):
+         ┌──────┐
+         │ 14I  │
+         │ K8s  │
+         └──────┘
+
+Post-completion:
+→ Update remaining docs
+→ Run full test suite
+→ Tag release v1.0.0-popsigner
+→ Build & push images
+```
+
+---
+
 ## Test Requirements
 
 Each sub-agent MUST deliver:

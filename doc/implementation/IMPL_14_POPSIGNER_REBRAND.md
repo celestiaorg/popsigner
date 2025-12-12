@@ -4,6 +4,49 @@
 
 ---
 
+## Parallel Agent Tasks
+
+Fire up agents with these independent task documents:
+
+### Stage 1: Core Library & CLI (can run in parallel)
+
+| Agent | Document | Dependencies |
+|-------|----------|--------------|
+| Agent 1 | [IMPL_14A_REBRAND_CORE_LIBRARY.md](./IMPL_14A_REBRAND_CORE_LIBRARY.md) | None |
+| Agent 2 | [IMPL_14B_REBRAND_CLI.md](./IMPL_14B_REBRAND_CLI.md) | None |
+| Agent 3 | [IMPL_14C_REBRAND_SDK_GO.md](./IMPL_14C_REBRAND_SDK_GO.md) | None |
+| Agent 4 | [IMPL_14D_REBRAND_SDK_RUST.md](./IMPL_14D_REBRAND_SDK_RUST.md) | None |
+| Agent 5 | [IMPL_14E_REBRAND_PLUGIN.md](./IMPL_14E_REBRAND_PLUGIN.md) | None |
+
+### Stage 2: Web Application (can run in parallel)
+
+| Agent | Document | Dependencies |
+|-------|----------|--------------|
+| Agent 6 | [IMPL_14F_REBRAND_WEBAPP_LANDING.md](./IMPL_14F_REBRAND_WEBAPP_LANDING.md) | None |
+| Agent 7 | [IMPL_14G_REBRAND_WEBAPP_DASHBOARD.md](./IMPL_14G_REBRAND_WEBAPP_DASHBOARD.md) | None |
+| Agent 8 | [IMPL_14H_REBRAND_WEBAPP_CONFIG.md](./IMPL_14H_REBRAND_WEBAPP_CONFIG.md) | None |
+
+### Stage 3: Kubernetes Operator (run after Stage 1)
+
+| Agent | Document | Dependencies |
+|-------|----------|--------------|
+| Agent 9 | [IMPL_14I_REBRAND_OPERATOR.md](./IMPL_14I_REBRAND_OPERATOR.md) | Stage 1 (imports) |
+
+---
+
+## Release Process
+
+After all agents complete:
+
+1. **Verify all changes**: `grep -r "banhbao" --include="*.go" --include="*.templ" --include="*.yaml" .`
+2. **Run all tests**: `make test`
+3. **Update remaining docs** (see doc refactor section below)
+4. **Tag release**: `git tag v1.0.0-popsigner`
+5. **Build and push images**
+6. **Update package registries** (Go, Rust crates)
+
+---
+
 ## Overview
 
 This document outlines the implementation plan for rebranding BanhBaoRing to POPSigner. The refactoring is divided into 3 stages:
@@ -635,9 +678,72 @@ make deploy
 
 ---
 
+## Post-Agent Doc Refactor
+
+After all agents complete, update remaining documentation files:
+
+### Implementation Docs to Update
+
+These docs reference "banhbaoring" and need updates:
+
+```bash
+# Find all docs with old branding
+grep -l "banhbao" doc/implementation/*.md
+```
+
+| File | Status |
+|------|--------|
+| `IMPL_00_SKELETON.md` | Update module paths |
+| `IMPL_01*` through `IMPL_13*` | Update references |
+
+### Quick Find/Replace for Docs
+
+```bash
+# In doc/implementation/
+find doc/implementation -name "*.md" -exec sed -i '' \
+  -e 's/banhbaoring/popsigner/g' \
+  -e 's/BanhBaoRing/POPSigner/g' \
+  -e 's/banhbao/popsigner/g' \
+  -e 's/bbr_/psk_/g' \
+  {} \;
+```
+
+### Web App Internal Docs
+
+```bash
+# control-plane README
+grep -l "banhbao" control-plane/*.md
+```
+
+---
+
+## Final Verification Checklist
+
+```bash
+# No remaining old references
+grep -r "banhbaoring" --include="*.go" . | wc -l  # Should be 0
+grep -r "BanhBaoRing" --include="*.go" . | wc -l  # Should be 0
+grep -r "banhbao" --include="*.templ" . | wc -l   # Should be 0
+grep -r "bbr_" --include="*.go" . | wc -l         # Should be 0
+
+# All tests pass
+make test
+cd control-plane && go test ./...
+cd sdk-go && go test ./...
+cd sdk-rust && cargo test
+cd operator && make test
+
+# All builds pass
+make build
+cd control-plane && make build
+cd operator && make build
+```
+
+---
+
 ## References
 
 - [DESIGN_SYSTEM.md](../design/DESIGN_SYSTEM.md) - Brand guidelines and copy
 - [PRD_DASHBOARD.md](../product/PRD_DASHBOARD.md) - Dashboard requirements
-- [Website Audit](#) - Original audit document (this conversation)
+- Agent task docs: `IMPL_14A` through `IMPL_14I`
 

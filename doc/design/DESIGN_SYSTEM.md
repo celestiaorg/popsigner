@@ -110,31 +110,31 @@ The following words must **NEVER** appear in marketing copy:
 
 ## 4. Color Palette
 
-### 4.1 Primary Colors
+> **Aesthetic:** Bloomberg Terminal / HFT Trading Systems
+> 
+> Think: data-dense, utilitarian, professional. Orange amber accents on near-black.
+> No purple. No gradients. No crypto wallet vibes.
+
+### 4.1 Primary Colors (Bloomberg Orange)
 
 ```css
 :root {
-  /* === PRIMARY: Professional indigo === */
-  --primary-50: #eef2ff;
-  --primary-100: #e0e7ff;
-  --primary-200: #c7d2fe;
-  --primary-300: #a5b4fc;
-  --primary-400: #818cf8;
-  --primary-500: #6366f1;    /* Main */
-  --primary-600: #4f46e5;
-  --primary-700: #4338ca;
-  --primary-800: #3730a3;
-  --primary-900: #312e81;
+  /* === PRIMARY: Bloomberg Orange/Amber === */
+  --primary-50: #fffbeb;
+  --primary-100: #fef3c7;
+  --primary-200: #fde68a;
+  --primary-300: #fcd34d;
+  --primary-400: #fbbf24;
+  --primary-500: #f59e0b;    /* Main - Amber */
+  --primary-600: #d97706;    /* Bloomberg Orange */
+  --primary-700: #b45309;
+  --primary-800: #92400e;
+  --primary-900: #78350f;
   
-  /* === ACCENT: Subtle warmth === */
-  --accent-50: #fff7ed;
-  --accent-100: #ffedd5;
-  --accent-200: #fed7aa;
-  --accent-300: #fdba74;
-  --accent-400: #fb923c;
-  --accent-500: #f97316;     /* Main */
-  --accent-600: #ea580c;
-  --accent-700: #c2410c;
+  /* === ACCENT: Terminal Cyan === */
+  --accent-400: #22d3ee;
+  --accent-500: #06b6d4;     /* Cyan for data highlights */
+  --accent-600: #0891b2;
 }
 ```
 
@@ -142,79 +142,96 @@ The following words must **NEVER** appear in marketing copy:
 
 ```css
 :root {
-  /* Success */
+  /* Success - Terminal Green */
   --success-400: #4ade80;
   --success-500: #22c55e;
   --success-600: #16a34a;
   
-  /* Warning */
-  --warning-400: #facc15;
-  --warning-500: #eab308;
-  --warning-600: #ca8a04;
+  /* Warning - Amber (same as primary) */
+  --warning-400: #fbbf24;
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
   
-  /* Error */
+  /* Error - Red */
   --error-400: #f87171;
   --error-500: #ef4444;
   --error-600: #dc2626;
+  
+  /* Info - Cyan */
+  --info-400: #22d3ee;
+  --info-500: #06b6d4;
 }
 ```
 
-### 4.3 Dark Theme (Primary)
+### 4.3 Dark Theme (Terminal Black - Default)
 
 ```css
 :root {
-  /* Dark mode - default */
-  --bg-primary: #0f0f10;     /* Near black */
-  --bg-secondary: #18181b;   /* Card backgrounds */
-  --bg-tertiary: #27272a;    /* Elevated surfaces */
-  --bg-hover: #3f3f46;       /* Hover states */
+  /* Bloomberg Terminal Dark */
+  --bg-primary: #000000;     /* True black */
+  --bg-secondary: #0a0a0a;   /* Card backgrounds */
+  --bg-tertiary: #141414;    /* Elevated surfaces */
+  --bg-hover: #1f1f1f;       /* Hover states */
   
-  --text-primary: #fafafa;   /* Main text */
-  --text-secondary: #a1a1aa; /* Muted text */
-  --text-tertiary: #71717a;  /* Disabled text */
+  --text-primary: #e5e5e5;   /* Main text - slightly warm */
+  --text-secondary: #a3a3a3; /* Muted text */
+  --text-tertiary: #737373;  /* Disabled text */
+  --text-accent: #f59e0b;    /* Orange accent text */
   
-  --border: #3f3f46;         /* Borders */
-  --border-hover: #52525b;   /* Hover borders */
+  --border: #262626;         /* Borders - subtle */
+  --border-hover: #404040;   /* Hover borders */
+  
+  /* Data colors */
+  --data-positive: #22c55e;  /* Green - up/success */
+  --data-negative: #ef4444;  /* Red - down/error */
+  --data-neutral: #f59e0b;   /* Orange - highlight */
 }
 ```
 
-### 4.4 Light Theme (Secondary)
+### 4.4 Light Theme (Disabled)
+
+POPSigner is dark-mode only. No light theme.
 
 ```css
-[data-theme="light"] {
-  --bg-primary: #fafafa;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f4f4f5;
-  
-  --text-primary: #18181b;
-  --text-secondary: #52525b;
-  
-  --border: #e4e4e7;
-}
+/* Light theme intentionally omitted.
+   Terminal systems are dark by default. */
 ```
 
 ---
 
 ## 5. Typography
 
+> **Aesthetic:** Terminal-first. Monospace prominence. Data-dense.
+
 ### 5.1 Font Stack
 
 ```css
 :root {
-  /* Display & Body - Professional, infrastructure-focused */
+  /* Display - Sharp, utilitarian */
   --font-display: "IBM Plex Sans", "Inter", system-ui, sans-serif;
+  
+  /* Body - Clean, readable */
   --font-body: "IBM Plex Sans", "Inter", system-ui, sans-serif;
   
-  /* Monospace - code, addresses, keys */
-  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+  /* Mono - PRIMARY for data, keys, addresses */
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", "SF Mono", monospace;
 }
 ```
 
-### 5.2 Avoid
+### 5.2 Typography Rules
 
-- Outfit (overused)
-- Space Grotesk (overused in crypto)
+- **Headlines:** Sans-serif, but lean toward monospace for technical pages
+- **Body:** Sans-serif for readability
+- **Data/Keys/Addresses:** ALWAYS monospace
+- **Numbers:** Monospace (tabular figures)
+- **Code blocks:** Monospace with terminal background
+
+### 5.3 Avoid
+
+- Outfit, Space Grotesk (crypto clichés)
 - Playful or decorative fonts
+- Rounded, friendly fonts
+- Any font with personality
 
 ### 5.3 Font Sizes (Tailwind scale)
 
