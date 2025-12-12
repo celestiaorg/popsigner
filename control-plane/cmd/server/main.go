@@ -807,17 +807,22 @@ func docsHandler() http.HandlerFunc {
 // deriveCelestiaAddress converts a hex address (from OpenBao) to Celestia bech32 format.
 // The hex address is RIPEMD160(SHA256(compressed_pubkey)) - 20 bytes.
 func deriveCelestiaAddress(hexAddr string) string {
+	// Handle old-style addresses (bao_xxxxx format)
+	if len(hexAddr) < 40 || hexAddr[:4] == "bao_" {
+		return "(legacy key - please create a new key for Celestia)"
+	}
+	
 	// Decode hex address to bytes
 	addrBytes, err := hex.DecodeString(hexAddr)
 	if err != nil || len(addrBytes) != 20 {
 		// Fallback for invalid addresses
-		return "celestia1" + hexAddr[:38]
+		return "(invalid address format)"
 	}
 	
 	// Convert to bech32 with "celestia" prefix
 	celestiaAddr, err := bech32Encode("celestia", addrBytes)
 	if err != nil {
-		return "celestia1" + hexAddr[:38]
+		return "(bech32 encoding failed)"
 	}
 	
 	return celestiaAddr
