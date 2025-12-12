@@ -9,11 +9,10 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
 
-// ForgotPasswordPage renders the forgot password request page.
+// ForgotPasswordPage renders the forgot password request page - 80s CRT terminal aesthetic
 func ForgotPasswordPage(errorMsg, successMsg string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -52,14 +51,14 @@ func ForgotPasswordPage(errorMsg, successMsg string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if successMsg != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-3\"><span class=\"text-emerald-400 text-lg\">✓</span><p class=\"text-emerald-400 text-sm\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"mb-6 p-4 bg-[#33FF00]/10 border border-[#33FF00]/50 flex items-center gap-3\"><span class=\"text-[#33FF00] text-lg\">✓</span><p class=\"text-[#33FF00] text-sm uppercase\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(successMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/forgot_password.templ`, Line: 15, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/forgot_password.templ`, Line: 14, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -75,14 +74,14 @@ func ForgotPasswordPage(errorMsg, successMsg string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if errorMsg != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3\"><span class=\"text-red-400 text-lg\">⚠</span><p class=\"text-red-400 text-sm\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"mb-6 p-4 bg-[#FF3333]/10 border border-[#FF3333]/50 flex items-center gap-3\"><span class=\"text-[#FF3333] text-lg\">⚠</span><p class=\"text-[#FF3333] text-sm uppercase\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/forgot_password.templ`, Line: 23, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/forgot_password.templ`, Line: 22, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -93,33 +92,7 @@ func ForgotPasswordPage(errorMsg, successMsg string) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " <div class=\"text-center mb-6\"><span class=\"text-4xl mb-4 inline-block\">🔐</span><h2 class=\"text-2xl font-heading font-bold text-bao-text\">Reset your password</h2><p class=\"mt-2 text-bao-muted text-sm\">Enter your email address and we'll send you a link to reset your password.</p></div><form action=\"/forgot-password\" method=\"POST\" class=\"space-y-4\"><div><label for=\"email\" class=\"block text-sm font-medium text-bao-text mb-1.5\">Email</label> <input type=\"email\" id=\"email\" name=\"email\" required autofocus autocomplete=\"email\" class=\"w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors\" placeholder=\"you@example.com\"></div><div class=\"pt-2\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Var5 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"w-full text-center\">Send Reset Link</span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				return nil
-			})
-			templ_7745c5c3_Err = components.Button(components.ButtonPrimary, components.ButtonSizeLarge, false).Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></form><p class=\"mt-6 text-center text-sm text-bao-muted\">Remember your password? <a href=\"/login\" class=\"text-bao-accent hover:text-amber-300 font-medium transition-colors\">Back to login</a></p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " <div class=\"text-center mb-6\"><span class=\"text-[#FFB000] text-4xl mb-4 inline-block drop-shadow-[0_0_15px_#FFB000]\">🔐</span><h2 class=\"text-xl text-[#FFB000] uppercase drop-shadow-[0_0_10px_#FFB000]\">&gt; RESET_PASSWORD</h2><p class=\"mt-2 text-[#666600] text-sm uppercase\">ENTER YOUR EMAIL TO RECEIVE RESET LINK</p></div><form action=\"/forgot-password\" method=\"POST\" class=\"space-y-4\"><div><label for=\"email\" class=\"block text-sm text-[#228B22] mb-1.5 uppercase\">EMAIL:</label> <input type=\"email\" id=\"email\" name=\"email\" required autofocus autocomplete=\"email\" class=\"w-full px-4 py-3 bg-black border border-[#1A4D1A] text-[#33FF00] placeholder-[#336633] focus:border-[#33FF00] focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] focus:outline-none transition-colors font-mono\" placeholder=\"user@example.com\"></div><div class=\"pt-2\"><button type=\"submit\" class=\"w-full bg-[#FFB000] text-black font-bold py-3 uppercase hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all\">[ SEND RESET LINK ]</button></div></form><p class=\"mt-6 text-center text-sm text-[#666600] uppercase\">REMEMBER YOUR PASSWORD? <a href=\"/login\" class=\"text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] font-medium transition-all\">LOGIN</a></p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -133,7 +106,7 @@ func ForgotPasswordPage(errorMsg, successMsg string) templ.Component {
 	})
 }
 
-// ResetPasswordPage renders the password reset form (after clicking email link).
+// ResetPasswordPage renders the password reset form (after clicking email link) - 80s CRT terminal aesthetic
 func ResetPasswordPage(token, errorMsg string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -150,12 +123,12 @@ func ResetPasswordPage(token, errorMsg string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var6 == nil {
-			templ_7745c5c3_Var6 = templ.NopComponent
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var7 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var6 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -167,75 +140,49 @@ func ResetPasswordPage(token, errorMsg string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<!-- Error message --> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<!-- Error message --> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if errorMsg != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3\"><span class=\"text-red-400 text-lg\">⚠</span><p class=\"text-red-400 text-sm\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"mb-6 p-4 bg-[#FF3333]/10 border border-[#FF3333]/50 flex items-center gap-3\"><span class=\"text-[#FF3333] text-lg\">⚠</span><p class=\"text-[#FF3333] text-sm uppercase\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/forgot_password.templ`, Line: 73, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/forgot_password.templ`, Line: 72, Col: 58}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p></div>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " <div class=\"text-center mb-6\"><span class=\"text-4xl mb-4 inline-block\">🔑</span><h2 class=\"text-2xl font-heading font-bold text-bao-text\">Create new password</h2><p class=\"mt-2 text-bao-muted text-sm\">Enter your new password below.</p></div><form action=\"/reset-password\" method=\"POST\" class=\"space-y-4\"><input type=\"hidden\" name=\"token\" value=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(token)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/forgot_password.templ`, Line: 86, Col: 50}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\"><div><label for=\"password\" class=\"block text-sm font-medium text-bao-text mb-1.5\">New Password</label> <input type=\"password\" id=\"password\" name=\"password\" required autofocus autocomplete=\"new-password\" minlength=\"8\" class=\"w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors\" placeholder=\"••••••••\"><p class=\"mt-1.5 text-xs text-bao-muted\">Must be at least 8 characters</p></div><div><label for=\"password_confirm\" class=\"block text-sm font-medium text-bao-text mb-1.5\">Confirm Password</label> <input type=\"password\" id=\"password_confirm\" name=\"password_confirm\" required autocomplete=\"new-password\" class=\"w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors\" placeholder=\"••••••••\"></div><div class=\"pt-2\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Var10 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"w-full text-center\">Reset Password</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</p></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				return nil
-			})
-			templ_7745c5c3_Err = components.Button(components.ButtonPrimary, components.ButtonSizeLarge, false).Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " <div class=\"text-center mb-6\"><span class=\"text-[#FFB000] text-4xl mb-4 inline-block drop-shadow-[0_0_15px_#FFB000]\">🔑</span><h2 class=\"text-xl text-[#FFB000] uppercase drop-shadow-[0_0_10px_#FFB000]\">&gt; NEW_PASSWORD</h2><p class=\"mt-2 text-[#666600] text-sm uppercase\">ENTER YOUR NEW PASSWORD BELOW</p></div><form action=\"/reset-password\" method=\"POST\" class=\"space-y-4\"><input type=\"hidden\" name=\"token\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div></form><p class=\"mt-6 text-center text-sm text-bao-muted\"><a href=\"/login\" class=\"text-bao-accent hover:text-amber-300 font-medium transition-colors\">Back to login</a></p>")
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(token)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/forgot_password.templ`, Line: 85, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\"><div><label for=\"password\" class=\"block text-sm text-[#228B22] mb-1.5 uppercase\">NEW_PASSWORD:</label> <input type=\"password\" id=\"password\" name=\"password\" required autofocus autocomplete=\"new-password\" minlength=\"8\" class=\"w-full px-4 py-3 bg-black border border-[#1A4D1A] text-[#33FF00] placeholder-[#336633] focus:border-[#33FF00] focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] focus:outline-none transition-colors font-mono\" placeholder=\"••••••••\"><p class=\"mt-1.5 text-xs text-[#666600] uppercase\">MUST BE AT LEAST 8 CHARACTERS</p></div><div><label for=\"password_confirm\" class=\"block text-sm text-[#228B22] mb-1.5 uppercase\">CONFIRM_PASSWORD:</label> <input type=\"password\" id=\"password_confirm\" name=\"password_confirm\" required autocomplete=\"new-password\" class=\"w-full px-4 py-3 bg-black border border-[#1A4D1A] text-[#33FF00] placeholder-[#336633] focus:border-[#33FF00] focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] focus:outline-none transition-colors font-mono\" placeholder=\"••••••••\"></div><div class=\"pt-2\"><button type=\"submit\" class=\"w-full bg-[#FFB000] text-black font-bold py-3 uppercase hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all\">[ RESET PASSWORD ]</button></div></form><p class=\"mt-6 text-center text-sm text-[#666600] uppercase\"><a href=\"/login\" class=\"text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] font-medium transition-all\">BACK TO LOGIN</a></p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.Auth("Reset Password").Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.Auth("Reset Password").Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

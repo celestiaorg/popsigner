@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/Bidon15/banhbaoring/control-plane/internal/models"
-	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
 
@@ -30,7 +29,7 @@ type KeyDetailData struct {
 	SigningStats    *SigningStats
 }
 
-// KeyDetailPage renders the key details page.
+// KeyDetailPage renders the key details page - 80s CRT terminal aesthetic
 templ KeyDetailPage(data KeyDetailData) {
 	@layouts.Dashboard(data.Key.Name, layouts.DashboardData{
 		UserName:   data.UserName,
@@ -42,30 +41,30 @@ templ KeyDetailPage(data KeyDetailData) {
 	}) {
 		<div class="space-y-6">
 			<!-- Breadcrumb -->
-			<div class="flex items-center gap-2 text-sm">
+			<div class="flex items-center gap-2 text-sm font-mono">
 				<a href="/keys" 
 				   hx-get="/keys" 
 				   hx-target="#main-content" 
 				   hx-push-url="true"
-				   class="text-bao-muted hover:text-bao-text transition-colors">
-					Keys
+				   class="text-[#666600] hover:text-[#FFB000] transition-colors uppercase">
+					KEYS
 				</a>
-				<span class="text-bao-muted/50">/</span>
-				<span class="text-bao-text">{ data.Key.Name }</span>
+				<span class="text-[#666600]">/</span>
+				<span class="text-[#33FF00] uppercase">{ data.Key.Name }</span>
 			</div>
 			
 			<!-- Header -->
 			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 				<div class="flex items-center gap-4">
-					<div class="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+					<div class="w-14 h-14 bg-[#33FF00] flex items-center justify-center">
 						<span class="text-2xl">🔑</span>
 					</div>
 					<div>
-						<h1 class="text-2xl font-heading font-bold text-bao-text flex items-center gap-3">
+						<h1 class="text-2xl font-bold text-[#FFB000] flex items-center gap-3 uppercase drop-shadow-[0_0_10px_#FFB000]">
 							{ data.Key.Name }
-							<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50 animate-pulse"></span>
+							<span class="w-2.5 h-2.5 bg-[#33FF00] drop-shadow-[0_0_8px_#33FF00] animate-pulse"></span>
 						</h1>
-						<p class="text-bao-muted text-sm">
+						<p class="text-[#666600] text-sm uppercase">
 							{ data.Namespace } · { string(data.Key.Algorithm) }
 						</p>
 					</div>
@@ -74,150 +73,160 @@ templ KeyDetailPage(data KeyDetailData) {
 				   hx-get="/keys" 
 				   hx-target="#main-content" 
 				   hx-push-url="true"
-				   class="px-4 py-2 text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors self-start">
-					← Back to Keys
+				   class="px-4 py-2 text-[#666600] hover:text-[#FFB000] border border-[#333300] hover:border-[#FFB000] transition-colors uppercase self-start">
+					← BACK TO KEYS
 				</a>
 			</div>
 			
 			<!-- Celestia Address Card -->
-			<div class="p-6 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl">
+			<div class="p-6 bg-black border border-[#33FF00]/50">
 				<div class="flex items-center gap-3 mb-3">
 					<span class="text-2xl">🌌</span>
 					<div>
-						<p class="text-sm text-bao-muted">Celestia Address</p>
-						<p class="font-mono text-lg text-bao-text break-all">{ data.CelestiaAddress }</p>
+						<p class="text-sm text-[#666600] uppercase">CELESTIA ADDRESS</p>
+						<p class="font-mono text-lg text-[#33FF00] break-all drop-shadow-[0_0_8px_#33FF00]">{ data.CelestiaAddress }</p>
 					</div>
 				</div>
 				<div class="flex gap-2 mt-4">
 					<button onclick={ copyToClipboard(data.CelestiaAddress) }
-							class="px-3 py-1.5 text-sm bg-purple-500/20 text-purple-300 rounded-lg hover:bg-purple-500/30 transition-colors">
-						📋 Copy Address
+							class="px-3 py-1.5 text-sm bg-[#33FF00]/10 border border-[#33FF00]/50 text-[#33FF00] hover:bg-[#33FF00]/20 transition-colors uppercase">
+						📋 COPY ADDRESS
 					</button>
 					<a href={ templ.SafeURL("https://celenium.io/address/" + data.CelestiaAddress) } 
 					   target="_blank"
-					   class="px-3 py-1.5 text-sm bg-bao-border/50 text-bao-text rounded-lg hover:bg-bao-border transition-colors">
-						🔍 View on Celenium
+					   class="px-3 py-1.5 text-sm bg-black border border-[#666600] text-[#666600] hover:text-[#FFB000] hover:border-[#FFB000] transition-colors uppercase">
+						🔍 VIEW ON CELENIUM
 					</a>
 				</div>
 			</div>
 
 			<!-- Key Details Card -->
-			@components.Card("Key Details", components.CardDefault) {
+			<div class="bg-black border border-[#333300] p-6">
+				<h2 class="text-lg text-[#FFB000] mb-4 uppercase">&gt; KEY_DETAILS</h2>
 				<dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div>
-						<dt class="text-sm text-bao-muted mb-1">Key ID</dt>
-						<dd class="font-mono text-sm text-bao-text flex items-center gap-2 group">
+						<dt class="text-sm text-[#666600] mb-1 uppercase">KEY_ID</dt>
+						<dd class="font-mono text-sm text-[#33FF00] flex items-center gap-2 group">
 							<span class="truncate" title={ data.Key.ID.String() }>
 								{ truncateID(data.Key.ID.String()) }
 							</span>
 							<button onclick={ copyToClipboard(data.Key.ID.String()) }
-									class="p-1 text-bao-muted/50 hover:text-bao-text opacity-0 group-hover:opacity-100 transition-opacity"
+									class="p-1 text-[#666600] hover:text-[#33FF00] opacity-0 group-hover:opacity-100 transition-opacity"
 									title="Copy full ID">
 								📋
 							</button>
 						</dd>
 					</div>
 					<div>
-						<dt class="text-sm text-bao-muted mb-1">Internal Address</dt>
-						<dd class="font-mono text-sm text-bao-text flex items-center gap-2 group">
+						<dt class="text-sm text-[#666600] mb-1 uppercase">INTERNAL_ADDRESS</dt>
+						<dd class="font-mono text-sm text-[#33FF00] flex items-center gap-2 group">
 							<span class="truncate" title={ data.Key.Address }>
 								{ truncateAddress(data.Key.Address) }
 							</span>
 							<button onclick={ copyToClipboard(data.Key.Address) }
-									class="p-1 text-bao-muted/50 hover:text-bao-text opacity-0 group-hover:opacity-100 transition-opacity"
+									class="p-1 text-[#666600] hover:text-[#33FF00] opacity-0 group-hover:opacity-100 transition-opacity"
 									title="Copy address">
 								📋
 							</button>
 						</dd>
 					</div>
 					<div>
-						<dt class="text-sm text-bao-muted mb-1">Public Key</dt>
-						<dd class="font-mono text-sm text-bao-text flex items-center gap-2 group">
+						<dt class="text-sm text-[#666600] mb-1 uppercase">PUBLIC_KEY</dt>
+						<dd class="font-mono text-sm text-[#33FF00] flex items-center gap-2 group">
 							<span class="truncate" title={ formatHex(data.Key.PublicKey) }>
 								{ truncatePubKey(formatHex(data.Key.PublicKey)) }
 							</span>
 							<button onclick={ copyToClipboard(formatHex(data.Key.PublicKey)) }
-									class="p-1 text-bao-muted/50 hover:text-bao-text opacity-0 group-hover:opacity-100 transition-opacity"
+									class="p-1 text-[#666600] hover:text-[#33FF00] opacity-0 group-hover:opacity-100 transition-opacity"
 									title="Copy public key">
 								📋
 							</button>
 						</dd>
 					</div>
 					<div>
-						<dt class="text-sm text-bao-muted mb-1">Algorithm</dt>
-						<dd class="text-sm text-bao-text">
-							<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-bao-border/30 rounded-lg">
-								{ string(data.Key.Algorithm) }
-							</span>
+						<dt class="text-sm text-[#666600] mb-1 uppercase">ALGORITHM</dt>
+						<dd class="text-sm text-[#33FF00] uppercase">
+							{ string(data.Key.Algorithm) }
 						</dd>
 					</div>
 					<div>
-						<dt class="text-sm text-bao-muted mb-1">Namespace</dt>
-						<dd class="text-sm text-bao-text">
-							<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-bao-accent/10 text-bao-accent rounded-lg">
-								{ data.Namespace }
-							</span>
+						<dt class="text-sm text-[#666600] mb-1 uppercase">NAMESPACE</dt>
+						<dd class="text-sm text-[#FFB000] uppercase">
+							{ data.Namespace }
 						</dd>
 					</div>
 					<div>
-						<dt class="text-sm text-bao-muted mb-1">Created</dt>
-						<dd class="text-sm text-bao-text">
-							{ data.Key.CreatedAt.Format("Jan 2, 2006 at 3:04 PM") }
+						<dt class="text-sm text-[#666600] mb-1 uppercase">CREATED</dt>
+						<dd class="text-sm text-[#33FF00]">
+							{ data.Key.CreatedAt.Format("2006-01-02 15:04:05") }
 						</dd>
 					</div>
 					<div>
-						<dt class="text-sm text-bao-muted mb-1">Exportable</dt>
-						<dd class="text-sm text-bao-text">
+						<dt class="text-sm text-[#666600] mb-1 uppercase">EXIT_STATUS</dt>
+						<dd class="text-sm">
 							if data.Key.Exportable {
-								<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-lg">
-									<span>📤</span> Yes
-								</span>
+								<span class="text-[#33FF00] drop-shadow-[0_0_8px_#33FF00] uppercase">EXIT_GUARANTEED</span>
 							} else {
-								<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-bao-border/30 text-bao-muted rounded-lg">
-									<span>🔒</span> No
-								</span>
+								<span class="text-[#FF3333] uppercase">LOCKED</span>
 							}
 						</dd>
 					</div>
 					<div>
-						<dt class="text-sm text-bao-muted mb-1">Version</dt>
-						<dd class="text-sm text-bao-text">
+						<dt class="text-sm text-[#666600] mb-1 uppercase">VERSION</dt>
+						<dd class="text-sm text-[#33FF00]">
 							v{ formatVersion(data.Key.Version) }
 						</dd>
 					</div>
 				</dl>
+			</div>
+			
+			<!-- Exit Guarantee Section (only if exportable) -->
+			if data.Key.Exportable {
+				<div class="bg-black border border-[#FFB000] p-6">
+					<h3 class="text-lg text-[#FFB000] mb-2 uppercase">&gt; EXIT_GUARANTEE</h3>
+					<p class="text-[#666600] text-sm mb-4 uppercase">
+						EXPORT THIS KEY FOR USE IN LOCAL KEYRINGS. YOUR SOVEREIGNTY IS NON-NEGOTIABLE.
+					</p>
+					<button hx-post={ "/keys/" + data.Key.ID.String() + "/export" }
+							hx-target="#toast-container"
+							class="bg-[#FFB000] text-black font-bold px-4 py-2 uppercase hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all">
+						[ EXPORT_KEY → ]
+					</button>
+				</div>
 			}
 			
 			<!-- Signing Activity Chart -->
-			@components.Card("Signing Activity (Last 30 Days)", components.CardDefault) {
+			<div class="bg-black border border-[#333300] p-6">
+				<h2 class="text-lg text-[#FFB000] mb-4 uppercase">&gt; SIGNING_ACTIVITY (30D)</h2>
 				<div class="relative">
 					<canvas id="signing-chart" height="200"></canvas>
 				</div>
 				@signingChartScript(data.SigningStats)
-				<div class="mt-6 flex flex-wrap gap-6 text-sm pt-4 border-t border-bao-border/50">
+				<div class="mt-6 flex flex-wrap gap-6 text-sm pt-4 border-t border-[#333300]">
 					<div class="flex items-center gap-2">
-						<div class="w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-rose-500"></div>
-						<span class="text-bao-muted">Total:</span>
-						<span class="text-bao-text font-semibold">{ keysFormatNumber(data.SigningStats.Total) }</span>
+						<div class="w-3 h-3 bg-[#FFB000]"></div>
+						<span class="text-[#666600] uppercase">TOTAL:</span>
+						<span class="text-[#33FF00] font-semibold drop-shadow-[0_0_8px_#33FF00]">{ keysFormatNumber(data.SigningStats.Total) }</span>
 					</div>
 					<div class="flex items-center gap-2">
-						<div class="w-3 h-3 rounded-full bg-bao-accent/60"></div>
-						<span class="text-bao-muted">Avg/day:</span>
-						<span class="text-bao-text font-semibold">{ formatFloat(data.SigningStats.AvgPerDay) }</span>
+						<div class="w-3 h-3 bg-[#33FF00]/60"></div>
+						<span class="text-[#666600] uppercase">AVG/DAY:</span>
+						<span class="text-[#33FF00] font-semibold">{ formatFloat(data.SigningStats.AvgPerDay) }</span>
 					</div>
 				</div>
-			}
+			</div>
 			
 			<!-- Integration Guide -->
-			@components.Card("Integration Guide", components.CardDefault) {
+			<div class="bg-black border border-[#333300] p-6">
+				<h2 class="text-lg text-[#FFB000] mb-4 uppercase">&gt; INTEGRATION</h2>
 				<div class="space-y-6">
-					<p class="text-bao-muted">Use this key with your Celestia node or application:</p>
+					<p class="text-[#666600] uppercase">USE THIS KEY WITH YOUR CELESTIA NODE OR APPLICATION:</p>
 					
 					<!-- Go SDK -->
 					<div>
 						<div class="flex items-center gap-2 mb-2">
 							<span class="text-lg">🔷</span>
-							<span class="font-medium text-bao-text">Go SDK</span>
+							<span class="font-medium text-[#33FF00] uppercase">GO SDK</span>
 						</div>
 						@codeBlock("go", goSDKExample(data.Key.ID.String()))
 					</div>
@@ -226,7 +235,7 @@ templ KeyDetailPage(data KeyDetailData) {
 					<div>
 						<div class="flex items-center gap-2 mb-2">
 							<span class="text-lg">🦀</span>
-							<span class="font-medium text-bao-text">Rust SDK</span>
+							<span class="font-medium text-[#33FF00] uppercase">RUST SDK</span>
 						</div>
 						@codeBlock("rust", rustSDKExample(data.Key.ID.String()))
 					</div>
@@ -235,50 +244,51 @@ templ KeyDetailPage(data KeyDetailData) {
 					<div>
 						<div class="flex items-center gap-2 mb-2">
 							<span class="text-lg">🌐</span>
-							<span class="font-medium text-bao-text">REST API</span>
+							<span class="font-medium text-[#33FF00] uppercase">REST API</span>
 						</div>
 						@codeBlock("bash", curlExample(data.Key.ID.String()))
 					</div>
 					
-					<div class="flex gap-3 pt-4 border-t border-bao-border/50">
+					<div class="flex gap-3 pt-4 border-t border-[#333300]">
 						<a href="/docs" 
-						   class="px-4 py-2 bg-bao-accent/10 text-bao-accent rounded-lg hover:bg-bao-accent/20 transition-colors">
-							📚 Full Documentation
+						   class="px-4 py-2 border border-[#FFB000] text-[#FFB000] hover:bg-[#FFB000]/10 transition-colors uppercase">
+							📚 FULL DOCS
 						</a>
 						<a href="/docs#celestia-client" 
-						   class="px-4 py-2 bg-purple-500/10 text-purple-400 rounded-lg hover:bg-purple-500/20 transition-colors">
-							🌌 Celestia Integration
+						   class="px-4 py-2 border border-[#33FF00] text-[#33FF00] hover:bg-[#33FF00]/10 transition-colors uppercase">
+							🌌 CELESTIA
 						</a>
 						<a href="https://github.com/Bidon15/banhbaoring/tree/main/examples" 
 						   target="_blank"
-						   class="px-4 py-2 bg-bao-border/50 text-bao-text rounded-lg hover:bg-bao-border transition-colors">
-							💡 More Examples ↗
+						   class="px-4 py-2 border border-[#666600] text-[#666600] hover:text-[#FFB000] hover:border-[#FFB000] transition-colors uppercase">
+							💡 EXAMPLES ↗
 						</a>
 					</div>
 				</div>
-			}
+			</div>
 			
 			<!-- Danger Zone -->
-			@components.Card("Danger Zone", components.CardDefault) {
-				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-red-500/5 border border-red-500/20 rounded-xl">
+			<div class="bg-black border border-[#FF3333] p-6">
+				<h2 class="text-lg text-[#FF3333] mb-4 uppercase">&gt; DANGER_ZONE</h2>
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-[#FF3333]/5 border border-[#FF3333]/20">
 					<div>
-						<p class="text-red-400 font-medium">Delete this key permanently</p>
-						<p class="text-sm text-bao-muted mt-1">This action cannot be undone. The key will be removed from OpenBao.</p>
+						<p class="text-[#FF3333] font-medium uppercase">DELETE THIS KEY PERMANENTLY</p>
+						<p class="text-sm text-[#666600] mt-1 uppercase">THIS ACTION CANNOT BE UNDONE. KEY MATERIAL WILL BE DESTROYED.</p>
 					</div>
 					<button hx-delete={ "/keys/" + data.Key.ID.String() }
 							hx-confirm="Are you absolutely sure you want to delete this key? This action cannot be undone and the key material will be permanently destroyed."
 							hx-target="#main-content"
 							hx-push-url="/keys"
-							class="px-4 py-2.5 bg-red-500/10 text-red-400 border border-red-500/50 rounded-xl hover:bg-red-500/20 transition-colors font-medium shrink-0">
-						🗑️ Delete Key
+							class="px-4 py-2.5 bg-[#FF3333]/10 border border-[#FF3333] text-[#FF3333] hover:bg-[#FF3333]/20 transition-colors font-medium shrink-0 uppercase">
+						🗑️ DELETE_KEY
 					</button>
 				</div>
-			}
+			</div>
 		</div>
 	}
 }
 
-// signingChartScript renders the Chart.js initialization script.
+// signingChartScript renders the Chart.js initialization script with terminal colors.
 templ signingChartScript(stats *SigningStats) {
 	<script>
 		(function() {
@@ -294,13 +304,13 @@ templ signingChartScript(stats *SigningStats) {
 					labels: labels,
 					datasets: [{
 						data: values,
-						borderColor: '#f59e0b',
-						backgroundColor: 'rgba(245, 158, 11, 0.1)',
+						borderColor: '#FFB000',
+						backgroundColor: 'rgba(255, 176, 0, 0.1)',
 						borderWidth: 2,
 						fill: true,
 						tension: 0.4,
-						pointBackgroundColor: '#f59e0b',
-						pointBorderColor: '#0c0a14',
+						pointBackgroundColor: '#FFB000',
+						pointBorderColor: '#000000',
 						pointBorderWidth: 2,
 						pointRadius: 0,
 						pointHoverRadius: 6
@@ -316,28 +326,30 @@ templ signingChartScript(stats *SigningStats) {
 					plugins: {
 						legend: { display: false },
 						tooltip: {
-							backgroundColor: '#1a1625',
-							borderColor: '#4a3f5c',
+							backgroundColor: '#000000',
+							borderColor: '#333300',
 							borderWidth: 1,
-							titleColor: '#faf5ff',
-							bodyColor: '#a1a1aa',
+							titleColor: '#FFB000',
+							bodyColor: '#33FF00',
 							padding: 12,
 							displayColors: false,
+							titleFont: { family: 'monospace' },
+							bodyFont: { family: 'monospace' },
 							callbacks: {
 								label: function(context) {
-									return context.parsed.y + ' signatures';
+									return context.parsed.y + ' SIGNATURES';
 								}
 							}
 						}
 					},
 					scales: {
 						x: {
-							grid: { color: 'rgba(74, 63, 92, 0.3)', drawBorder: false },
-							ticks: { color: '#71717a', font: { size: 11 }, maxRotation: 0 }
+							grid: { color: 'rgba(51, 51, 0, 0.5)', drawBorder: false },
+							ticks: { color: '#666600', font: { size: 11, family: 'monospace' }, maxRotation: 0 }
 						},
 						y: {
-							grid: { color: 'rgba(74, 63, 92, 0.3)', drawBorder: false },
-							ticks: { color: '#71717a', font: { size: 11 }, precision: 0 },
+							grid: { color: 'rgba(51, 51, 0, 0.5)', drawBorder: false },
+							ticks: { color: '#666600', font: { size: 11, family: 'monospace' }, precision: 0 },
 							beginAtZero: true
 						}
 					}
@@ -398,7 +410,7 @@ func mustMarshalJSON(v interface{}) string {
 func goSDKExample(keyID string) string {
 	return `import "github.com/Bidon15/banhbaoring/sdk-go"
 
-client := banhbao.NewClient("your-api-key")
+client := popsigner.NewClient("your-api-key")
 signer := client.Key("` + keyID + `")
 
 // Sign a transaction
@@ -406,7 +418,7 @@ sig, err := signer.Sign(txBytes)`
 }
 
 func rustSDKExample(keyID string) string {
-	return `use banhbaoring::Client;
+	return `use popsigner::Client;
 
 let client = Client::new("your-api-key");
 let signer = client.key("` + keyID + `");
@@ -416,14 +428,12 @@ let sig = signer.sign(&tx_bytes)?;`
 }
 
 func curlExample(keyID string) string {
-	return `curl -X POST https://api.banhbaoring.io/v1/keys/` + keyID + `/sign \
+	return `curl -X POST https://api.popsigner.com/v1/keys/` + keyID + `/sign \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"data": "base64_encoded_message"}'`
 }
 
 templ codeBlock(lang string, code string) {
-	<pre class="p-4 bg-bao-bg border border-bao-border rounded-xl text-sm overflow-x-auto"><code class="text-bao-text">{ code }</code></pre>
+	<pre class="p-4 bg-black border border-[#1A4D1A] text-sm overflow-x-auto font-mono"><code class="text-[#33FF00]">{ code }</code></pre>
 }
-
-

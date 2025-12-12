@@ -8,7 +8,7 @@ package landing
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// Hero renders the hero section with tagline and CTA
+// Hero renders the hero section with 80s CRT terminal aesthetic
 func Hero() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -30,27 +30,27 @@ func Hero() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"relative pt-32 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden\"><!-- Background glow effect --><div class=\"absolute inset-0 overflow-hidden pointer-events-none\"><div class=\"absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-radial from-purple-500/10 via-orange-500/5 to-transparent blur-3xl\"></div></div><div class=\"relative max-w-5xl mx-auto text-center\"><!-- Badge --><div class=\"inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 mb-8 animate-fade-in\"><span class=\"relative flex h-2 w-2\"><span class=\"animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75\"></span> <span class=\"relative inline-flex rounded-full h-2 w-2 bg-purple-500\"></span></span> <span class=\"text-xs font-medium text-purple-300\">Built on OpenBao • 100% Open Source</span></div><!-- Bell Icon --><div class=\"text-6xl mb-4 animate-bounce\" style=\"animation-duration: 2s;\">🔔</div><!-- Main Headline --><h1 class=\"text-5xl sm:text-6xl lg:text-7xl font-display font-bold text-terminal-text leading-tight mb-6 animate-slide-up\">Ring ring!<br class=\"hidden sm:block\"><span class=\"bg-gradient-to-r from-purple-400 via-orange-400 to-purple-400 bg-clip-text text-transparent\">Sign where your infra lives.</span></h1><!-- Sub-headline - POP focused --><p class=\"text-xl sm:text-2xl text-terminal-muted max-w-3xl mx-auto mb-6 animate-slide-up animation-delay-100\"><span class=\"text-purple-400 font-semibold\">📍 Point of Presence</span> key management for sovereign rollups.</p><p class=\"text-lg text-terminal-muted/80 max-w-2xl mx-auto mb-10 animate-slide-up animation-delay-200\">Deploy next to your nodes. Same region. Same datacenter. Vault-grade security with OpenBao.</p><!-- CTAs --><div class=\"flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up animation-delay-300\"><a href=\"/signup\" class=\"group bg-gradient-to-r from-purple-500 to-orange-500 text-white font-display font-semibold text-lg px-10 py-4 rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2\">Get Started Free <svg class=\"w-5 h-5 group-hover:translate-x-1 transition-transform\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 7l5 5m0 0l-5 5m5-5H6\"></path></svg></a> <a href=\"https://github.com/Bidon15/banhbaoring\" target=\"_blank\" rel=\"noopener\" class=\"btn-ghost text-lg px-8 py-4 flex items-center gap-2\"><svg class=\"w-5 h-5\" fill=\"currentColor\" viewBox=\"0 0 24 24\"><path d=\"M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.807 1.305 3.492.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z\"></path></svg> Star on GitHub</a></div><!-- Stats row --><div class=\"mt-20 grid grid-cols-2 sm:grid-cols-4 gap-8 max-w-3xl mx-auto animate-slide-up animation-delay-500\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"relative min-h-screen flex items-center bg-black font-mono pt-16 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden\"><!-- CRT Scanline overlay --><div class=\"absolute inset-0 pointer-events-none opacity-[0.03]\n\t\t            bg-[repeating-linear-gradient(0deg,transparent,transparent_1px,rgba(0,0,0,0.3)_1px,rgba(0,0,0,0.3)_2px)]\"></div><!-- Subtle phosphor glow --><div class=\"absolute inset-0 overflow-hidden pointer-events-none\"><div class=\"absolute top-1/3 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-radial from-[#FFB000]/5 via-transparent to-transparent blur-3xl\"></div></div><div class=\"relative max-w-6xl mx-auto z-10\"><!-- Terminal prompt --><div class=\"text-[#33FF00] text-sm mb-6 opacity-70 animate-pulse\"><span class=\"text-[#228B22]\">&gt;</span> INITIALIZING POPSIGNER...<span class=\"animate-[blink_1s_infinite]\">_</span></div><!-- Main Headline - Amber phosphor with glow --><h1 class=\"text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold uppercase tracking-wider\n\t\t\t           text-[#FFB000] drop-shadow-[0_0_20px_#FFB000] leading-tight mb-8\">POINT-OF-PRESENCE<br>SIGNING INFRASTRUCTURE</h1><!-- Subhead - Green phosphor --><p class=\"text-lg sm:text-xl text-[#33FF00] max-w-3xl opacity-90 leading-relaxed mb-4\n\t\t\t          drop-shadow-[0_0_8px_#33FF00]\">A DISTRIBUTED SIGNING LAYER DESIGNED TO LIVE INLINE WITH  EXECUTION—NOT BEHIND AN API QUEUE.</p><!-- Secondary - Dimmed green --><p class=\"text-base sm:text-lg text-[#228B22] max-w-2xl mb-12\">DEPLOY NEXT TO YOUR SYSTEMS. KEYS REMAIN REMOTE. YOU REMAIN SOVEREIGN.</p><!-- CTAs - Terminal button style --><div class=\"flex flex-col sm:flex-row gap-4 sm:gap-6 mb-16\"><a href=\"/signup\" class=\"inline-flex items-center justify-center gap-2 bg-[#FFB000] text-black font-bold px-8 py-4 uppercase\n\t\t\t\t          hover:bg-[#FFCC00] hover:shadow-[0_0_25px_#FFB000]\n\t\t\t\t          transition-all duration-150 text-lg\">[ DEPLOY POPSIGNER ]</a> <a href=\"/docs\" class=\"inline-flex items-center justify-center gap-2 border-2 border-[#33FF00] text-[#33FF00] px-8 py-4 uppercase\n\t\t\t\t          hover:bg-[#33FF00] hover:text-black\n\t\t\t\t          hover:shadow-[0_0_20px_#33FF00]\n\t\t\t\t          transition-all duration-150 text-lg\">[ DOCUMENTATION ]</a></div><!-- Stats row - CRT data display style --><div class=\"grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = HeroStat("📍", "Point of Presence", "Deploy next to nodes").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = HeroStat("POP", "POINT-OF-PRESENCE", "INLINE DEPLOYMENT").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = HeroStat("🚀", "5 Minutes", "To first signature").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = HeroStat("OSS", "100% OPEN SOURCE", "APACHE 2.0").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = HeroStat("🔓", "100%", "Open source").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = HeroStat("BAO", "BUILT ON OPENBAO", "VAULT-GRADE SECURITY").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = HeroStat("🧩", "Plugins", "secp256k1 & more").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = HeroStat("PLG", "PLUGIN READY", "SECP256K1 & MORE").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><!-- Version/status bar --><div class=\"mt-16 text-[#666600] text-xs uppercase tracking-wider\">STATUS: OPERATIONAL | VERSION: 1.0.0 | (FORMERLY BANHBAORING)</div></div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -58,7 +58,7 @@ func Hero() templ.Component {
 	})
 }
 
-func HeroStat(icon, value, label string) templ.Component {
+func HeroStat(code, value, label string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -79,40 +79,40 @@ func HeroStat(icon, value, label string) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"text-center p-4 rounded-xl bg-terminal-card/50 border border-terminal-border hover:border-purple-500/30 transition-colors group\"><div class=\"text-2xl mb-2 group-hover:scale-110 transition-transform\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"p-4 border border-[#1A4D1A] bg-black/50 hover:border-[#33FF00] transition-colors group\"><div class=\"text-xs text-[#666600] mb-1 uppercase\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(code)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/hero.templ`, Line: 70, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/hero.templ`, Line: 75, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"text-lg sm:text-xl font-display font-bold text-terminal-text\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"text-sm sm:text-base text-[#33FF00] font-bold uppercase\n\t\t            group-hover:drop-shadow-[0_0_5px_#33FF00] transition-all\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/hero.templ`, Line: 71, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/hero.templ`, Line: 77, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div class=\"text-xs text-terminal-muted mt-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><div class=\"text-xs text-[#228B22] mt-1 uppercase\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/hero.templ`, Line: 72, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/hero.templ`, Line: 78, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {

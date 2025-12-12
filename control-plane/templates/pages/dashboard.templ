@@ -5,36 +5,36 @@ import (
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
 
-// DashboardPage renders the main dashboard for authenticated users.
+// DashboardPage renders the main dashboard for authenticated users - 80s CRT terminal aesthetic
 templ DashboardPage(user *models.User) {
 	@layouts.Base("Dashboard", true, false) {
-		<div class="min-h-screen bg-terminal-bg">
+		<div class="min-h-screen bg-black font-mono">
 			<!-- Header -->
-			<header class="border-b border-terminal-border bg-terminal-card/50 backdrop-blur-sm sticky top-0 z-50">
+			<header class="border-b border-[#333300] bg-black sticky top-0 z-50">
 				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 					<div class="flex items-center justify-between h-16">
 						<!-- Logo -->
 						<div class="flex items-center gap-3">
 							<a href="/dashboard" class="flex items-center gap-2 group">
-								<span class="text-2xl group-hover:scale-110 transition-transform">🔔</span>
-								<span class="text-xl font-heading font-bold text-terminal-text">BanhBaoRing</span>
+								<span class="text-[#FFB000] text-xl group-hover:drop-shadow-[0_0_10px_#FFB000] transition-all">◇</span>
+								<span class="text-lg font-bold text-[#FFB000] uppercase tracking-wider">POPSIGNER</span>
 							</a>
 						</div>
 						
 						<!-- User menu -->
 						<div class="flex items-center gap-4">
-							<span class="text-sm text-terminal-muted">
+							<span class="text-sm text-[#33FF00] uppercase">
 								{ getUserDisplayName(user) }
 							</span>
 							if user.AvatarURL != nil && *user.AvatarURL != "" {
-								<img src={ *user.AvatarURL } alt="Avatar" class="w-8 h-8 rounded-full border border-terminal-border"/>
+								<img src={ *user.AvatarURL } alt="Avatar" class="w-8 h-8 border border-[#33FF00]"/>
 							} else {
-								<div class="w-8 h-8 rounded-full bg-terminal-accent flex items-center justify-center text-terminal-bg font-bold text-sm">
+								<div class="w-8 h-8 bg-[#33FF00] flex items-center justify-center text-black font-bold text-sm">
 									{ getInitial(user) }
 								</div>
 							}
-							<a href="/logout" class="text-sm text-terminal-muted hover:text-terminal-text transition-colors">
-								Sign out
+							<a href="/logout" class="text-sm text-[#666600] hover:text-[#FFB000] transition-colors uppercase">
+								LOGOUT
 							</a>
 						</div>
 					</div>
@@ -45,108 +45,96 @@ templ DashboardPage(user *models.User) {
 			<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 				<!-- Welcome section -->
 				<div class="mb-8">
-					<h1 class="text-3xl font-heading font-bold text-terminal-text mb-2">
-						Welcome back, { getFirstName(user) }! 👋
+					<h1 class="text-3xl font-bold text-[#FFB000] mb-2 uppercase drop-shadow-[0_0_10px_#FFB000]">
+						&gt; WELCOME, { getFirstName(user) }_
 					</h1>
-					<p class="text-terminal-muted">
-						Manage your cryptographic keys securely.
+					<p class="text-[#33FF00]">
+						MANAGE YOUR CRYPTOGRAPHIC KEYS SECURELY
 					</p>
 				</div>
 				
 				<!-- Quick stats -->
 				<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-					<div class="terminal-card">
+					<div class="bg-black border border-[#333300] p-6 hover:border-[#FFB000]/50 transition-colors">
 						<div class="flex items-center gap-3 mb-2">
-							<div class="feature-icon">
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-								</svg>
-							</div>
-							<span class="text-terminal-muted text-sm">Keys</span>
+							<span class="text-[#33FF00] text-xl">🔑</span>
+							<span class="text-[#666600] text-sm uppercase">KEYS</span>
 						</div>
-						<div class="text-2xl font-heading font-bold text-terminal-text">0</div>
-						<a href="/keys" class="text-sm text-terminal-accent hover:text-amber-300 transition-colors">
-							Create your first key →
+						<div class="text-2xl font-bold text-[#33FF00] drop-shadow-[0_0_8px_#33FF00]">0</div>
+						<a href="/keys" class="text-sm text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] transition-all uppercase">
+							CREATE FIRST KEY →
 						</a>
 					</div>
 					
-					<div class="terminal-card">
+					<div class="bg-black border border-[#333300] p-6 hover:border-[#33FF00]/50 transition-colors">
 						<div class="flex items-center gap-3 mb-2">
-							<div class="feature-icon">
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-								</svg>
-							</div>
-							<span class="text-terminal-muted text-sm">Signatures (This Month)</span>
+							<span class="text-[#33FF00] text-xl">✍</span>
+							<span class="text-[#666600] text-sm uppercase">SIGNATURES (THIS MONTH)</span>
 						</div>
-						<div class="text-2xl font-heading font-bold text-terminal-text">0</div>
-						<span class="text-sm text-terminal-muted">of 1,000 free</span>
+						<div class="text-2xl font-bold text-[#33FF00] drop-shadow-[0_0_8px_#33FF00]">0</div>
+						<span class="text-sm text-[#666600] uppercase">OF 1,000 FREE</span>
 					</div>
 					
-					<div class="terminal-card">
+					<div class="bg-black border border-[#333300] p-6 hover:border-[#33FF00]/50 transition-colors">
 						<div class="flex items-center gap-3 mb-2">
-							<div class="feature-icon">
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-								</svg>
-							</div>
-							<span class="text-terminal-muted text-sm">API Calls (This Month)</span>
+							<span class="text-[#33FF00] text-xl">📡</span>
+							<span class="text-[#666600] text-sm uppercase">API CALLS (THIS MONTH)</span>
 						</div>
-						<div class="text-2xl font-heading font-bold text-terminal-text">0</div>
-						<a href="/settings/api-keys" class="text-sm text-terminal-accent hover:text-amber-300 transition-colors">
-							Create API key →
+						<div class="text-2xl font-bold text-[#33FF00] drop-shadow-[0_0_8px_#33FF00]">0</div>
+						<a href="/settings/api-keys" class="text-sm text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] transition-all uppercase">
+							CREATE API KEY →
 						</a>
 					</div>
 				</div>
 				
 				<!-- Quick actions -->
 				<div class="mb-8">
-					<h2 class="text-xl font-heading font-semibold text-terminal-text mb-4">Quick Actions</h2>
+					<h2 class="text-xl font-bold text-[#FFB000] mb-4 uppercase">&gt; QUICK_ACTIONS</h2>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-						<a href="/keys/new" class="terminal-card hover:glow-border-orange group cursor-pointer transition-all">
+						<a href="/keys/new" class="bg-black border border-[#333300] p-4 hover:border-[#FFB000] group cursor-pointer transition-all">
 							<div class="flex items-center gap-3">
-								<div class="w-10 h-10 rounded-lg bg-terminal-accent/10 flex items-center justify-center group-hover:bg-terminal-accent/20 transition-colors">
+								<div class="w-10 h-10 border border-[#FFB000] flex items-center justify-center group-hover:bg-[#FFB000]/10 transition-colors">
 									<span class="text-xl">🔑</span>
 								</div>
 								<div>
-									<div class="font-medium text-terminal-text">Create Key</div>
-									<div class="text-sm text-terminal-muted">Generate a new signing key</div>
+									<div class="font-medium text-[#FFB000] uppercase">CREATE_KEY</div>
+									<div class="text-sm text-[#666600]">GENERATE SIGNING KEY</div>
 								</div>
 							</div>
 						</a>
 						
-						<a href="/settings/api-keys" class="terminal-card hover:glow-border-orange group cursor-pointer transition-all">
+						<a href="/settings/api-keys" class="bg-black border border-[#333300] p-4 hover:border-[#33FF00] group cursor-pointer transition-all">
 							<div class="flex items-center gap-3">
-								<div class="w-10 h-10 rounded-lg bg-terminal-teal/10 flex items-center justify-center group-hover:bg-terminal-teal/20 transition-colors">
+								<div class="w-10 h-10 border border-[#33FF00] flex items-center justify-center group-hover:bg-[#33FF00]/10 transition-colors">
 									<span class="text-xl">🔌</span>
 								</div>
 								<div>
-									<div class="font-medium text-terminal-text">API Keys</div>
-									<div class="text-sm text-terminal-muted">Manage API access</div>
+									<div class="font-medium text-[#33FF00] uppercase">API_KEYS</div>
+									<div class="text-sm text-[#666600]">MANAGE ACCESS</div>
 								</div>
 							</div>
 						</a>
 						
-						<a href="/docs" class="terminal-card hover:glow-border-orange group cursor-pointer transition-all">
+						<a href="/docs" class="bg-black border border-[#333300] p-4 hover:border-[#33FF00] group cursor-pointer transition-all">
 							<div class="flex items-center gap-3">
-								<div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
+								<div class="w-10 h-10 border border-[#33FF00] flex items-center justify-center group-hover:bg-[#33FF00]/10 transition-colors">
 									<span class="text-xl">📚</span>
 								</div>
 								<div>
-									<div class="font-medium text-terminal-text">Documentation</div>
-									<div class="text-sm text-terminal-muted">Learn the API</div>
+									<div class="font-medium text-[#33FF00] uppercase">DOCS</div>
+									<div class="text-sm text-[#666600]">LEARN THE API</div>
 								</div>
 							</div>
 						</a>
 						
-						<a href="/settings/profile" class="terminal-card hover:glow-border-orange group cursor-pointer transition-all">
+						<a href="/settings/profile" class="bg-black border border-[#333300] p-4 hover:border-[#33FF00] group cursor-pointer transition-all">
 							<div class="flex items-center gap-3">
-								<div class="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
+								<div class="w-10 h-10 border border-[#33FF00] flex items-center justify-center group-hover:bg-[#33FF00]/10 transition-colors">
 									<span class="text-xl">⚙️</span>
 								</div>
 								<div>
-									<div class="font-medium text-terminal-text">Settings</div>
-									<div class="text-sm text-terminal-muted">Account preferences</div>
+									<div class="font-medium text-[#33FF00] uppercase">SETTINGS</div>
+									<div class="text-sm text-[#666600]">PREFERENCES</div>
 								</div>
 							</div>
 						</a>
@@ -154,36 +142,36 @@ templ DashboardPage(user *models.User) {
 				</div>
 				
 				<!-- Getting started guide -->
-				<div class="terminal-card">
-					<h2 class="text-xl font-heading font-semibold text-terminal-text mb-4">Getting Started</h2>
+				<div class="bg-black border border-[#333300] p-6">
+					<h2 class="text-xl font-bold text-[#FFB000] mb-4 uppercase">&gt; GETTING_STARTED</h2>
 					<div class="space-y-4">
 						<div class="flex items-start gap-4">
-							<div class="w-8 h-8 rounded-full bg-terminal-teal text-terminal-bg flex items-center justify-center font-bold text-sm shrink-0">
+							<div class="w-8 h-8 bg-[#33FF00] text-black flex items-center justify-center font-bold text-sm shrink-0">
 								1
 							</div>
 							<div>
-								<h3 class="font-medium text-terminal-text">Create your first key</h3>
-								<p class="text-sm text-terminal-muted">Generate a secp256k1 key for signing Celestia or Cosmos transactions.</p>
+								<h3 class="font-medium text-[#33FF00] uppercase">CREATE YOUR FIRST KEY</h3>
+								<p class="text-sm text-[#666600]">GENERATE A SECP256K1 KEY FOR SIGNING CELESTIA OR COSMOS TRANSACTIONS.</p>
 							</div>
 						</div>
 						
 						<div class="flex items-start gap-4">
-							<div class="w-8 h-8 rounded-full bg-terminal-border text-terminal-muted flex items-center justify-center font-bold text-sm shrink-0">
+							<div class="w-8 h-8 border border-[#666600] text-[#666600] flex items-center justify-center font-bold text-sm shrink-0">
 								2
 							</div>
 							<div>
-								<h3 class="font-medium text-terminal-text">Generate an API key</h3>
-								<p class="text-sm text-terminal-muted">Create credentials to authenticate your application.</p>
+								<h3 class="font-medium text-[#33FF00] uppercase">GENERATE AN API KEY</h3>
+								<p class="text-sm text-[#666600]">CREATE CREDENTIALS TO AUTHENTICATE YOUR APPLICATION.</p>
 							</div>
 						</div>
 						
 						<div class="flex items-start gap-4">
-							<div class="w-8 h-8 rounded-full bg-terminal-border text-terminal-muted flex items-center justify-center font-bold text-sm shrink-0">
+							<div class="w-8 h-8 border border-[#666600] text-[#666600] flex items-center justify-center font-bold text-sm shrink-0">
 								3
 							</div>
 							<div>
-								<h3 class="font-medium text-terminal-text">Integrate the SDK</h3>
-								<p class="text-sm text-terminal-muted">Use our Go or Rust SDK to sign transactions from your application.</p>
+								<h3 class="font-medium text-[#33FF00] uppercase">INTEGRATE THE SDK</h3>
+								<p class="text-sm text-[#666600]">USE OUR GO OR RUST SDK TO SIGN TRANSACTIONS FROM YOUR APPLICATION.</p>
 							</div>
 						</div>
 					</div>
@@ -228,4 +216,3 @@ func getInitial(user *models.User) string {
 	}
 	return "?"
 }
-

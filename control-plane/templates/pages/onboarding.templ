@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
 
@@ -15,31 +14,31 @@ type OnboardingData struct {
 	ErrorMsg    string
 }
 
-// OnboardingStep1 renders the first step: Create Organization.
+// OnboardingStep1 renders the first step: Create Organization - 80s CRT terminal aesthetic
 templ OnboardingStep1(data OnboardingData) {
 	@layouts.Auth("Welcome") {
 		@OnboardingProgress(1)
 		
 		<!-- Error message -->
 		if data.ErrorMsg != "" {
-			<div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3">
-				<span class="text-red-400 text-lg">⚠</span>
-				<p class="text-red-400 text-sm">{ data.ErrorMsg }</p>
+			<div class="mb-6 p-4 bg-[#FF3333]/10 border border-[#FF3333]/50 flex items-center gap-3">
+				<span class="text-[#FF3333] text-lg">⚠</span>
+				<p class="text-[#FF3333] text-sm uppercase">{ data.ErrorMsg }</p>
 			</div>
 		}
 		
 		<div class="text-center mb-6">
-			<span class="text-5xl mb-4 inline-block animate-bounce">👋</span>
-			<h2 class="text-2xl font-heading font-bold text-bao-text">
-				Welcome, { data.UserName }!
+			<span class="text-[#33FF00] text-4xl mb-4 inline-block drop-shadow-[0_0_15px_#33FF00]">&gt;_</span>
+			<h2 class="text-xl text-[#FFB000] uppercase drop-shadow-[0_0_10px_#FFB000]">
+				WELCOME, { data.UserName }
 			</h2>
-			<p class="mt-2 text-bao-muted">Let's set up your organization</p>
+			<p class="mt-2 text-[#666600] uppercase">INITIALIZING YOUR ORGANIZATION</p>
 		</div>
 		
 		<form action="/onboarding/step1" method="POST" class="space-y-4">
 			<div>
-				<label for="org_name" class="block text-sm font-medium text-bao-text mb-1.5">
-					Organization Name
+				<label for="org_name" class="block text-sm text-[#228B22] mb-1.5 uppercase">
+					ORG_NAME:
 				</label>
 				<input 
 					type="text" 
@@ -48,49 +47,44 @@ templ OnboardingStep1(data OnboardingData) {
 					required
 					autofocus
 					value={ data.OrgName }
-					class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors"
-					placeholder="My Rollup Co"
+					class="w-full px-4 py-3 bg-black border border-[#1A4D1A] text-[#33FF00] placeholder-[#336633] focus:border-[#33FF00] focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] focus:outline-none transition-colors font-mono uppercase"
+					placeholder="MY_ROLLUP_CO"
 				/>
-				<p class="mt-1.5 text-xs text-bao-muted">This is your team or company name</p>
+				<p class="mt-1.5 text-xs text-[#666600] uppercase">YOUR TEAM OR COMPANY NAME</p>
 			</div>
 			
 			<div class="pt-4">
-				@components.Button(components.ButtonPrimary, components.ButtonSizeLarge, false) {
-					<span class="w-full text-center flex items-center justify-center gap-2">
-						Continue
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-						</svg>
-					</span>
-				}
+				<button type="submit" class="w-full bg-[#FFB000] text-black font-bold py-3 uppercase hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all">
+					[ CONTINUE ]
+				</button>
 			</div>
 		</form>
 	}
 }
 
-// OnboardingStep2 renders the second step: Create First Key.
+// OnboardingStep2 renders the second step: Create First Key - 80s CRT terminal aesthetic
 templ OnboardingStep2(data OnboardingData) {
 	@layouts.Auth("Create Your First Key") {
 		@OnboardingProgress(2)
 		
 		<!-- Error message -->
 		if data.ErrorMsg != "" {
-			<div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3">
-				<span class="text-red-400 text-lg">⚠</span>
-				<p class="text-red-400 text-sm">{ data.ErrorMsg }</p>
+			<div class="mb-6 p-4 bg-[#FF3333]/10 border border-[#FF3333]/50 flex items-center gap-3">
+				<span class="text-[#FF3333] text-lg">⚠</span>
+				<p class="text-[#FF3333] text-sm uppercase">{ data.ErrorMsg }</p>
 			</div>
 		}
 		
 		<div class="text-center mb-6">
-			<span class="text-5xl mb-4 inline-block">🔑</span>
-			<h2 class="text-2xl font-heading font-bold text-bao-text">Create your first key</h2>
-			<p class="mt-2 text-bao-muted">Keys are used to sign transactions securely</p>
+			<span class="text-[#FFB000] text-4xl mb-4 inline-block drop-shadow-[0_0_15px_#FFB000]">🔑</span>
+			<h2 class="text-xl text-[#FFB000] uppercase drop-shadow-[0_0_10px_#FFB000]">&gt; CREATE_KEY</h2>
+			<p class="mt-2 text-[#666600] uppercase">KEYS ARE USED TO SIGN TRANSACTIONS</p>
 		</div>
 		
 		<form action="/onboarding/step2" method="POST" class="space-y-4">
 			<div>
-				<label for="key_name" class="block text-sm font-medium text-bao-text mb-1.5">
-					Key Name
+				<label for="key_name" class="block text-sm text-[#228B22] mb-1.5 uppercase">
+					KEY_NAME:
 				</label>
 				<input 
 					type="text" 
@@ -99,166 +93,143 @@ templ OnboardingStep2(data OnboardingData) {
 					required
 					autofocus
 					value={ data.KeyName }
-					class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text placeholder-bao-muted focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors"
+					class="w-full px-4 py-3 bg-black border border-[#1A4D1A] text-[#33FF00] placeholder-[#336633] focus:border-[#33FF00] focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] focus:outline-none transition-colors font-mono"
 					placeholder="production-validator"
 				/>
-				<p class="mt-1.5 text-xs text-bao-muted">A descriptive name for this key</p>
+				<p class="mt-1.5 text-xs text-[#666600] uppercase">A DESCRIPTIVE NAME FOR THIS KEY</p>
 			</div>
 			
 			<div>
-				<label for="key_type" class="block text-sm font-medium text-bao-text mb-1.5">
-					Key Type
+				<label for="key_type" class="block text-sm text-[#228B22] mb-1.5 uppercase">
+					KEY_TYPE:
 				</label>
 				<select 
 					id="key_type" 
 					name="key_type"
-					class="w-full px-4 py-3 bg-bao-bg border border-bao-border rounded-xl text-bao-text focus:border-bao-accent focus:ring-1 focus:ring-bao-accent focus:outline-none transition-colors"
+					class="w-full px-4 py-3 bg-black border border-[#1A4D1A] text-[#33FF00] focus:border-[#33FF00] focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] focus:outline-none transition-colors font-mono uppercase"
 				>
-					<option value="secp256k1" selected>secp256k1 (Ethereum, Celestia)</option>
-					<option value="ed25519">Ed25519 (Cosmos)</option>
+					<option value="secp256k1" selected>SECP256K1 (ETHEREUM, CELESTIA)</option>
+					<option value="ed25519">ED25519 (COSMOS)</option>
 				</select>
 			</div>
 			
 			<div class="pt-4 flex gap-3">
-				<a href="/onboarding/step1" class="flex-1">
-					@components.Button(components.ButtonSecondary, components.ButtonSizeMedium, false) {
-						<span class="w-full text-center flex items-center justify-center gap-2">
-							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-							</svg>
-							Back
-						</span>
-					}
+				<a href="/onboarding/step1" class="flex-1 text-center py-3 border border-[#666600] text-[#666600] uppercase hover:border-[#FFB000] hover:text-[#FFB000] transition-colors">
+					[ BACK ]
 				</a>
-				@components.Button(components.ButtonPrimary, components.ButtonSizeMedium, false) {
-					<span class="flex-1 text-center flex items-center justify-center gap-2">
-						Create Key
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-						</svg>
-					</span>
-				}
+				<button type="submit" class="flex-1 bg-[#FFB000] text-black font-bold py-3 uppercase hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all">
+					[ CREATE ]
+				</button>
 			</div>
 		</form>
 		
 		<!-- Skip option -->
 		<p class="mt-6 text-center">
-			<a href="/onboarding/step3?skip=true" class="text-sm text-bao-muted hover:text-bao-text transition-colors">
-				Skip for now, I'll create keys later
+			<a href="/onboarding/step3?skip=true" class="text-sm text-[#666600] hover:text-[#FFB000] transition-colors uppercase">
+				SKIP FOR NOW →
 			</a>
 		</p>
 	}
 }
 
-// OnboardingStep3 renders the third step: Integration Guide.
+// OnboardingStep3 renders the third step: Integration Guide - 80s CRT terminal aesthetic
 templ OnboardingStep3(data OnboardingData) {
 	@layouts.Auth("You're All Set!") {
 		@OnboardingProgress(3)
 		
 		<div class="text-center mb-6">
-			<span class="text-5xl mb-4 inline-block animate-pulse">🎉</span>
-			<h2 class="text-2xl font-heading font-bold text-bao-text">You're all set!</h2>
-			<p class="mt-2 text-bao-muted">Here's how to start using BanhBaoRing</p>
+			<span class="text-[#33FF00] text-4xl mb-4 inline-block drop-shadow-[0_0_15px_#33FF00]">✓</span>
+			<h2 class="text-xl text-[#FFB000] uppercase drop-shadow-[0_0_10px_#FFB000]">&gt; DEPLOY_COMPLETE</h2>
+			<p class="mt-2 text-[#666600] uppercase">POPSIGNER IS READY</p>
 		</div>
 		
 		if data.KeyAddress != "" {
 			<!-- Key Created Success -->
-			<div class="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+			<div class="mb-6 p-4 bg-[#33FF00]/10 border border-[#33FF00]/50">
 				<div class="flex items-center gap-2 mb-2">
-					<span class="text-emerald-400">✓</span>
-					<span class="text-sm font-medium text-emerald-400">Key Created Successfully</span>
+					<span class="text-[#33FF00]">✓</span>
+					<span class="text-sm font-medium text-[#33FF00] uppercase">KEY_CREATED</span>
 				</div>
 				<div class="mt-2">
-					<p class="text-xs text-bao-muted mb-1">Key Name</p>
-					<p class="text-sm text-bao-text font-mono">{ data.KeyName }</p>
+					<p class="text-xs text-[#666600] mb-1 uppercase">KEY_NAME:</p>
+					<p class="text-sm text-[#33FF00] font-mono">{ data.KeyName }</p>
 				</div>
 				<div class="mt-2">
-					<p class="text-xs text-bao-muted mb-1">Address</p>
-					<p class="text-sm text-bao-text font-mono break-all">{ data.KeyAddress }</p>
+					<p class="text-xs text-[#666600] mb-1 uppercase">ADDRESS:</p>
+					<p class="text-sm text-[#33FF00] font-mono break-all">{ data.KeyAddress }</p>
 				</div>
 			</div>
 		}
 		
 		<!-- Quick Start Guide -->
-		@components.Card("Quick Start", components.CardDefault) {
+		<div class="bg-black border border-[#333300] p-4 mb-6">
+			<p class="text-sm text-[#FFB000] mb-4 uppercase">&gt; QUICK_START</p>
 			<div class="space-y-4">
-				@IntegrationStep("1", "Install the SDK", "go get github.com/Bidon15/banhbaoring/sdk-go")
-				@IntegrationStep("2", "Configure your API key", "export BANHBAO_API_KEY=\"your-api-key\"")
-				@IntegrationStep("3", "Start signing", `
-client := banhbaoring.New(os.Getenv("BANHBAO_API_KEY"))
+				@IntegrationStep("1", "INSTALL SDK", "go get github.com/Bidon15/banhbaoring/sdk-go")
+				@IntegrationStep("2", "SET API KEY", "export POPSIGNER_API_KEY=\"your-api-key\"")
+				@IntegrationStep("3", "START SIGNING", `client := popsigner.New(os.Getenv("POPSIGNER_API_KEY"))
 sig, err := client.Sign(ctx, keyName, message)`)
 			</div>
-		}
+		</div>
 		
 		<!-- Action Buttons -->
-		<div class="mt-6 space-y-3">
-			<a href="/dashboard" class="block">
-				@components.Button(components.ButtonPrimary, components.ButtonSizeLarge, false) {
-					<span class="w-full text-center flex items-center justify-center gap-2">
-						Go to Dashboard
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-						</svg>
-					</span>
-				}
+		<div class="space-y-3">
+			<a href="/dashboard" class="block w-full bg-[#FFB000] text-black font-bold py-3 text-center uppercase hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all">
+				[ GO TO DASHBOARD ]
 			</a>
 			
-			<a href="/settings/api-keys" class="block">
-				@components.Button(components.ButtonSecondary, components.ButtonSizeLarge, false) {
-					<span class="w-full text-center">Create API Key</span>
-				}
+			<a href="/settings/api-keys" class="block w-full py-3 border border-[#33FF00] text-[#33FF00] text-center uppercase hover:bg-[#0D1A0D] transition-colors">
+				[ CREATE API KEY ]
 			</a>
 		</div>
 		
 		<!-- Resources -->
-		<div class="mt-8 pt-6 border-t border-bao-border">
-			<p class="text-sm text-bao-muted mb-4 text-center">Helpful resources</p>
+		<div class="mt-8 pt-6 border-t border-[#333300]">
+			<p class="text-sm text-[#666600] mb-4 text-center uppercase">RESOURCES</p>
 			<div class="flex justify-center gap-4 text-sm">
-				<a href="/docs" class="text-bao-accent hover:text-amber-300 transition-colors flex items-center gap-1">
-					<span>📚</span> Documentation
+				<a href="/docs" class="text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] transition-all uppercase flex items-center gap-1">
+					<span>📚</span> DOCS
 				</a>
-				<a href="/docs/api" class="text-bao-accent hover:text-amber-300 transition-colors flex items-center gap-1">
-					<span>🔗</span> API Reference
+				<a href="/docs/api" class="text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] transition-all uppercase flex items-center gap-1">
+					<span>🔗</span> API
 				</a>
-				<a href="https://github.com/Bidon15/banhbaoring" class="text-bao-accent hover:text-amber-300 transition-colors flex items-center gap-1">
-					<span>🐙</span> GitHub
+				<a href="https://github.com/Bidon15/banhbaoring" class="text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] transition-all uppercase flex items-center gap-1">
+					<span>📦</span> GITHUB
 				</a>
 			</div>
 		</div>
 	}
 }
 
-// OnboardingProgress renders the progress indicator.
+// OnboardingProgress renders the progress indicator - terminal style
 templ OnboardingProgress(currentStep int) {
 	<div class="mb-8">
 		<div class="flex justify-between items-center mb-2">
-			<span class="text-sm text-bao-muted">Step { stepText(currentStep) } of 3</span>
-			<span class="text-sm text-bao-accent">{ stepLabel(currentStep) }</span>
+			<span class="text-sm text-[#666600] uppercase">STEP { stepText(currentStep) }/3</span>
+			<span class="text-sm text-[#FFB000] uppercase">{ stepLabel(currentStep) }</span>
 		</div>
-		<div class="h-1.5 bg-bao-border rounded-full overflow-hidden">
+		<div class="h-1 bg-[#333300] overflow-hidden">
 			<div 
-				class="h-full bg-gradient-to-r from-amber-400 via-rose-400 to-amber-500 rounded-full transition-all duration-500"
+				class="h-full bg-[#FFB000] transition-all duration-500"
 				style={ progressWidth(currentStep) }
 			></div>
 		</div>
 		
 		<!-- Step indicators -->
 		<div class="flex justify-between mt-3">
-			@StepIndicator(1, currentStep, "Organization")
-			@StepIndicator(2, currentStep, "First Key")
-			@StepIndicator(3, currentStep, "Integration")
+			@StepIndicator(1, currentStep, "ORG")
+			@StepIndicator(2, currentStep, "KEY")
+			@StepIndicator(3, currentStep, "DEPLOY")
 		</div>
 	</div>
 }
 
-// StepIndicator renders a single step indicator.
+// StepIndicator renders a single step indicator - terminal style
 templ StepIndicator(step, currentStep int, label string) {
 	<div class="flex flex-col items-center">
 		<div class={ stepIndicatorClasses(step, currentStep) }>
 			if step < currentStep {
-				<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-					<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-				</svg>
+				<span class="text-xs">✓</span>
 			} else {
 				<span class="text-xs">{ stepText(step) }</span>
 			}
@@ -267,20 +238,20 @@ templ StepIndicator(step, currentStep int, label string) {
 	</div>
 }
 
-// IntegrationStep renders a code snippet step.
+// IntegrationStep renders a code snippet step - terminal style
 templ IntegrationStep(number, title, code string) {
 	<div class="group">
 		<div class="flex items-center gap-2 mb-2">
-			<span class="flex-shrink-0 w-5 h-5 rounded-full bg-bao-accent/10 text-bao-accent text-xs flex items-center justify-center">
+			<span class="flex-shrink-0 w-5 h-5 bg-[#FFB000] text-black text-xs flex items-center justify-center font-bold">
 				{ number }
 			</span>
-			<span class="text-sm font-medium text-bao-text">{ title }</span>
+			<span class="text-sm font-medium text-[#FFB000] uppercase">{ title }</span>
 		</div>
 		<div class="ml-7 relative">
-			<pre class="text-xs bg-bao-bg border border-bao-border rounded-lg p-3 overflow-x-auto"><code class="text-bao-muted">{ code }</code></pre>
+			<pre class="text-xs bg-black border border-[#1A4D1A] p-3 overflow-x-auto"><code class="text-[#33FF00]">{ code }</code></pre>
 			<button 
 				onclick={ copyCode(code) }
-				class="absolute top-2 right-2 p-1.5 rounded bg-bao-card/80 text-bao-muted hover:text-bao-text opacity-0 group-hover:opacity-100 transition-opacity"
+				class="absolute top-2 right-2 p-1.5 bg-black border border-[#333300] text-[#666600] hover:text-[#33FF00] hover:border-[#33FF00] opacity-0 group-hover:opacity-100 transition-all"
 				title="Copy to clipboard"
 			>
 				<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -308,13 +279,13 @@ func stepText(step int) string {
 func stepLabel(step int) string {
 	switch step {
 	case 1:
-		return "Organization"
+		return "ORGANIZATION"
 	case 2:
-		return "First Key"
+		return "FIRST_KEY"
 	case 3:
-		return "Integration"
+		return "INTEGRATION"
 	default:
-		return "Organization"
+		return "ORGANIZATION"
 	}
 }
 
@@ -332,23 +303,23 @@ func progressWidth(step int) string {
 }
 
 func stepIndicatorClasses(step, currentStep int) string {
-	base := "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-300"
+	base := "w-6 h-6 flex items-center justify-center text-xs font-medium transition-all duration-300"
 	
 	if step < currentStep {
-		return base + " bg-emerald-500 text-white"
+		return base + " bg-[#33FF00] text-black"
 	} else if step == currentStep {
-		return base + " bg-bao-accent text-bao-bg"
+		return base + " bg-[#FFB000] text-black"
 	}
-	return base + " bg-bao-border text-bao-muted"
+	return base + " border border-[#666600] text-[#666600]"
 }
 
 func stepLabelClasses(step, currentStep int) string {
-	base := "mt-1.5 text-xs transition-colors"
+	base := "mt-1.5 text-xs uppercase transition-colors"
 	
 	if step <= currentStep {
-		return base + " text-bao-text"
+		return base + " text-[#33FF00]"
 	}
-	return base + " text-bao-muted"
+	return base + " text-[#666600]"
 }
 
 script copyCode(code string) {
@@ -356,5 +327,3 @@ script copyCode(code string) {
 		// Could show a toast here
 	});
 }
-
-

@@ -1,67 +1,42 @@
 package landing
 
-// Features renders the 6-feature grid
+// Features renders the 6-feature grid with CRT terminal aesthetic
 templ Features() {
-	<section id="features" class="py-24 px-4 sm:px-6 lg:px-8 relative">
-		<!-- Background accent -->
-		<div class="absolute inset-0 bg-gradient-to-t from-purple-500/5 via-transparent to-transparent pointer-events-none"></div>
+	<section id="features" class="py-24 px-4 sm:px-6 lg:px-8 bg-black font-mono relative">
+		<!-- Subtle accent line -->
+		<div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#333300] to-transparent"></div>
 		
 		<div class="relative max-w-6xl mx-auto">
 			<div class="text-center mb-16">
-				<span class="inline-block text-sm font-semibold text-purple-400 uppercase tracking-wider mb-3">Features</span>
-				<h2 class="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-terminal-text mb-4">
-					Everything you need
+				<h2 class="text-2xl sm:text-3xl md:text-4xl text-[#FFB000] mb-4 uppercase tracking-wider
+				           drop-shadow-[0_0_10px_#FFB000]">
+					&gt; CAPABILITIES_
 				</h2>
-				<p class="section-subheading mx-auto">
-					Production-ready features out of the box. No assembly required.
+				<p class="text-[#666600] uppercase tracking-wide">
+					PRODUCTION-READY FEATURES. NO ASSEMBLY REQUIRED.
 				</p>
 			</div>
 
 			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-				@FeatureCard("🔐", "Vault-Grade Security", "Keys never leave OpenBao. Full audit trail. Powered by battle-tested Vault technology.", "purple")
-				@FeatureCard("📊", "Real-time Analytics", "Monitor signing operations, latency, and throughput with built-in dashboards.", "orange")
-				@FeatureCard("📜", "Audit Logging", "Complete audit trail for compliance. Know who signed what, when, and from where.", "teal")
-				@FeatureCard("🔗", "Drop-in SDK", "One line of Go or Rust. Cosmos SDK keyring interface compatible.", "purple")
-				@FeatureCard("⚡", "Parallel Workers", "Create multiple signing workers for parallel blob submission with fee grants.", "orange")
-				@FeatureCard("🔔", "Webhooks", "Real-time notifications for signing events and security alerts.", "teal")
+				@FeatureCard("INLINE", "INLINE_SIGNING", "On the execution path, not behind a queue.")
+				@FeatureCard("EXIT", "EXIT_GUARANTEE", "Export keys anytime. Sovereignty by default.")
+				@FeatureCard("PLUG", "PLUGIN_ARCHITECTURE", "secp256k1 built-in. Bring your own algorithms.")
+				@FeatureCard("AUDIT", "AUDIT_TRAIL", "Every signature logged. Compliance ready.")
+				@FeatureCard("K8S", "KUBERNETES_NATIVE", "Helm charts, CRDs, GitOps ready.")
+				@FeatureCard("OSS", "OPEN_SOURCE", "Apache 2.0. Self-host forever.")
 			</div>
 		</div>
 	</section>
 }
 
-templ FeatureCard(emoji, title, description, accentColor string) {
-	<div class={ "group p-6 rounded-xl border transition-all duration-300 hover:scale-[1.02] " + featureCardBg(accentColor) }>
-		<div class={ "w-14 h-14 rounded-xl flex items-center justify-center text-2xl mb-5 transition-transform group-hover:scale-110 " + featureIconBg(accentColor) }>
-			{ emoji }
-		</div>
-		<h3 class="text-lg font-display font-semibold text-terminal-text mb-3">{ title }</h3>
-		<p class="text-sm text-terminal-muted leading-relaxed">{ description }</p>
+templ FeatureCard(code, title, description string) {
+	<div class="group p-6 bg-black border border-[#333300] hover:border-[#FFB000]
+	            hover:shadow-[0_0_10px_rgba(255,176,0,0.2)] transition-all duration-300">
+		<div class="text-xs text-[#666600] mb-2 uppercase tracking-wide">{ code }</div>
+		<h3 class="text-lg text-[#FFB000] mb-3 uppercase tracking-wide
+		           group-hover:drop-shadow-[0_0_8px_#FFB000] transition-all">
+			{ title }
+		</h3>
+		<p class="text-sm text-[#33FF00] opacity-80 leading-relaxed">{ description }</p>
 	</div>
-}
-
-func featureCardBg(color string) string {
-	base := "bg-terminal-card/50 border-terminal-border"
-	switch color {
-	case "purple":
-		return base + " hover:border-purple-500/40 hover:bg-purple-500/5"
-	case "orange":
-		return base + " hover:border-orange-500/40 hover:bg-orange-500/5"
-	case "teal":
-		return base + " hover:border-teal-500/40 hover:bg-teal-500/5"
-	default:
-		return base + " hover:border-purple-500/40"
-	}
-}
-
-func featureIconBg(color string) string {
-	switch color {
-	case "purple":
-		return "bg-purple-500/10 border border-purple-500/20"
-	case "orange":
-		return "bg-orange-500/10 border border-orange-500/20"
-	case "teal":
-		return "bg-teal-500/10 border border-teal-500/20"
-	default:
-		return "bg-terminal-border/50 border border-terminal-border"
-	}
 }

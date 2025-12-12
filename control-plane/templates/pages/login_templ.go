@@ -12,7 +12,7 @@ import (
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
 
-// LoginPage renders the login page with OAuth options (GitHub and Google only).
+// LoginPage renders the login page with OAuth options - 80s CRT terminal aesthetic
 func LoginPage(errorMsg string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -51,14 +51,14 @@ func LoginPage(errorMsg string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if errorMsg != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3\"><span class=\"text-red-400 text-lg\">⚠</span><p class=\"text-red-400 text-sm\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"mb-6 p-4 bg-[#FF3333]/10 border border-[#FF3333]/50 flex items-center gap-3\"><span class=\"text-[#FF3333] text-lg\">⚠</span><p class=\"text-[#FF3333] text-sm uppercase\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/login.templ`, Line: 14, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/login.templ`, Line: 14, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -69,19 +69,19 @@ func LoginPage(errorMsg string) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " <h2 class=\"text-2xl font-heading font-bold text-bao-text mb-2\">Welcome back</h2><p class=\"text-bao-muted text-sm mb-8\">Sign in with your GitHub or Google account</p><!-- OAuth Buttons --> <div class=\"space-y-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " <h2 class=\"text-xl text-[#FFB000] mb-2 uppercase drop-shadow-[0_0_10px_#FFB000]\">&gt; LOGIN_</h2><p class=\"text-[#666600] text-sm mb-8 uppercase\">AUTHENTICATE WITH YOUR PROVIDER</p><!-- OAuth Buttons --> <div class=\"space-y-3\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = OAuthButton("github", "Continue with GitHub").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = OAuthButton("github", "CONTINUE WITH GITHUB").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = OAuthButton("google", "Continue with Google").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = OAuthButton("google", "CONTINUE WITH GOOGLE").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><p class=\"mt-8 text-center text-sm text-bao-muted\">Don't have an account? <a href=\"/signup\" class=\"text-bao-accent hover:text-amber-300 font-medium transition-colors\">Sign up free</a></p><p class=\"mt-4 text-center text-xs text-bao-muted\">By signing in, you agree to our  <a href=\"/terms\" class=\"text-bao-accent hover:underline\">Terms</a> and  <a href=\"/privacy\" class=\"text-bao-accent hover:underline\">Privacy Policy</a></p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><p class=\"mt-8 text-center text-sm text-[#666600] uppercase\">NO ACCOUNT? <a href=\"/signup\" class=\"text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] font-medium transition-all\">DEPLOY NOW</a></p><p class=\"mt-4 text-center text-xs text-[#666600] uppercase\">BY SIGNING IN, YOU AGREE TO OUR  <a href=\"/terms\" class=\"text-[#FFB000] hover:underline\">TERMS</a> AND  <a href=\"/privacy\" class=\"text-[#FFB000] hover:underline\">PRIVACY POLICY</a></p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -95,7 +95,7 @@ func LoginPage(errorMsg string) templ.Component {
 	})
 }
 
-// OAuthButton renders an OAuth provider button.
+// OAuthButton renders an OAuth provider button - terminal style
 func OAuthButton(provider, label string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -156,14 +156,14 @@ func OAuthButton(provider, label string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<span class=\"font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<span class=\"font-medium uppercase\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/login.templ`, Line: 49, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/login.templ`, Line: 49, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -178,15 +178,15 @@ func OAuthButton(provider, label string) templ.Component {
 }
 
 func oauthButtonClasses(provider string) string {
-	base := "flex items-center justify-center gap-3 w-full px-4 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-[1.01] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-bao-bg"
+	base := "flex items-center justify-center gap-3 w-full px-4 py-3 font-mono transition-all duration-200 hover:drop-shadow-[0_0_10px_currentColor]"
 
 	switch provider {
 	case "github":
-		return base + " bg-[#24292e] text-white hover:bg-[#2f363d] focus:ring-[#24292e]"
+		return base + " bg-black border border-[#33FF00] text-[#33FF00] hover:bg-[#0D1A0D]"
 	case "google":
-		return base + " bg-white text-gray-900 hover:bg-gray-100 focus:ring-gray-300"
+		return base + " bg-black border border-[#FFB000] text-[#FFB000] hover:bg-[#1A1A00]"
 	default:
-		return base + " bg-bao-border text-bao-text hover:bg-bao-card focus:ring-bao-accent"
+		return base + " bg-black border border-[#33FF00] text-[#33FF00] hover:bg-[#0D1A0D]"
 	}
 }
 
@@ -218,7 +218,7 @@ func OAuthIcon(provider string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		case "google":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<svg class=\"w-5 h-5\" viewBox=\"0 0 24 24\"><path fill=\"#4285F4\" d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"></path> <path fill=\"#34A853\" d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"></path> <path fill=\"#FBBC05\" d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z\"></path> <path fill=\"#EA4335\" d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"></path></svg>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<svg class=\"w-5 h-5\" fill=\"currentColor\" viewBox=\"0 0 24 24\"><path d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\"></path> <path d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\"></path> <path d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z\"></path> <path d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\"></path></svg>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

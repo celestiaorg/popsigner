@@ -90,7 +90,7 @@ func SettingsAPIKeysPage(data APIKeysPageData) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"space-y-4\"><div><p class=\"text-sm font-medium text-bao-text mb-2\">cURL</p><pre class=\"p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto\"><code>curl -H \"Authorization: Bearer bbr_live_xxxxx\" \\ https://api.banhbaoring.io/v1/keys</code></pre></div><div><p class=\"text-sm font-medium text-bao-text mb-2\">Go SDK</p><pre class=\"p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto\"><code>client := banhbaoring.NewClient(\"bbr_live_xxxxx\") keys, err := client.Keys.List(ctx)</code></pre></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"space-y-4\"><div><p class=\"text-sm font-medium text-bao-text mb-2\">cURL</p><pre class=\"p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto\"><code>curl -H \"Authorization: Bearer bbr_live_xxxxx\" \\ https://api.popsigner.com/v1/keys</code></pre></div><div><p class=\"text-sm font-medium text-bao-text mb-2\">Go SDK</p><pre class=\"p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto\"><code>client := banhbaoring.NewClient(\"bbr_live_xxxxx\") keys, err := client.Keys.List(ctx)</code></pre></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

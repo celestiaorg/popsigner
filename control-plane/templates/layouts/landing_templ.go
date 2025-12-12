@@ -8,7 +8,7 @@ package layouts
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// Landing layout for public marketing pages (no sidebar, fixed nav)
+// Landing layout for public marketing pages - 80s CRT terminal aesthetic
 func Landing(title string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -42,7 +42,7 @@ func Landing(title string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"min-h-screen bg-terminal-bg relative\"><!-- Subtle grid background pattern --><div class=\"fixed inset-0 terminal-grid-bg opacity-40 pointer-events-none\"></div><!-- Content --><div class=\"relative z-10\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"min-h-screen bg-black relative font-mono\"><!-- CRT scanlines overlay --><div class=\"fixed inset-0 pointer-events-none opacity-[0.03]\n\t\t\t            bg-[repeating-linear-gradient(0deg,transparent,transparent_1px,rgba(0,0,0,0.3)_1px,rgba(0,0,0,0.3)_2px)]\"></div><!-- Subtle grid background pattern --><div class=\"fixed inset-0 bg-[linear-gradient(to_right,#1A1A00_1px,transparent_1px),linear-gradient(to_bottom,#1A1A00_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20 pointer-events-none\"></div><!-- Content --><div class=\"relative z-10\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

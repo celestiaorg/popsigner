@@ -17,7 +17,7 @@ templ DocsPage(data DocsPageData) {
 	<head>
 		<meta charset="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-		<title>Documentation - BanhBaoRing</title>
+		<title>Documentation - POPSigner</title>
 		<link rel="stylesheet" href="/static/css/output.css"/>
 		<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 		<style>
@@ -31,8 +31,8 @@ templ DocsPage(data DocsPageData) {
 		<header style="position: sticky; top: 0; z-index: 50; background-color: rgba(12, 10, 20, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(74, 63, 92, 0.5);">
 			<div style="max-width: 64rem; margin: 0 auto; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
 				<a href="/dashboard" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #faf5ff;">
-					<span style="font-size: 1.5rem;">🥟</span>
-					<span style="font-size: 1.25rem; font-weight: bold;">BanhBaoRing</span>
+					<span style="font-size: 1.5rem; color: #FFB000;">◇</span>
+					<span style="font-size: 1.25rem; font-weight: bold; color: #FFB000;">POPSigner</span>
 				</a>
 				<div style="display: flex; align-items: center; gap: 1.5rem;">
 					<a href="/keys" style="font-size: 0.875rem; color: #a1a1aa; text-decoration: none;">Dashboard</a>
@@ -44,9 +44,9 @@ templ DocsPage(data DocsPageData) {
 		<div style="max-width: 64rem; margin: 0 auto; padding: 3rem 1.5rem;">
 			<!-- Hero -->
 			<div style="margin-bottom: 3rem;">
-				<h1 style="font-size: 2.25rem; font-weight: bold; margin-bottom: 1rem; color: #faf5ff;">BanhBaoRing Documentation</h1>
-				<p style="font-size: 1.25rem; color: #a1a1aa; max-width: 42rem;">
-					Secure key management for Celestia. Your keys never leave our vault.
+				<h1 style="font-size: 2.25rem; font-weight: bold; margin-bottom: 1rem; color: #FFB000;">POPSigner Documentation</h1>
+				<p style="font-size: 1.25rem; color: #33FF00; max-width: 42rem;">
+					Point-of-Presence signing infrastructure. Keys remain remote. You remain sovereign.
 				</p>
 			</div>
 
@@ -115,7 +115,7 @@ templ DocsPage(data DocsPageData) {
 				<div x-show="tab === 'rust'">
 					<p style="font-size: 0.875rem; color: #a1a1aa; margin-bottom: 0.5rem;">Add to Cargo.toml:</p>
 					@copyableCode("toml", `[dependencies]
-banhbaoring = "0.1"`)
+popsigner = "0.1"`)
 					
 					<p style="font-size: 0.875rem; color: #a1a1aa; margin-top: 1.5rem; margin-bottom: 0.5rem;">Complete example:</p>
 					@copyableCode("rust", rustExample())
@@ -127,7 +127,7 @@ banhbaoring = "0.1"`)
 					@copyableCode("bash", curlSignExample())
 					
 					<p style="font-size: 0.875rem; color: #a1a1aa; margin-top: 1.5rem; margin-bottom: 0.5rem;">Get key info:</p>
-					@copyableCode("bash", `curl https://api.banhbaoring.io/v1/keys/{KEY_ID} \
+					@copyableCode("bash", `curl https://api.popsigner.com/v1/keys/{KEY_ID} \
   -H "Authorization: Bearer YOUR_API_KEY"`)
 				</div>
 			</section>
@@ -207,7 +207,7 @@ import (
 
 func main() {
     // Create keyring (one line!)
-    kr, err := banhbaoring.NewCelestiaKeyring(
+    kr, err := popsigner.NewCelestiaKeyring(
         "your-api-key",
         "your-key-id",
     )
@@ -227,7 +227,7 @@ func main() {
         },
     }
 
-    // Create client - signing handled by BanhBaoRing
+    // Create client - signing handled by POPSigner
     celestiaClient, _ := client.New(context.Background(), cfg, kr)
 
     // Submit blob
@@ -240,7 +240,7 @@ func main() {
 }
 
 func rustExample() string {
-	return `use banhbaoring::Client;
+	return `use popsigner::Client;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -260,7 +260,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 func curlSignExample() string {
-	return `curl -X POST https://api.banhbaoring.io/v1/keys/{KEY_ID}/sign \
+	return `curl -X POST https://api.popsigner.com/v1/keys/{KEY_ID}/sign \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"data": "base64_encoded_data"}'`

@@ -8,7 +8,7 @@ package landing
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// Problems renders the pain points section
+// WhatItIs renders the "What POPSigner Is" section - reframed from problems
 func Problems() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -30,27 +30,27 @@ func Problems() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"py-24 px-4 sm:px-6 lg:px-8 relative\"><!-- Background accent --><div class=\"absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent pointer-events-none\"></div><div class=\"relative max-w-6xl mx-auto\"><div class=\"text-center mb-16\"><span class=\"inline-block text-sm font-semibold text-red-400 uppercase tracking-wider mb-3\">The Problem</span><h2 class=\"text-3xl md:text-4xl lg:text-5xl font-display font-bold text-terminal-text mb-4\">Current key management <span class=\"text-red-400\">sucks</span>.</h2><p class=\"section-subheading mx-auto\">Rollup teams are forced to choose between security, flexibility, and performance.</p></div><div class=\"grid md:grid-cols-2 gap-6 max-w-4xl mx-auto\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"py-24 px-4 sm:px-6 lg:px-8 bg-black font-mono relative\"><!-- Subtle border accent --><div class=\"absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#333300] to-transparent\"></div><div class=\"relative max-w-6xl mx-auto\"><div class=\"text-center mb-16\"><h2 class=\"text-2xl sm:text-3xl md:text-4xl text-[#FFB000] mb-4 uppercase tracking-wider\n\t\t\t\t           drop-shadow-[0_0_10px_#FFB000]\">&gt; WHAT_IT_IS_</h2><p class=\"text-[#666600] uppercase tracking-wide max-w-2xl mx-auto\">POPSIGNER IS POINT-OF-PRESENCE SIGNING INFRASTRUCTURE. A DISTRIBUTED SIGNING LAYER FOR ROLLUPS, BOTS, AND INFRASTRUCTURE TEAMS.</p></div><div class=\"grid md:grid-cols-2 gap-6 max-w-4xl mx-auto\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ProblemCard("lock", "🔒", "Vendor Lock-in", "Trapped with AWS KMS or HashiCorp Enterprise? Good luck leaving. Proprietary APIs make migration a nightmare.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = WhatCard("01", "INLINE_SIGNING", "Signing happens on the execution path, not behind a queue. Deploy where your systems already run.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ProblemCard("puzzle", "🧩", "No Customizability", "Need secp256k1? \"Sorry, not supported.\" Cloud providers don't care about crypto-native algorithms.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = WhatCard("02", "SOVEREIGNTY_DEFAULT", "Keys are remote, but you control them. Export anytime. Exit anytime. No vendor lock-in.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ProblemCard("globe", "🌍", "Remote Signers Are... Remote", "Your vault is in us-east-1, your nodes are in Frankfurt. Every signature travels across the world.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = WhatCard("03", "NEUTRAL_ANCHOR", "Recovery data anchored to neutral data availability. Your keys, your terms.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ProblemCard("sad", "😫", "Tedious Local Setup", "Another keyring config. Another passphrase. Another .env file to lose sleep over.").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = WhatCard("04", "PLUGIN_ARCHITECTURE", "secp256k1 built-in. Bring your own algorithms. Extensible by design.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"text-center mt-12\"><p class=\"text-lg text-terminal-muted/80 italic\">Sound familiar?</p></div></div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"text-center mt-16\"><p class=\"text-sm text-[#228B22] uppercase tracking-wide\">WE SELL PLACEMENT, NOT TRANSACTIONS.</p></div></div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -58,7 +58,7 @@ func Problems() templ.Component {
 	})
 }
 
-func ProblemCard(iconType, emoji, title, description string) templ.Component {
+func WhatCard(number, title, description string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -79,46 +79,46 @@ func ProblemCard(iconType, emoji, title, description string) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"group relative p-6 rounded-xl bg-terminal-card/50 border border-terminal-border hover:border-red-500/30 transition-all duration-300\"><!-- Hover glow --><div class=\"absolute inset-0 rounded-xl bg-gradient-to-br from-red-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none\"></div><div class=\"relative flex gap-4\"><div class=\"shrink-0\"><div class=\"w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"group relative p-6 bg-black border border-[#1A4D1A] hover:border-[#33FF00] transition-all duration-300\"><!-- Number badge --><div class=\"absolute -top-3 left-4 bg-black px-2 text-xs text-[#666600] uppercase\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(emoji)
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(number)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/problems.templ`, Line: 43, Col: 12}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/problems.templ`, Line: 41, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div><div><h3 class=\"text-lg font-display font-semibold text-terminal-text mb-2 group-hover:text-red-300 transition-colors\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><h3 class=\"text-lg text-[#FFB000] mb-3 uppercase tracking-wide\n\t\t           group-hover:drop-shadow-[0_0_8px_#FFB000] transition-all\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/problems.templ`, Line: 47, Col: 125}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/problems.templ`, Line: 46, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h3><p class=\"text-sm text-terminal-muted leading-relaxed\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h3><p class=\"text-sm text-[#33FF00] opacity-80 leading-relaxed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/problems.templ`, Line: 48, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/problems.templ`, Line: 49, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

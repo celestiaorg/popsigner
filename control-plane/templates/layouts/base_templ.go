@@ -42,7 +42,7 @@ func Base(title string, showCharts, showCode bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | BanhBaoRing</title><!-- Fonts - Outfit for display, Plus Jakarta Sans for body --><link rel=\"preconnect\" href=\"https://fonts.bunny.net\"><link href=\"https://fonts.bunny.net/css?family=outfit:400,500,600,700,800|plus-jakarta-sans:400,500,600,700|jetbrains-mono:400,500\" rel=\"stylesheet\"><!-- Tailwind CSS --><link rel=\"stylesheet\" href=\"/static/css/output.css\"><!-- Favicon --><link rel=\"icon\" href=\"/static/img/favicon.svg\" type=\"image/svg+xml\"><!-- CSRF Token --><meta name=\"csrf-token\" content=\"\"></head><body class=\"bg-terminal-bg text-terminal-text font-body antialiased\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | POPSigner</title><meta name=\"description\" content=\"POPSigner - Point-of-Presence signing infrastructure\"><meta name=\"keywords\" content=\"signing, infrastructure, celestia, cosmos, keys\"><!-- Fonts - IBM Plex Mono and VT323 for terminal aesthetic --><link rel=\"preconnect\" href=\"https://fonts.bunny.net\"><link href=\"https://fonts.bunny.net/css?family=ibm-plex-mono:400,500,600,700|vt323:400\" rel=\"stylesheet\"><!-- Tailwind CSS --><link rel=\"stylesheet\" href=\"/static/css/output.css\"><!-- Favicon --><link rel=\"icon\" href=\"/static/img/favicon.svg\" type=\"image/svg+xml\"><!-- CSRF Token --><meta name=\"csrf-token\" content=\"\"></head><body class=\"bg-terminal-bg text-terminal-text font-body antialiased\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

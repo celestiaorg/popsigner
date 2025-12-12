@@ -85,7 +85,7 @@ banhbaoring = "0.1"`).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = copyableCode("bash", `curl https://api.banhbaoring.io/v1/keys/{KEY_ID} \
+		templ_7745c5c3_Err = copyableCode("bash", `curl https://api.popsigner.com/v1/keys/{KEY_ID} \
   -H "Authorization: Bearer YOUR_API_KEY"`).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -209,7 +209,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 func curlSignExample() string {
-	return `curl -X POST https://api.banhbaoring.io/v1/keys/{KEY_ID}/sign \
+	return `curl -X POST https://api.popsigner.com/v1/keys/{KEY_ID}/sign \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"data": "base64_encoded_data"}'`

@@ -8,7 +8,7 @@ package landing
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// Features renders the 6-feature grid
+// Features renders the 6-feature grid with CRT terminal aesthetic
 func Features() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -30,31 +30,31 @@ func Features() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section id=\"features\" class=\"py-24 px-4 sm:px-6 lg:px-8 relative\"><!-- Background accent --><div class=\"absolute inset-0 bg-gradient-to-t from-purple-500/5 via-transparent to-transparent pointer-events-none\"></div><div class=\"relative max-w-6xl mx-auto\"><div class=\"text-center mb-16\"><span class=\"inline-block text-sm font-semibold text-purple-400 uppercase tracking-wider mb-3\">Features</span><h2 class=\"text-3xl md:text-4xl lg:text-5xl font-display font-bold text-terminal-text mb-4\">Everything you need</h2><p class=\"section-subheading mx-auto\">Production-ready features out of the box. No assembly required.</p></div><div class=\"grid md:grid-cols-2 lg:grid-cols-3 gap-6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section id=\"features\" class=\"py-24 px-4 sm:px-6 lg:px-8 bg-black font-mono relative\"><!-- Subtle accent line --><div class=\"absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#333300] to-transparent\"></div><div class=\"relative max-w-6xl mx-auto\"><div class=\"text-center mb-16\"><h2 class=\"text-2xl sm:text-3xl md:text-4xl text-[#FFB000] mb-4 uppercase tracking-wider\n\t\t\t\t           drop-shadow-[0_0_10px_#FFB000]\">&gt; CAPABILITIES_</h2><p class=\"text-[#666600] uppercase tracking-wide\">PRODUCTION-READY FEATURES. NO ASSEMBLY REQUIRED.</p></div><div class=\"grid md:grid-cols-2 lg:grid-cols-3 gap-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FeatureCard("🔐", "Vault-Grade Security", "Keys never leave OpenBao. Full audit trail. Powered by battle-tested Vault technology.", "purple").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FeatureCard("INLINE", "INLINE_SIGNING", "On the execution path, not behind a queue.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FeatureCard("📊", "Real-time Analytics", "Monitor signing operations, latency, and throughput with built-in dashboards.", "orange").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FeatureCard("EXIT", "EXIT_GUARANTEE", "Export keys anytime. Sovereignty by default.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FeatureCard("📜", "Audit Logging", "Complete audit trail for compliance. Know who signed what, when, and from where.", "teal").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FeatureCard("PLUG", "PLUGIN_ARCHITECTURE", "secp256k1 built-in. Bring your own algorithms.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FeatureCard("🔗", "Drop-in SDK", "One line of Go or Rust. Cosmos SDK keyring interface compatible.", "purple").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FeatureCard("AUDIT", "AUDIT_TRAIL", "Every signature logged. Compliance ready.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FeatureCard("⚡", "Parallel Workers", "Create multiple signing workers for parallel blob submission with fee grants.", "orange").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FeatureCard("K8S", "KUBERNETES_NATIVE", "Helm charts, CRDs, GitOps ready.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = FeatureCard("🔔", "Webhooks", "Real-time notifications for signing events and security alerts.", "teal").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = FeatureCard("OSS", "OPEN_SOURCE", "Apache 2.0. Self-host forever.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -66,7 +66,7 @@ func Features() templ.Component {
 	})
 }
 
-func FeatureCard(emoji, title, description, accentColor string) templ.Component {
+func FeatureCard(code, title, description string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -87,118 +87,51 @@ func FeatureCard(emoji, title, description, accentColor string) templ.Component 
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var3 = []any{"group p-6 rounded-xl border transition-all duration-300 hover:scale-[1.02] " + featureCardBg(accentColor)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"group p-6 bg-black border border-[#333300] hover:border-[#FFB000]\n\t            hover:shadow-[0_0_10px_rgba(255,176,0,0.2)] transition-all duration-300\"><div class=\"text-xs text-[#666600] mb-2 uppercase tracking-wide\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"")
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(code)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/features.templ`, Line: 35, Col: 73}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><h3 class=\"text-lg text-[#FFB000] mb-3 uppercase tracking-wide\n\t\t           group-hover:drop-shadow-[0_0_8px_#FFB000] transition-all\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var3).String())
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/features.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/features.templ`, Line: 38, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h3><p class=\"text-sm text-[#33FF00] opacity-80 leading-relaxed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var5 = []any{"w-14 h-14 rounded-xl flex items-center justify-center text-2xl mb-5 transition-transform group-hover:scale-110 " + featureIconBg(accentColor)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var5...)
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(description)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/features.templ`, Line: 40, Col: 76}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var5).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/features.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(emoji)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/features.templ`, Line: 35, Col: 10}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><h3 class=\"text-lg font-display font-semibold text-terminal-text mb-3\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var8 string
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(title)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/features.templ`, Line: 37, Col: 80}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</h3><p class=\"text-sm text-terminal-muted leading-relaxed\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var9 string
-		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(description)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/features.templ`, Line: 38, Col: 70}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		return nil
 	})
-}
-
-func featureCardBg(color string) string {
-	base := "bg-terminal-card/50 border-terminal-border"
-	switch color {
-	case "purple":
-		return base + " hover:border-purple-500/40 hover:bg-purple-500/5"
-	case "orange":
-		return base + " hover:border-orange-500/40 hover:bg-orange-500/5"
-	case "teal":
-		return base + " hover:border-teal-500/40 hover:bg-teal-500/5"
-	default:
-		return base + " hover:border-purple-500/40"
-	}
-}
-
-func featureIconBg(color string) string {
-	switch color {
-	case "purple":
-		return "bg-purple-500/10 border border-purple-500/20"
-	case "orange":
-		return "bg-orange-500/10 border border-orange-500/20"
-	case "teal":
-		return "bg-teal-500/10 border border-teal-500/20"
-	default:
-		return "bg-terminal-border/50 border border-terminal-border"
-	}
 }
 
 var _ = templruntime.GeneratedTemplate

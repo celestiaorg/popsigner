@@ -20,7 +20,7 @@ type DashboardData struct {
 	ActivePath string
 }
 
-// Dashboard layout with sidebar navigation
+// Dashboard layout with sidebar navigation - 80s CRT terminal aesthetic
 func Dashboard(title string, data DashboardData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -54,7 +54,7 @@ func Dashboard(title string, data DashboardData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"min-h-screen flex\" x-data=\"{ sidebarOpen: false }\"><!-- Desktop Sidebar --><aside class=\"hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"min-h-screen flex bg-black font-mono\" x-data=\"{ sidebarOpen: false }\"><!-- Desktop Sidebar --><aside class=\"hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -69,7 +69,7 @@ func Dashboard(title string, data DashboardData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</aside><!-- Mobile Sidebar (slide-out) --><div x-show=\"sidebarOpen\" x-transition:enter=\"transition ease-out duration-200\" x-transition:enter-start=\"opacity-0\" x-transition:enter-end=\"opacity-100\" x-transition:leave=\"transition ease-in duration-150\" x-transition:leave-start=\"opacity-100\" x-transition:leave-end=\"opacity-0\" class=\"lg:hidden fixed inset-0 z-40\" style=\"display: none;\"><div class=\"absolute inset-0 bg-black/60 backdrop-blur-sm\" @click=\"sidebarOpen = false\"></div><aside class=\"absolute left-0 top-0 h-full w-72 bg-bao-bg border-r border-bao-border shadow-2xl\" x-transition:enter=\"transition ease-out duration-200\" x-transition:enter-start=\"-translate-x-full\" x-transition:enter-end=\"translate-x-0\" x-transition:leave=\"transition ease-in duration-150\" x-transition:leave-start=\"translate-x-0\" x-transition:leave-end=\"-translate-x-full\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</aside><!-- Mobile Sidebar (slide-out) --><div x-show=\"sidebarOpen\" x-transition:enter=\"transition ease-out duration-200\" x-transition:enter-start=\"opacity-0\" x-transition:enter-end=\"opacity-100\" x-transition:leave=\"transition ease-in duration-150\" x-transition:leave-start=\"opacity-100\" x-transition:leave-end=\"opacity-0\" class=\"lg:hidden fixed inset-0 z-40\" style=\"display: none;\"><div class=\"absolute inset-0 bg-black/80\" @click=\"sidebarOpen = false\"></div><aside class=\"absolute left-0 top-0 h-full w-72 bg-black border-r border-[#333300]\" x-transition:enter=\"transition ease-out duration-200\" x-transition:enter-start=\"-translate-x-full\" x-transition:enter-end=\"translate-x-0\" x-transition:leave=\"transition ease-in duration-150\" x-transition:leave-start=\"translate-x-0\" x-transition:leave-end=\"-translate-x-full\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -84,7 +84,7 @@ func Dashboard(title string, data DashboardData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</aside></div><!-- Main Content --><div class=\"lg:pl-64 flex flex-col flex-1 min-h-screen\"><!-- Top Nav (mobile) --><header class=\"lg:hidden flex items-center justify-between p-4 bg-bao-card/80 backdrop-blur-lg border-b border-bao-border sticky top-0 z-20\"><button @click=\"sidebarOpen = true\" class=\"p-2 -ml-2 text-bao-muted hover:text-bao-text rounded-lg hover:bg-bao-border/30 transition-colors\"><svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 6h16M4 12h16M4 18h16\"></path></svg></button> <a href=\"/dashboard\" class=\"flex items-center gap-2\"><span class=\"text-xl\">🔔</span> <span class=\"font-heading font-bold text-lg bg-gradient-to-r from-amber-300 to-rose-400 bg-clip-text text-transparent\">BanhBaoRing</span></a><div class=\"w-10\"></div></header><!-- Page Content --><main id=\"main-content\" class=\"flex-1 p-4 sm:p-6 lg:p-8\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</aside></div><!-- Main Content --><div class=\"lg:pl-64 flex flex-col flex-1 min-h-screen\"><!-- Top Nav (mobile) --><header class=\"lg:hidden flex items-center justify-between p-4 bg-black border-b border-[#333300] sticky top-0 z-20\"><button @click=\"sidebarOpen = true\" class=\"p-2 -ml-2 text-[#33FF00] hover:text-[#FFB000] transition-colors\"><svg class=\"w-6 h-6\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 6h16M4 12h16M4 18h16\"></path></svg></button> <a href=\"/dashboard\" class=\"flex items-center gap-2\"><span class=\"text-[#FFB000] text-xl\">◇</span> <span class=\"font-bold text-[#FFB000] uppercase tracking-wider\">POPSIGNER</span></a><div class=\"w-10\"></div></header><!-- Page Content --><main id=\"main-content\" class=\"flex-1 p-4 sm:p-6 lg:p-8\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -92,7 +92,7 @@ func Dashboard(title string, data DashboardData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</main><!-- Footer --><footer class=\"p-4 border-t border-bao-border text-center text-sm text-bao-muted\"><span>© 2024 BanhBaoRing</span> <span class=\"mx-2\">·</span> <a href=\"/docs\" class=\"hover:text-bao-text transition-colors\">Docs</a> <span class=\"mx-2\">·</span> <a href=\"/support\" class=\"hover:text-bao-text transition-colors\">Support</a></footer></div><!-- Toast Container --><div id=\"toast-container\" class=\"fixed bottom-4 right-4 z-50 flex flex-col gap-2\"></div><!-- Modal Container -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</main><!-- Footer --><footer class=\"p-4 border-t border-[#333300] text-center text-sm text-[#666600] uppercase\"><span>© 2024 POPSIGNER</span> <span class=\"mx-2\">·</span> <a href=\"/docs\" class=\"hover:text-[#FFB000] transition-colors\">DOCS</a> <span class=\"mx-2\">·</span> <a href=\"/support\" class=\"hover:text-[#FFB000] transition-colors\">SUPPORT</a></footer></div><!-- Toast Container --><div id=\"toast-container\" class=\"fixed bottom-4 right-4 z-50 flex flex-col gap-2\"></div><!-- Modal Container -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

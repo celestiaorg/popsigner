@@ -8,7 +8,7 @@ package landing
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// HowItWorks renders the 3-step onboarding process section
+// HowItWorks renders the 3-step onboarding process with CRT terminal aesthetic
 func HowItWorks() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -30,23 +30,23 @@ func HowItWorks() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden\"><!-- Background gradient --><div class=\"absolute inset-0 bg-gradient-to-b from-terminal-card/50 via-transparent to-terminal-card/50 pointer-events-none\"></div><div class=\"relative max-w-5xl mx-auto\"><div class=\"text-center mb-16\"><span class=\"inline-block text-sm font-semibold text-orange-400 uppercase tracking-wider mb-3\">How It Works</span><h2 class=\"text-3xl md:text-4xl lg:text-5xl font-display font-bold text-terminal-text mb-4\">From signup to signature <span class=\"bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent\">in 5 minutes</span></h2><p class=\"section-subheading mx-auto\">No complex setup. No configuration nightmares. Just keys that work.</p></div><!-- Steps Timeline --><div class=\"relative\"><!-- Connecting line --><div class=\"hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500/50 via-orange-500/50 to-purple-500/50 -translate-y-1/2\"></div><div class=\"grid md:grid-cols-3 gap-8 lg:gap-12\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"py-24 px-4 sm:px-6 lg:px-8 bg-black font-mono relative overflow-hidden\"><!-- Subtle accent line --><div class=\"absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#333300] to-transparent\"></div><div class=\"relative max-w-5xl mx-auto\"><div class=\"text-center mb-16\"><h2 class=\"text-2xl sm:text-3xl md:text-4xl text-[#FFB000] mb-4 uppercase tracking-wider\n\t\t\t\t           drop-shadow-[0_0_10px_#FFB000]\">&gt; GETTING_STARTED_</h2><p class=\"text-[#666600] uppercase tracking-wide max-w-2xl mx-auto\">NO COMPLEX SETUP. NO CONFIGURATION NIGHTMARES. JUST KEYS THAT WORK.</p></div><!-- Steps Timeline --><div class=\"relative\"><!-- Connecting line --><div class=\"hidden lg:block absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-[#1A4D1A] via-[#33FF00]/50 to-[#1A4D1A] -translate-y-1/2\"></div><div class=\"grid md:grid-cols-3 gap-8 lg:gap-12\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = StepCard("1", "🔐", "Sign Up", "OAuth login with GitHub, Google, or email. 30 seconds and you're in.", "30 sec", "purple").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = StepCard("01", "SIGN_UP", "OAuth login with GitHub, Google, or email. Create your account and organization.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = StepCard("2", "🔑", "Create Key", "Pick your algorithm, name your key, done. We handle the OpenBao setup.", "1 min", "orange").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = StepCard("02", "CREATE_KEY", "Select algorithm, name your key. We handle the OpenBao infrastructure.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = StepCard("3", "⚡", "Integrate SDK", "One import, one line of code. Start signing transactions immediately.", "2 min", "teal").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = StepCard("03", "INTEGRATE", "One import, one line of code. Start signing transactions inline.").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div><!-- Celebration --><div class=\"mt-16 text-center\"><div class=\"inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-purple-500/10 via-orange-500/10 to-purple-500/10 border border-purple-500/30\"><span class=\"text-2xl\">🎉</span> <span class=\"text-lg font-display font-semibold text-terminal-text\">Done! Your sequencer is now secure.</span></div></div></div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div><!-- Status message --><div class=\"mt-16 text-center\"><div class=\"inline-flex items-center gap-3 px-6 py-3 border border-[#33FF00] bg-black\"><span class=\"text-[#33FF00] drop-shadow-[0_0_5px_#33FF00]\">▶</span> <span class=\"text-[#33FF00] uppercase tracking-wide\">READY. YOUR INFRASTRUCTURE IS NOW SOVEREIGN.</span></div></div></div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -54,7 +54,7 @@ func HowItWorks() templ.Component {
 	})
 }
 
-func StepCard(number, emoji, title, description, time, color string) templ.Component {
+func StepCard(number, title, description string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -75,182 +75,51 @@ func StepCard(number, emoji, title, description, time, color string) templ.Compo
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"group relative\"><!-- Step number circle -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"group relative\"><!-- Step number circle --><div class=\"relative z-10 w-16 h-16 mx-auto mb-6 border-2 border-[#33FF00] bg-black\n\t\t            flex items-center justify-center transition-all\n\t\t            group-hover:shadow-[0_0_15px_#33FF00] group-hover:border-[#FFB000]\"><span class=\"text-xl text-[#33FF00] font-bold group-hover:text-[#FFB000] transition-colors\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var3 = []any{"relative z-10 w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center text-3xl shadow-lg transition-transform group-hover:scale-110 " + stepIconBg(color)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(number)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 51, Col: 103}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</span></div><!-- Content card --><div class=\"text-center p-6 bg-black border border-[#1A4D1A] group-hover:border-[#33FF00] transition-all\"><h3 class=\"text-lg text-[#FFB000] mb-3 uppercase tracking-wide\n\t\t\t           group-hover:drop-shadow-[0_0_8px_#FFB000] transition-all\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var3).String())
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 58, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h3><p class=\"text-sm text-[#33FF00] opacity-80 leading-relaxed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(emoji)
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 50, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 60, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!-- Number badge -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var6 = []any{"absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shadow-lg " + stepNumberBg(color)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var6).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var8 string
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(number)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 53, Col: 12}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div></div><!-- Content card --><div class=\"text-center p-6 rounded-xl bg-terminal-card/50 border border-terminal-border group-hover:border-purple-500/30 transition-all\"><h3 class=\"text-xl font-display font-semibold text-terminal-text mb-3\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var9 string
-		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(title)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 59, Col: 81}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</h3><p class=\"text-sm text-terminal-muted leading-relaxed mb-4\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(description)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 60, Col: 76}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</p>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var11 = []any{"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium " + stepTimeBadge(color)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var11...)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var11).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"><svg class=\"w-3.5 h-3.5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> ")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(time)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/landing/how_it_works.templ`, Line: 65, Col: 10}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		return nil
 	})
-}
-
-func stepIconBg(color string) string {
-	switch color {
-	case "purple":
-		return "bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30"
-	case "orange":
-		return "bg-gradient-to-br from-orange-500/20 to-orange-600/20 border border-orange-500/30"
-	case "teal":
-		return "bg-gradient-to-br from-teal-500/20 to-teal-600/20 border border-teal-500/30"
-	default:
-		return "bg-terminal-card border border-terminal-border"
-	}
-}
-
-func stepNumberBg(color string) string {
-	switch color {
-	case "purple":
-		return "bg-purple-500 text-white"
-	case "orange":
-		return "bg-orange-500 text-white"
-	case "teal":
-		return "bg-teal-500 text-terminal-bg"
-	default:
-		return "bg-terminal-border text-terminal-text"
-	}
-}
-
-func stepTimeBadge(color string) string {
-	switch color {
-	case "purple":
-		return "bg-purple-500/10 text-purple-300 border border-purple-500/20"
-	case "orange":
-		return "bg-orange-500/10 text-orange-300 border border-orange-500/20"
-	case "teal":
-		return "bg-teal-500/10 text-teal-300 border border-teal-500/20"
-	default:
-		return "bg-terminal-border/50 text-terminal-muted"
-	}
 }
 
 var _ = templruntime.GeneratedTemplate

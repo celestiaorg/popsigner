@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/Bidon15/banhbaoring/control-plane/internal/models"
-	"github.com/Bidon15/banhbaoring/control-plane/templates/components"
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
 
@@ -32,7 +31,7 @@ type KeysPageData struct {
 	NamespaceID string
 }
 
-// KeysListPage renders the keys management page.
+// KeysListPage renders the keys management page - 80s CRT terminal aesthetic
 func KeysListPage(data KeysPageData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -66,20 +65,20 @@ func KeysListPage(data KeysPageData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"space-y-6\"><!-- Header --><div class=\"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4\"><div><h1 class=\"text-2xl font-heading font-bold text-bao-text\">Keys</h1><p class=\"text-bao-muted\">Manage your cryptographic keys</p></div><div class=\"flex gap-3\"><button hx-get=\"/keys/workers/new\" hx-target=\"#modal-content\" @click=\"$dispatch('modal-open')\" class=\"px-4 py-2.5 border border-bao-accent/50 text-bao-accent rounded-xl hover:bg-bao-accent/10 transition-colors flex items-center gap-2\"><span>⚡</span> <span class=\"hidden sm:inline\">Create Workers</span></button> <button hx-get=\"/keys/new\" hx-target=\"#modal-content\" @click=\"$dispatch('modal-open')\" class=\"px-4 py-2.5 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-medium rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-shadow flex items-center gap-2\"><span>+</span> <span>Create Key</span></button></div></div><!-- Filters --><div class=\"flex flex-col sm:flex-row gap-4\"><div class=\"relative flex-1\"><input type=\"search\" name=\"q\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"space-y-6\"><!-- Header --><div class=\"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4\"><div><h1 class=\"text-2xl font-bold text-[#FFB000] uppercase drop-shadow-[0_0_10px_#FFB000]\">&gt; KEYS_</h1><p class=\"text-[#666600] uppercase\">MANAGE YOUR CRYPTOGRAPHIC KEYS</p></div><div class=\"flex gap-3\"><button hx-get=\"/keys/workers/new\" hx-target=\"#modal-content\" @click=\"$dispatch('modal-open')\" class=\"px-4 py-2.5 border border-[#33FF00] text-[#33FF00] hover:bg-[#0D1A0D] transition-colors flex items-center gap-2 uppercase\"><span>⚡</span> <span class=\"hidden sm:inline\">CREATE_WORKERS</span></button> <button hx-get=\"/keys/new\" hx-target=\"#modal-content\" @click=\"$dispatch('modal-open')\" class=\"px-4 py-2.5 bg-[#FFB000] text-black font-bold hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all flex items-center gap-2 uppercase\"><span>+</span> <span>CREATE_KEY</span></button></div></div><!-- Filters --><div class=\"flex flex-col sm:flex-row gap-4\"><div class=\"relative flex-1\"><input type=\"search\" name=\"q\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.SearchQuery)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 67, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 66, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" placeholder=\"Search keys by name or address...\" hx-get=\"/keys\" hx-trigger=\"keyup changed delay:300ms, search\" hx-target=\"#keys-list\" hx-include=\"[name='namespace']\" hx-push-url=\"true\" class=\"w-full px-4 py-2.5 pl-10 bg-bao-card/60 border border-bao-border rounded-xl text-bao-text placeholder-bao-muted/50 focus:border-bao-accent focus:outline-none focus:ring-1 focus:ring-bao-accent/50 transition-colors\"> <svg class=\"absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-bao-muted\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z\"></path></svg></div><select name=\"namespace\" hx-get=\"/keys\" hx-trigger=\"change\" hx-target=\"#keys-list\" hx-include=\"[name='q']\" hx-push-url=\"true\" class=\"px-4 py-2.5 bg-bao-card/60 border border-bao-border rounded-xl text-bao-text focus:border-bao-accent focus:outline-none focus:ring-1 focus:ring-bao-accent/50 min-w-[160px] cursor-pointer\"><option value=\"\">All Namespaces</option> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" placeholder=\"SEARCH KEYS BY NAME OR ADDRESS...\" hx-get=\"/keys\" hx-trigger=\"keyup changed delay:300ms, search\" hx-target=\"#keys-list\" hx-include=\"[name='namespace']\" hx-push-url=\"true\" class=\"w-full px-4 py-2.5 pl-10 bg-black border border-[#333300] text-[#33FF00] placeholder-[#336633] focus:border-[#33FF00] focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] focus:outline-none transition-colors font-mono uppercase\"> <svg class=\"absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#666600]\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z\"></path></svg></div><select name=\"namespace\" hx-get=\"/keys\" hx-trigger=\"change\" hx-target=\"#keys-list\" hx-include=\"[name='q']\" hx-push-url=\"true\" class=\"px-4 py-2.5 bg-black border border-[#333300] text-[#33FF00] focus:border-[#33FF00] focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] focus:outline-none min-w-[160px] cursor-pointer font-mono uppercase\"><option value=\"\">ALL NAMESPACES</option> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -91,7 +90,7 @@ func KeysListPage(data KeysPageData) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(ns.ID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 89, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 88, Col: 36}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -114,7 +113,7 @@ func KeysListPage(data KeysPageData) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(ns.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 90, Col: 16}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 89, Col: 16}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -154,7 +153,7 @@ func KeysListPage(data KeysPageData) templ.Component {
 	})
 }
 
-// KeysList renders just the keys list (for HTMX partial updates).
+// KeysList renders just the keys list (for HTMX partial updates) - terminal style
 func KeysList(keys []*models.Key, namespaces []*models.Namespace) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -177,53 +176,17 @@ func KeysList(keys []*models.Key, namespaces []*models.Namespace) templ.Componen
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(keys) == 0 {
-			templ_7745c5c3_Var7 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Var8 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-					if !templ_7745c5c3_IsBuffer {
-						defer func() {
-							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-							if templ_7745c5c3_Err == nil {
-								templ_7745c5c3_Err = templ_7745c5c3_BufErr
-							}
-						}()
-					}
-					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<button hx-get=\"/keys/new\" hx-target=\"#modal-content\" @click=\"$dispatch('modal-open')\" class=\"px-5 py-2.5 bg-gradient-to-r from-amber-400 to-rose-500 text-bao-bg font-medium rounded-xl shadow-lg hover:shadow-amber-500/30 transition-shadow\">Create Key</button>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					return nil
-				})
-				templ_7745c5c3_Err = components.EmptyState("🔑", "No keys yet", "Create your first cryptographic key to get started with signing.").Render(templ.WithChildren(ctx, templ_7745c5c3_Var8), templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				return nil
-			})
-			templ_7745c5c3_Err = components.Card("", components.CardDefault).Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"bg-black border border-[#333300] p-8 text-center\"><span class=\"text-4xl mb-4 inline-block\">🔑</span><h3 class=\"text-lg text-[#FFB000] uppercase mb-2\">&gt; NO_KEYS_FOUND</h3><p class=\"text-[#666600] uppercase mb-6\">CREATE YOUR FIRST CRYPTOGRAPHIC KEY TO GET STARTED</p><button hx-get=\"/keys/new\" hx-target=\"#modal-content\" @click=\"$dispatch('modal-open')\" class=\"px-5 py-2.5 bg-[#FFB000] text-black font-bold uppercase hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all\">[ CREATE_KEY ]</button></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"space-y-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- Terminal-style table header --> <div class=\"bg-black border border-[#333300] overflow-hidden\"><div class=\"grid grid-cols-12 gap-4 p-4 border-b border-[#333300] text-xs text-[#666600] uppercase\"><div class=\"col-span-3\">NAME</div><div class=\"col-span-3\">ADDRESS</div><div class=\"col-span-2\">ALGORITHM</div><div class=\"col-span-1\">EXIT_STATUS</div><div class=\"col-span-1\">CREATED</div><div class=\"col-span-2\">ACTIONS</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, key := range keys {
-				templ_7745c5c3_Err = KeyCard(key, getNamespaceName(key.NamespaceID, namespaces)).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = KeyRow(key, getNamespaceName(key.NamespaceID, namespaces)).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -237,8 +200,8 @@ func KeysList(keys []*models.Key, namespaces []*models.Namespace) templ.Componen
 	})
 }
 
-// KeyCard renders a single key card.
-func KeyCard(key *models.Key, namespaceName string) templ.Component {
+// KeyRow renders a single key row - terminal style
+func KeyRow(key *models.Key, namespaceName string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -254,126 +217,131 @@ func KeyCard(key *models.Key, namespaceName string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var9 == nil {
-			templ_7745c5c3_Var9 = templ.NopComponent
+		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var7 == nil {
+			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs("key-" + key.ID.String())
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("key-" + key.ID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 128, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 138, Col: 35}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"grid grid-cols-12 gap-4 p-4 border-b border-[#1A1A00] hover:bg-[#0D1A0D] transition-colors group\"><!-- Name --><div class=\"col-span-3 flex items-center gap-2\"><span class=\"text-[#33FF00]\">🔑</span><div><span class=\"text-[#33FF00] font-medium\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var9 string
+		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(key.Name)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 144, Col: 55}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span> <span class=\"ml-2 text-xs text-[#FFB000] bg-[#FFB000]/10 px-1.5 py-0.5 uppercase\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(namespaceName)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 146, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"group bg-bao-card/60 backdrop-blur-sm border-l-4 border-l-emerald-500 border border-bao-border rounded-xl p-5 hover:border-bao-accent/30 hover:shadow-lg hover:shadow-black/10 transition-all duration-300\"><div class=\"flex flex-col lg:flex-row lg:items-center justify-between gap-4\"><div class=\"flex-1 min-w-0\"><div class=\"flex items-center gap-3 mb-2\"><h3 class=\"text-lg font-heading font-semibold text-bao-text truncate flex items-center gap-2\"><span class=\"text-xl\">🔑</span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</span></div></div><!-- Address --><div class=\"col-span-3 flex items-center\"><span class=\"font-mono text-sm text-[#228B22] truncate\" title=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(key.Name)
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(key.Address)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 135, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 153, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</h3><span class=\"text-xs text-bao-accent bg-bao-accent/10 px-2.5 py-1 rounded-full font-medium shrink-0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(namespaceName)
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(key.Address)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 138, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 154, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</span> ")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if key.Exportable {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<span class=\"text-xs text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full\" title=\"Exportable\">📤</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div><p class=\"font-mono text-sm text-bao-muted truncate mb-1\" title=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span></div><!-- Algorithm --><div class=\"col-span-2 flex items-center\"><span class=\"text-[#33FF00] text-sm uppercase\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(key.Address)
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(string(key.Algorithm))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 146, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 160, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span></div><!-- Export Status --><div class=\"col-span-1 flex items-center\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if key.Exportable {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span class=\"text-[#33FF00] text-sm uppercase drop-shadow-[0_0_8px_#33FF00]\">EXIT_OK</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span class=\"text-[#666600] text-sm uppercase\">LOCKED</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div><!-- Created --><div class=\"col-span-1 flex items-center\"><span class=\"text-[#666600] text-sm\" title=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(key.Address)
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(key.CreatedAt.Format(time.RFC3339))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 147, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 174, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</p><div class=\"flex items-center gap-4 text-xs text-bao-muted/70\"><span title=\"Algorithm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(string(key.Algorithm))
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(keysFormatTimeAgo(key.CreatedAt))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 151, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 175, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</span> <span>•</span> <span title=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(key.CreatedAt.Format(time.RFC3339))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 154, Col: 53}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\">Created ")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(keysFormatTimeAgo(key.CreatedAt))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 155, Col: 48}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</span></div></div><div class=\"flex items-center gap-2 shrink-0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</span></div><!-- Actions --><div class=\"col-span-2 flex items-center gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -381,42 +349,42 @@ func KeyCard(key *models.Key, namespaceName string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<button onclick=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<button onclick=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var18 templ.ComponentScript = copyToClipboard(key.Address)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18.Call)
+		var templ_7745c5c3_Var16 templ.ComponentScript = copyToClipboard(key.Address)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"p-2.5 text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors\" title=\"Copy address\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z\"></path></svg></button> <a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"p-2 text-[#666600] hover:text-[#33FF00] transition-colors\" title=\"Copy address\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z\"></path></svg></button> <a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var19 templ.SafeURL
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/keys/" + key.ID.String()))
+		var templ_7745c5c3_Var17 templ.SafeURL
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/keys/" + key.ID.String()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 168, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 188, Col: 54}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"px-3.5 py-2 text-sm text-bao-accent hover:text-bao-text hover:bg-bao-accent/10 rounded-lg transition-colors\">View</a> <button hx-post=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs("/keys/" + key.ID.String() + "/sign-test")
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 172, Col: 63}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" class=\"px-2 py-1 text-sm text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] transition-all uppercase\">VIEW →</a> <button hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" hx-target=\"#toast-container\" hx-swap=\"innerHTML\" class=\"px-3.5 py-2 text-sm text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-lg transition-colors\">Sign Test</button></div></div></div>")
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs("/keys/" + key.ID.String() + "/sign-test")
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/keys_list.templ`, Line: 192, Col: 62}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" hx-target=\"#toast-container\" hx-swap=\"innerHTML\" class=\"px-2 py-1 text-sm text-[#33FF00] hover:drop-shadow-[0_0_8px_#33FF00] transition-all uppercase\">SIGN</button></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -427,26 +395,26 @@ func KeyCard(key *models.Key, namespaceName string) templ.Component {
 // Helper to copy text to clipboard using script.
 func copyToClipboard(text string) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_copyToClipboard_5e2c`,
-		Function: `function __templ_copyToClipboard_5e2c(text){navigator.clipboard.writeText(text).then(() => {
+		Name: `__templ_copyToClipboard_9373`,
+		Function: `function __templ_copyToClipboard_9373(text){navigator.clipboard.writeText(text).then(() => {
 		// Show brief notification
 		const container = document.getElementById('toast-container');
 		if (container) {
 			container.innerHTML = ` + "`" + `
-				<div class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl backdrop-blur-lg bg-emerald-500/90 border border-emerald-400/50 text-white min-w-[200px]"
+				<div class="flex items-center gap-3 px-4 py-3 bg-black border border-[#33FF00] text-[#33FF00] min-w-[200px] font-mono uppercase"
 					 x-data="{ show: true }"
 					 x-show="show"
 					 x-init="setTimeout(() => { show = false; setTimeout(() => $el.remove(), 200) }, 2000)"
 					 x-transition>
 					<span>✓</span>
-					<span class="text-sm font-medium">Copied!</span>
+					<span class="text-sm font-medium">COPIED</span>
 				</div>
 			` + "`" + `;
 		}
 	});
 }`,
-		Call:       templ.SafeScript(`__templ_copyToClipboard_5e2c`, text),
-		CallInline: templ.SafeScriptInline(`__templ_copyToClipboard_5e2c`, text),
+		Call:       templ.SafeScript(`__templ_copyToClipboard_9373`, text),
+		CallInline: templ.SafeScriptInline(`__templ_copyToClipboard_9373`, text),
 	}
 }
 
@@ -457,27 +425,27 @@ func keysFormatTimeAgo(t time.Time) string {
 
 	switch {
 	case diff < time.Minute:
-		return "just now"
+		return "now"
 	case diff < time.Hour:
 		mins := int(diff.Minutes())
 		if mins == 1 {
-			return "1 minute ago"
+			return "1m"
 		}
-		return keysFormatInt(mins) + " minutes ago"
+		return keysFormatInt(mins) + "m"
 	case diff < 24*time.Hour:
 		hours := int(diff.Hours())
 		if hours == 1 {
-			return "1 hour ago"
+			return "1h"
 		}
-		return keysFormatInt(hours) + " hours ago"
+		return keysFormatInt(hours) + "h"
 	case diff < 7*24*time.Hour:
 		days := int(diff.Hours() / 24)
 		if days == 1 {
-			return "yesterday"
+			return "1d"
 		}
-		return keysFormatInt(days) + " days ago"
+		return keysFormatInt(days) + "d"
 	default:
-		return t.Format("Jan 2, 2006")
+		return t.Format("Jan 2")
 	}
 }
 

@@ -8,7 +8,7 @@ package layouts
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// Auth layout for login/signup pages (no sidebar, centered content)
+// Auth layout for login/signup pages - 80s CRT terminal aesthetic
 func Auth(title string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -42,7 +42,7 @@ func Auth(title string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"min-h-screen flex flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden\"><!-- Atmospheric background --><div class=\"absolute inset-0 -z-10\"><!-- Gradient mesh background --><div class=\"absolute inset-0 bg-gradient-to-br from-bao-bg via-bao-card to-bao-bg\"></div><!-- Decorative orbs --><div class=\"absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse\"></div><div class=\"absolute bottom-1/4 right-1/4 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl animate-pulse\" style=\"animation-delay: 1s;\"></div><div class=\"absolute top-1/2 right-1/3 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl animate-pulse\" style=\"animation-delay: 2s;\"></div><!-- Grid pattern overlay --><div class=\"absolute inset-0 bg-[linear-gradient(to_right,#1a1625_1px,transparent_1px),linear-gradient(to_bottom,#1a1625_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20\"></div></div><!-- Logo --><div class=\"mb-8 text-center\"><a href=\"/\" class=\"inline-flex items-center gap-3 group\"><span class=\"text-4xl group-hover:scale-110 transition-transform duration-300\">🔔</span> <span class=\"text-3xl font-heading font-bold bg-gradient-to-r from-amber-300 via-rose-400 to-amber-500 bg-clip-text text-transparent\">BanhBaoRing</span></a><p class=\"mt-3 text-bao-muted text-sm tracking-wide\">Secure key management for the decentralized web</p></div><!-- Auth card --><div class=\"w-full max-w-md\"><div class=\"bg-bao-card/60 backdrop-blur-xl border border-bao-border rounded-2xl shadow-2xl shadow-black/20 p-8\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"min-h-screen bg-black flex flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden font-mono\"><!-- CRT scanlines overlay --><div class=\"absolute inset-0 pointer-events-none opacity-[0.03]\n\t\t\t            bg-[repeating-linear-gradient(0deg,transparent,transparent_1px,rgba(0,0,0,0.3)_1px,rgba(0,0,0,0.3)_2px)]\"></div><!-- Phosphor glow effects --><div class=\"absolute inset-0 -z-10\"><div class=\"absolute top-1/4 left-1/4 w-96 h-96 bg-[#FFB000]/5 rounded-full blur-3xl\"></div><div class=\"absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#33FF00]/5 rounded-full blur-3xl\"></div></div><!-- Logo --><div class=\"mb-8 text-center relative z-10\"><a href=\"/\" class=\"inline-flex items-center gap-3 group\"><span class=\"text-[#FFB000] text-3xl group-hover:drop-shadow-[0_0_15px_#FFB000] transition-all\">◇</span> <span class=\"text-2xl font-bold text-[#FFB000] uppercase tracking-wider\n\t\t\t\t\t             drop-shadow-[0_0_10px_#FFB000] group-hover:drop-shadow-[0_0_20px_#FFB000] transition-all\">POPSIGNER</span></a><p class=\"mt-3 text-[#666600] text-sm tracking-wide uppercase\">Point-of-Presence Signing Infrastructure</p></div><!-- Auth card --><div class=\"w-full max-w-md relative z-10\"><div class=\"bg-black border border-[#333300] p-8\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -50,7 +50,7 @@ func Auth(title string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div><!-- Footer links --><div class=\"mt-8 text-center text-sm text-bao-muted\"><a href=\"/docs\" class=\"hover:text-bao-text transition-colors\">Docs</a> <span class=\"mx-2\">·</span> <a href=\"/privacy\" class=\"hover:text-bao-text transition-colors\">Privacy</a> <span class=\"mx-2\">·</span> <a href=\"/terms\" class=\"hover:text-bao-text transition-colors\">Terms</a></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div><!-- Footer links --><div class=\"mt-8 text-center text-sm text-[#666600] relative z-10 font-mono uppercase\"><a href=\"/docs\" class=\"hover:text-[#FFB000] transition-colors\">Docs</a> <span class=\"mx-2\">·</span> <a href=\"/privacy\" class=\"hover:text-[#FFB000] transition-colors\">Privacy</a> <span class=\"mx-2\">·</span> <a href=\"/terms\" class=\"hover:text-[#FFB000] transition-colors\">Terms</a></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

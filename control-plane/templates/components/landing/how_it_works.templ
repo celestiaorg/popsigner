@@ -1,41 +1,40 @@
 package landing
 
-// HowItWorks renders the 3-step onboarding process section
+// HowItWorks renders the 3-step onboarding process with CRT terminal aesthetic
 templ HowItWorks() {
-	<section class="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-		<!-- Background gradient -->
-		<div class="absolute inset-0 bg-gradient-to-b from-terminal-card/50 via-transparent to-terminal-card/50 pointer-events-none"></div>
+	<section class="py-24 px-4 sm:px-6 lg:px-8 bg-black font-mono relative overflow-hidden">
+		<!-- Subtle accent line -->
+		<div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#333300] to-transparent"></div>
 		
 		<div class="relative max-w-5xl mx-auto">
 			<div class="text-center mb-16">
-				<span class="inline-block text-sm font-semibold text-orange-400 uppercase tracking-wider mb-3">How It Works</span>
-				<h2 class="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-terminal-text mb-4">
-					From signup to signature
-					<span class="bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent">in 5 minutes</span>
+				<h2 class="text-2xl sm:text-3xl md:text-4xl text-[#FFB000] mb-4 uppercase tracking-wider
+				           drop-shadow-[0_0_10px_#FFB000]">
+					&gt; GETTING_STARTED_
 				</h2>
-				<p class="section-subheading mx-auto">
-					No complex setup. No configuration nightmares. Just keys that work.
+				<p class="text-[#666600] uppercase tracking-wide max-w-2xl mx-auto">
+					NO COMPLEX SETUP. NO CONFIGURATION NIGHTMARES. JUST KEYS THAT WORK.
 				</p>
 			</div>
 
 			<!-- Steps Timeline -->
 			<div class="relative">
 				<!-- Connecting line -->
-				<div class="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500/50 via-orange-500/50 to-purple-500/50 -translate-y-1/2"></div>
+				<div class="hidden lg:block absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-[#1A4D1A] via-[#33FF00]/50 to-[#1A4D1A] -translate-y-1/2"></div>
 				
 				<div class="grid md:grid-cols-3 gap-8 lg:gap-12">
-					@StepCard("1", "🔐", "Sign Up", "OAuth login with GitHub, Google, or email. 30 seconds and you're in.", "30 sec", "purple")
-					@StepCard("2", "🔑", "Create Key", "Pick your algorithm, name your key, done. We handle the OpenBao setup.", "1 min", "orange")
-					@StepCard("3", "⚡", "Integrate SDK", "One import, one line of code. Start signing transactions immediately.", "2 min", "teal")
+					@StepCard("01", "SIGN_UP", "OAuth login with GitHub, Google, or email. Create your account and organization.")
+					@StepCard("02", "CREATE_KEY", "Select algorithm, name your key. We handle the OpenBao infrastructure.")
+					@StepCard("03", "INTEGRATE", "One import, one line of code. Start signing transactions inline.")
 				</div>
 			</div>
 
-			<!-- Celebration -->
+			<!-- Status message -->
 			<div class="mt-16 text-center">
-				<div class="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-purple-500/10 via-orange-500/10 to-purple-500/10 border border-purple-500/30">
-					<span class="text-2xl">🎉</span>
-					<span class="text-lg font-display font-semibold text-terminal-text">
-						Done! Your sequencer is now secure.
+				<div class="inline-flex items-center gap-3 px-6 py-3 border border-[#33FF00] bg-black">
+					<span class="text-[#33FF00] drop-shadow-[0_0_5px_#33FF00]">▶</span>
+					<span class="text-[#33FF00] uppercase tracking-wide">
+						READY. YOUR INFRASTRUCTURE IS NOW SOVEREIGN.
 					</span>
 				</div>
 			</div>
@@ -43,67 +42,22 @@ templ HowItWorks() {
 	</section>
 }
 
-templ StepCard(number, emoji, title, description, time, color string) {
+templ StepCard(number, title, description string) {
 	<div class="group relative">
 		<!-- Step number circle -->
-		<div class={ "relative z-10 w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center text-3xl shadow-lg transition-transform group-hover:scale-110 " + stepIconBg(color) }>
-			{ emoji }
-			<!-- Number badge -->
-			<div class={ "absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold shadow-lg " + stepNumberBg(color) }>
-				{ number }
-			</div>
+		<div class="relative z-10 w-16 h-16 mx-auto mb-6 border-2 border-[#33FF00] bg-black
+		            flex items-center justify-center transition-all
+		            group-hover:shadow-[0_0_15px_#33FF00] group-hover:border-[#FFB000]">
+			<span class="text-xl text-[#33FF00] font-bold group-hover:text-[#FFB000] transition-colors">{ number }</span>
 		</div>
 		
 		<!-- Content card -->
-		<div class="text-center p-6 rounded-xl bg-terminal-card/50 border border-terminal-border group-hover:border-purple-500/30 transition-all">
-			<h3 class="text-xl font-display font-semibold text-terminal-text mb-3">{ title }</h3>
-			<p class="text-sm text-terminal-muted leading-relaxed mb-4">{ description }</p>
-			<div class={ "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium " + stepTimeBadge(color) }>
-				<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-				</svg>
-				{ time }
-			</div>
+		<div class="text-center p-6 bg-black border border-[#1A4D1A] group-hover:border-[#33FF00] transition-all">
+			<h3 class="text-lg text-[#FFB000] mb-3 uppercase tracking-wide
+			           group-hover:drop-shadow-[0_0_8px_#FFB000] transition-all">
+				{ title }
+			</h3>
+			<p class="text-sm text-[#33FF00] opacity-80 leading-relaxed">{ description }</p>
 		</div>
 	</div>
 }
-
-func stepIconBg(color string) string {
-	switch color {
-	case "purple":
-		return "bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30"
-	case "orange":
-		return "bg-gradient-to-br from-orange-500/20 to-orange-600/20 border border-orange-500/30"
-	case "teal":
-		return "bg-gradient-to-br from-teal-500/20 to-teal-600/20 border border-teal-500/30"
-	default:
-		return "bg-terminal-card border border-terminal-border"
-	}
-}
-
-func stepNumberBg(color string) string {
-	switch color {
-	case "purple":
-		return "bg-purple-500 text-white"
-	case "orange":
-		return "bg-orange-500 text-white"
-	case "teal":
-		return "bg-teal-500 text-terminal-bg"
-	default:
-		return "bg-terminal-border text-terminal-text"
-	}
-}
-
-func stepTimeBadge(color string) string {
-	switch color {
-	case "purple":
-		return "bg-purple-500/10 text-purple-300 border border-purple-500/20"
-	case "orange":
-		return "bg-orange-500/10 text-orange-300 border border-orange-500/20"
-	case "teal":
-		return "bg-teal-500/10 text-teal-300 border border-teal-500/20"
-	default:
-		return "bg-terminal-border/50 text-terminal-muted"
-	}
-}
-

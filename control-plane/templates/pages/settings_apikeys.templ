@@ -60,12 +60,12 @@ templ SettingsAPIKeysPage(data APIKeysPageData) {
 				<div class="space-y-4">
 					<div>
 						<p class="text-sm font-medium text-bao-text mb-2">cURL</p>
-						<pre class="p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto"><code>curl -H "Authorization: Bearer bbr_live_xxxxx" \
-     https://api.banhbaoring.io/v1/keys</code></pre>
+						<pre class="p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto"><code>curl -H "Authorization: Bearer psk_live_xxxxx" \
+     https://api.popsigner.com/v1/keys</code></pre>
 					</div>
 					<div>
 						<p class="text-sm font-medium text-bao-text mb-2">Go SDK</p>
-						<pre class="p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto"><code>client := banhbaoring.NewClient("bbr_live_xxxxx")
+						<pre class="p-4 bg-bao-bg rounded-xl text-sm text-bao-muted overflow-x-auto"><code>client := popsigner.NewClient("psk_live_xxxxx")
 keys, err := client.Keys.List(ctx)</code></pre>
 					</div>
 				</div>
@@ -137,7 +137,7 @@ templ APIKeysList(keys []*models.APIKey) {
 				}
 			</div>
 		} else {
-			@components.EmptyState("🔗", "No API keys yet", "Create an API key to access the BanhBaoRing API programmatically.") {
+			@components.EmptyState("🔗", "No API keys yet", "Create an API key to access the POPSigner API programmatically.") {
 				<button hx-get="/settings/api-keys/new"
 						hx-target="#modal-content"
 						@click="$dispatch('modal-open')"

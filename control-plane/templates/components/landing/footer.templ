@@ -1,72 +1,75 @@
 package landing
 
-// Footer renders the landing page footer
+// Footer renders the landing page footer with CRT terminal aesthetic
 templ Footer() {
-	<footer class="py-16 px-4 sm:px-6 lg:px-8 border-t border-terminal-border bg-terminal-card/30">
+	<footer class="py-16 px-4 sm:px-6 lg:px-8 border-t border-[#333300] bg-black font-mono">
 		<div class="max-w-6xl mx-auto">
 			<div class="grid md:grid-cols-5 gap-8 mb-12">
 				<!-- Brand -->
 				<div class="md:col-span-2">
 					<a href="/" class="flex items-center gap-2.5 mb-4 group">
-						<span class="text-3xl group-hover:scale-110 transition-transform">🔔</span>
-						<span class="text-xl font-display font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent">BanhBaoRing</span>
+						<span class="text-[#FFB000] text-xl">◇</span>
+						<span class="text-lg text-[#FFB000] font-bold uppercase tracking-wider
+						            group-hover:drop-shadow-[0_0_10px_#FFB000] transition-all">
+							POPSIGNER
+						</span>
 					</a>
-					<p class="text-sm text-terminal-muted mb-6 max-w-xs">
-						Point of Presence key management for sovereign rollups. Secure keys, delivered right to your infrastructure.
+					<p class="text-sm text-[#228B22] mb-6 max-w-xs uppercase leading-relaxed">
+						POINT-OF-PRESENCE SIGNING INFRASTRUCTURE
 					</p>
-					<!-- Newsletter signup hint -->
-					<div class="flex items-center gap-2 text-xs text-terminal-dim">
-						<span class="text-purple-400">📍</span>
-						<span>Deploy next to your nodes</span>
+					<!-- Status indicator -->
+					<div class="flex items-center gap-2 text-xs text-[#33FF00]">
+						<span class="inline-block w-2 h-2 bg-[#33FF00] rounded-full animate-pulse shadow-[0_0_5px_#33FF00]"></span>
+						<span class="uppercase">SYSTEM OPERATIONAL</span>
 					</div>
 				</div>
 
 				<!-- Product -->
 				<div>
-					<h4 class="font-display font-semibold text-terminal-text mb-4 text-sm uppercase tracking-wider">Product</h4>
+					<h4 class="text-[#FFB000] mb-4 text-sm uppercase tracking-wider">PRODUCT</h4>
 					<ul class="space-y-3">
-						@FooterLink("Features", "#features")
-						@FooterLink("Pricing", "#pricing")
-						@FooterLink("Documentation", "/docs")
-						@FooterLink("API Reference", "/docs/api")
-						@FooterLink("Status", "/status")
+						@FooterLink("FEATURES", "#features")
+						@FooterLink("PRICING", "#pricing")
+						@FooterLink("DOCS", "/docs")
+						@FooterLink("API", "/docs/api")
+						@FooterLink("STATUS", "/status")
 					</ul>
 				</div>
 
 				<!-- Developers -->
 				<div>
-					<h4 class="font-display font-semibold text-terminal-text mb-4 text-sm uppercase tracking-wider">Developers</h4>
+					<h4 class="text-[#FFB000] mb-4 text-sm uppercase tracking-wider">DEVELOPERS</h4>
 					<ul class="space-y-3">
-						@FooterLink("Getting Started", "/docs/quickstart")
-						@FooterLink("SDK (Go)", "/docs/sdk-go")
-						@FooterLink("SDK (Rust)", "/docs/sdk-rust")
-						@FooterLink("GitHub", "https://github.com/Bidon15/banhbaoring")
-						@FooterLink("Changelog", "/changelog")
+						@FooterLink("QUICKSTART", "/docs/quickstart")
+						@FooterLink("SDK (GO)", "/docs/sdk-go")
+						@FooterLink("SDK (RUST)", "/docs/sdk-rust")
+						@FooterLink("GITHUB", "https://github.com/Bidon15/banhbaoring")
+						@FooterLink("CHANGELOG", "/changelog")
 					</ul>
 				</div>
 
 				<!-- Company -->
 				<div>
-					<h4 class="font-display font-semibold text-terminal-text mb-4 text-sm uppercase tracking-wider">Company</h4>
+					<h4 class="text-[#FFB000] mb-4 text-sm uppercase tracking-wider">COMPANY</h4>
 					<ul class="space-y-3">
-						@FooterLink("About", "/about")
-						@FooterLink("Blog", "/blog")
-						@FooterLink("Contact", "/contact")
-						@FooterLink("Privacy", "/privacy")
-						@FooterLink("Terms", "/terms")
+						@FooterLink("ABOUT", "/about")
+						@FooterLink("BLOG", "/blog")
+						@FooterLink("CONTACT", "/contact")
+						@FooterLink("PRIVACY", "/privacy")
+						@FooterLink("TERMS", "/terms")
 					</ul>
 				</div>
 			</div>
 
 			<!-- Bottom bar -->
-			<div class="pt-8 border-t border-terminal-border flex flex-col sm:flex-row items-center justify-between gap-4">
-				<p class="text-sm text-terminal-dim">
-					&copy; 2025 BanhBaoRing. Open source under MIT License.
+			<div class="pt-8 border-t border-[#333300] flex flex-col sm:flex-row items-center justify-between gap-4">
+				<p class="text-xs text-[#666600] uppercase">
+					© 2025 POPSIGNER. APACHE 2.0.
 				</p>
-				<div class="flex items-center gap-2">
+				<div class="flex items-center gap-4">
 					@SocialLink("GitHub", "https://github.com/Bidon15/banhbaoring")
-					@SocialLink("Discord", "https://discord.gg/banhbaoring")
-					@SocialLink("Twitter", "https://twitter.com/banhbaoring")
+					@SocialLink("Discord", "https://discord.gg/popsigner")
+					@SocialLink("Twitter", "https://twitter.com/popsigner")
 				</div>
 			</div>
 		</div>
@@ -75,7 +78,7 @@ templ Footer() {
 
 templ FooterLink(label, href string) {
 	<li>
-		<a href={ templ.SafeURL(href) } class="text-sm text-terminal-muted hover:text-terminal-text transition-colors">
+		<a href={ templ.SafeURL(href) } class="text-sm text-[#33FF00] opacity-70 hover:opacity-100 hover:drop-shadow-[0_0_5px_#33FF00] transition-all uppercase">
 			{ label }
 		</a>
 	</li>
@@ -83,7 +86,7 @@ templ FooterLink(label, href string) {
 
 templ SocialLink(name, href string) {
 	<a href={ templ.SafeURL(href) } target="_blank" rel="noopener"
-		class="p-2 text-terminal-muted hover:text-terminal-text transition-colors"
+		class="p-2 text-[#33FF00] opacity-70 hover:opacity-100 hover:drop-shadow-[0_0_8px_#33FF00] transition-all"
 		title={ name }>
 		switch name {
 			case "GitHub":

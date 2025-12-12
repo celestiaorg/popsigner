@@ -20,7 +20,7 @@ type SidebarData struct {
 	ActivePath string
 }
 
-// Sidebar renders the main navigation sidebar.
+// Sidebar renders the main navigation sidebar - 80s CRT terminal aesthetic
 func Sidebar(data SidebarData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -42,82 +42,82 @@ func Sidebar(data SidebarData) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col h-full bg-bao-bg\"><!-- Logo --><div class=\"flex items-center h-16 px-5 border-b border-bao-border\"><a href=\"/dashboard\" class=\"flex items-center gap-2.5 group\"><span class=\"text-2xl group-hover:scale-110 transition-transform duration-300\">🔔</span> <span class=\"text-xl font-heading font-bold bg-gradient-to-r from-amber-300 via-rose-400 to-amber-500 bg-clip-text text-transparent\">BanhBaoRing</span></a></div><!-- Org Selector --><div class=\"px-4 py-3 border-b border-bao-border\"><div x-data=\"{ open: false }\" class=\"relative\"><button @click=\"open = !open\" class=\"w-full flex items-center gap-3 px-3 py-2.5 bg-bao-card/60 border border-bao-border rounded-lg hover:border-bao-accent/30 transition-colors\"><div class=\"w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-rose-500 flex items-center justify-center text-bao-bg font-bold text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col h-full bg-black border-r border-[#333300] font-mono\"><!-- Logo --><div class=\"flex items-center h-16 px-5 border-b border-[#333300]\"><a href=\"/dashboard\" class=\"flex items-center gap-2.5 group\"><span class=\"text-[#FFB000] text-xl group-hover:drop-shadow-[0_0_10px_#FFB000] transition-all\">◇</span> <span class=\"text-lg font-bold text-[#FFB000] uppercase tracking-wider\n\t\t\t\t             group-hover:drop-shadow-[0_0_10px_#FFB000] transition-all\">POPSIGNER</span></a></div><!-- Terminal status bar --><div class=\"px-4 py-2 text-[#666600] text-xs border-b border-[#1A1A00] uppercase\">&gt; SYSTEM READY_</div><!-- Org Selector --><div class=\"px-4 py-3 border-b border-[#333300]\"><div x-data=\"{ open: false }\" class=\"relative\"><button @click=\"open = !open\" class=\"w-full flex items-center gap-3 px-3 py-2.5 bg-black border border-[#333300] hover:border-[#FFB000]/50 transition-colors\"><div class=\"w-8 h-8 bg-[#FFB000] flex items-center justify-center text-black font-bold text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(getInitial(data.OrgName))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 33, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 39, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"flex-1 text-left min-w-0\"><p class=\"text-sm font-medium text-bao-text truncate\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"flex-1 text-left min-w-0\"><p class=\"text-sm font-medium text-[#FFB000] truncate uppercase\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.OrgName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 36, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 42, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</p><p class=\"text-xs text-bao-muted capitalize\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</p><p class=\"text-xs text-[#666600] uppercase\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.OrgPlan)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 37, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 43, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " plan</p></div><svg class=\"w-4 h-4 text-bao-muted transition-transform\" :class=\"open && 'rotate-180'\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19 9l-7 7-7-7\"></path></svg></button><!-- Dropdown menu (placeholder for org switching) --><div x-show=\"open\" @click.outside=\"open = false\" x-transition:enter=\"transition ease-out duration-100\" x-transition:enter-start=\"opacity-0 scale-95\" x-transition:enter-end=\"opacity-100 scale-100\" x-transition:leave=\"transition ease-in duration-75\" x-transition:leave-start=\"opacity-100 scale-100\" x-transition:leave-end=\"opacity-0 scale-95\" class=\"absolute left-0 right-0 mt-2 bg-bao-card border border-bao-border rounded-lg shadow-xl z-50\" style=\"display: none;\"><div class=\"p-2\"><a href=\"/settings/organizations\" class=\"flex items-center gap-2 px-3 py-2 text-sm text-bao-muted hover:text-bao-text hover:bg-bao-border/30 rounded-lg transition-colors\"><svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 6v6m0 0v6m0-6h6m-6 0H6\"></path></svg> Create organization</a></div></div></div></div><!-- Navigation --><nav class=\"flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " PLAN</p></div><svg class=\"w-4 h-4 text-[#666600] transition-transform\" :class=\"open && 'rotate-180'\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19 9l-7 7-7-7\"></path></svg></button><!-- Dropdown menu --><div x-show=\"open\" @click.outside=\"open = false\" x-transition:enter=\"transition ease-out duration-100\" x-transition:enter-start=\"opacity-0\" x-transition:enter-end=\"opacity-100\" x-transition:leave=\"transition ease-in duration-75\" x-transition:leave-start=\"opacity-100\" x-transition:leave-end=\"opacity-0\" class=\"absolute left-0 right-0 mt-2 bg-black border border-[#333300] z-50\" style=\"display: none;\"><div class=\"p-2\"><a href=\"/settings/organizations\" class=\"flex items-center gap-2 px-3 py-2 text-sm text-[#33FF00] hover:bg-[#0D1A0D] transition-colors uppercase\"><span>+</span> CREATE ORGANIZATION</a></div></div></div></div><!-- Navigation --><nav class=\"flex-1 px-3 py-4 space-y-1 overflow-y-auto\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SidebarLink("/dashboard", "🏠", "Overview", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SidebarLink("/dashboard", "&gt; DASHBOARD", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SidebarLink("/keys", "🔑", "Keys", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SidebarLink("/keys", "&gt; KEYS", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SidebarLink("/usage", "📊", "Usage", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SidebarLink("/usage", "&gt; USAGE", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SidebarLink("/audit", "📜", "Audit Log", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SidebarLink("/audit", "&gt; AUDIT_LOG", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"pt-4 mt-4 border-t border-bao-border\"><p class=\"px-3 mb-2 text-xs font-semibold text-bao-muted/60 uppercase tracking-wider\">Settings</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"pt-4 mt-4 border-t border-[#333300]\"><p class=\"px-3 mb-2 text-xs text-[#666600]/60 uppercase tracking-wider\">SETTINGS</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SidebarLink("/settings/team", "👥", "Team", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SidebarLink("/settings/team", "&gt; TEAM", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SidebarLink("/settings/api-keys", "🔗", "API Keys", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SidebarLink("/settings/api-keys", "&gt; API_KEYS", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = SidebarLink("/settings/profile", "⚙️", "Profile", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = SidebarLink("/settings/profile", "&gt; PROFILE", data.ActivePath).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></nav><!-- User Menu --><div class=\"p-4 border-t border-bao-border\"><div class=\"flex items-center gap-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></nav><!-- User Menu --><div class=\"p-4 border-t border-[#333300]\"><div class=\"flex items-center gap-3\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -129,25 +129,25 @@ func Sidebar(data SidebarData) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.AvatarURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 84, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 88, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" alt=\"Avatar\" class=\"w-9 h-9 rounded-full ring-2 ring-bao-border\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" alt=\"Avatar\" class=\"w-9 h-9 border border-[#33FF00]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"w-9 h-9 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-bao-bg text-sm font-bold ring-2 ring-bao-border\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"w-9 h-9 bg-[#33FF00] flex items-center justify-center text-black text-sm font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(getInitial(data.UserName))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 87, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 91, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -158,33 +158,33 @@ func Sidebar(data SidebarData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"flex-1 min-w-0\"><p class=\"text-sm font-medium text-bao-text truncate\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"flex-1 min-w-0\"><p class=\"text-sm font-medium text-[#33FF00] truncate uppercase\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.UserName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 91, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 95, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p><p class=\"text-xs text-bao-muted truncate\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</p><p class=\"text-xs text-[#228B22] truncate\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(data.UserEmail)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 92, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 96, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</p></div><form action=\"/logout\" method=\"POST\"><button type=\"submit\" class=\"p-2 text-bao-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors\" title=\"Logout\"><svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1\"></path></svg></button></form></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</p></div><form action=\"/logout\" method=\"POST\"><button type=\"submit\" class=\"p-2 text-[#666600] hover:text-[#FF3333] transition-colors\" title=\"Logout\"><svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1\"></path></svg></button></form></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -192,8 +192,8 @@ func Sidebar(data SidebarData) templ.Component {
 	})
 }
 
-// SidebarLink renders a navigation link in the sidebar.
-func SidebarLink(href, icon, label, activePath string) templ.Component {
+// SidebarLink renders a navigation link in the sidebar - terminal style
+func SidebarLink(href, label, activePath string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -226,7 +226,7 @@ func SidebarLink(href, icon, label, activePath string) templ.Component {
 		var templ_7745c5c3_Var11 templ.SafeURL
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 111, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 115, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -245,33 +245,15 @@ func SidebarLink(href, icon, label, activePath string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\"><span class=\"text-base\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(icon)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 113, Col: 32}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+		templ_7745c5c3_Err = templ.Raw(label).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span> <span class=\"text-sm\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(label)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/sidebar.templ`, Line: 114, Col: 31}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span></a>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -280,16 +262,16 @@ func SidebarLink(href, icon, label, activePath string) templ.Component {
 }
 
 func sidebarLinkClasses(href, activePath string) string {
-	base := "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
+	base := "block px-3 py-2 text-sm uppercase transition-all duration-200"
 
-	// Check if this link is active (exact match or prefix for settings pages)
+	// Check if this link is active
 	isActive := href == activePath ||
 		(strings.HasPrefix(activePath, href) && href != "/dashboard" && len(href) > 1)
 
 	if isActive {
-		return base + " bg-gradient-to-r from-bao-accent/10 to-transparent text-bao-accent border-l-2 border-bao-accent -ml-[2px]"
+		return base + " text-[#FFB000] bg-[#1A1A00] border-l-2 border-[#FFB000] -ml-[2px] drop-shadow-[0_0_8px_#FFB000]"
 	}
-	return base + " text-bao-muted hover:text-bao-text hover:bg-bao-border/20"
+	return base + " text-[#33FF00] hover:bg-[#0D1A0D] hover:drop-shadow-[0_0_8px_#33FF00]"
 }
 
 func getInitial(name string) string {

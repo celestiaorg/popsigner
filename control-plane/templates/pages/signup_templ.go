@@ -12,8 +12,14 @@ import (
 	"github.com/Bidon15/banhbaoring/control-plane/templates/layouts"
 )
 
-// SignupPage renders the signup/registration page with OAuth options (GitHub and Google only).
-func SignupPage(errorMsg string) templ.Component {
+// SignupFormValues holds form values for the signup page.
+type SignupFormValues struct {
+	Name  string
+	Email string
+}
+
+// SignupPage renders the signup/registration page - 80s CRT terminal aesthetic
+func SignupPage(errorMsg string, formValues SignupFormValues) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -51,14 +57,14 @@ func SignupPage(errorMsg string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if errorMsg != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3\"><span class=\"text-red-400 text-lg\">⚠</span><p class=\"text-red-400 text-sm\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"mb-6 p-4 bg-[#FF3333]/10 border border-[#FF3333]/50 flex items-center gap-3\"><span class=\"text-[#FF3333] text-lg\">⚠</span><p class=\"text-[#FF3333] text-sm uppercase\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(errorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/signup.templ`, Line: 14, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/signup.templ`, Line: 20, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -69,19 +75,19 @@ func SignupPage(errorMsg string) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " <h2 class=\"text-2xl font-heading font-bold text-bao-text mb-2\">Create your account</h2><p class=\"text-bao-muted text-sm mb-8\">Start managing your keys securely in minutes</p><!-- OAuth Buttons --> <div class=\"space-y-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " <h2 class=\"text-xl text-[#FFB000] mb-2 uppercase drop-shadow-[0_0_10px_#FFB000]\">&gt; DEPLOY_</h2><p class=\"text-[#666600] text-sm mb-8 uppercase\">CREATE YOUR POPSIGNER ACCOUNT</p><!-- OAuth Buttons --> <div class=\"space-y-3\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = OAuthButton("github", "Sign up with GitHub").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = OAuthButton("github", "DEPLOY WITH GITHUB").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = OAuthButton("google", "Sign up with Google").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = OAuthButton("google", "DEPLOY WITH GOOGLE").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><!-- Features --> <div class=\"mt-8 p-4 bg-bao-bg rounded-xl border border-bao-border\"><p class=\"text-sm font-medium text-bao-text mb-3\">What you get with BanhBaoRing:</p><ul class=\"space-y-2 text-sm text-bao-muted\"><li class=\"flex items-center gap-2\"><span class=\"text-green-400\">✓</span> <span>HSM-level key security without complexity</span></li><li class=\"flex items-center gap-2\"><span class=\"text-green-400\">✓</span> <span>Parallel worker support for Celestia rollups</span></li><li class=\"flex items-center gap-2\"><span class=\"text-green-400\">✓</span> <span>Full audit trail for compliance</span></li><li class=\"flex items-center gap-2\"><span class=\"text-green-400\">✓</span> <span>Free tier with 3 keys and 10K signatures/month</span></li></ul></div><p class=\"mt-6 text-center text-sm text-bao-muted\">Already have an account? <a href=\"/login\" class=\"text-bao-accent hover:text-amber-300 font-medium transition-colors\">Sign in</a></p><p class=\"mt-4 text-center text-xs text-bao-muted\">By signing up, you agree to our  <a href=\"/terms\" class=\"text-bao-accent hover:underline\">Terms</a> and  <a href=\"/privacy\" class=\"text-bao-accent hover:underline\">Privacy Policy</a></p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div><!-- Features --> <div class=\"mt-8 p-4 bg-black border border-[#1A4D1A]\"><p class=\"text-sm font-medium text-[#FFB000] mb-3 uppercase\">&gt; POPSIGNER INCLUDES:</p><ul class=\"space-y-2 text-sm text-[#33FF00]\"><li class=\"flex items-center gap-2 uppercase\"><span class=\"text-[#33FF00]\">✓</span> <span>HSM-LEVEL KEY SECURITY</span></li><li class=\"flex items-center gap-2 uppercase\"><span class=\"text-[#33FF00]\">✓</span> <span>PARALLEL WORKER SUPPORT</span></li><li class=\"flex items-center gap-2 uppercase\"><span class=\"text-[#33FF00]\">✓</span> <span>FULL AUDIT TRAIL</span></li><li class=\"flex items-center gap-2 uppercase\"><span class=\"text-[#33FF00]\">✓</span> <span>EXIT GUARANTEE - YOUR KEYS, ALWAYS</span></li></ul></div><p class=\"mt-6 text-center text-sm text-[#666600] uppercase\">ALREADY DEPLOYED? <a href=\"/login\" class=\"text-[#FFB000] hover:drop-shadow-[0_0_8px_#FFB000] font-medium transition-all\">LOGIN</a></p><p class=\"mt-4 text-center text-xs text-[#666600] uppercase\">BY SIGNING UP, YOU AGREE TO OUR  <a href=\"/terms\" class=\"text-[#FFB000] hover:underline\">TERMS</a> AND  <a href=\"/privacy\" class=\"text-[#FFB000] hover:underline\">PRIVACY POLICY</a></p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
