@@ -81,6 +81,11 @@ type keyResponse struct {
 	CreatedAt   string                 `json:"created_at"`
 }
 
+// keyResponseWrapper handles the {"data": {...}} response format.
+type keyResponseWrapper struct {
+	Data keyResponse `json:"data"`
+}
+
 // toKey converts a keyResponse to a Key.
 func (r *keyResponse) toKey() *Key {
 	createdAt, _ := time.Parse("2006-01-02T15:04:05Z", r.CreatedAt)
@@ -130,11 +135,11 @@ func (s *KeysService) Create(ctx context.Context, req CreateKeyRequest) (*Key, e
 		apiReq["metadata"] = req.Metadata
 	}
 
-	var resp keyResponse
+	var resp keyResponseWrapper
 	if err := s.client.post(ctx, "/v1/keys", apiReq, &resp); err != nil {
 		return nil, err
 	}
-	return resp.toKey(), nil
+	return resp.Data.toKey(), nil
 }
 
 // CreateBatch creates multiple keys in parallel.
@@ -157,15 +162,17 @@ func (s *KeysService) CreateBatch(ctx context.Context, req CreateBatchRequest) (
 	}
 
 	var resp struct {
-		Keys  []*keyResponse `json:"keys"`
-		Count int            `json:"count"`
+		Data struct {
+			Keys  []*keyResponse `json:"keys"`
+			Count int            `json:"count"`
+		} `json:"data"`
 	}
 	if err := s.client.post(ctx, "/v1/keys/batch", apiReq, &resp); err != nil {
 		return nil, err
 	}
 
-	keys := make([]*Key, len(resp.Keys))
-	for i, k := range resp.Keys {
+	keys := make([]*Key, len(resp.Data.Keys))
+	for i, k := range resp.Data.Keys {
 		keys[i] = k.toKey()
 	}
 	return keys, nil
@@ -177,11 +184,11 @@ func (s *KeysService) CreateBatch(ctx context.Context, req CreateBatchRequest) (
 //
 //	key, err := client.Keys.Get(ctx, keyID)
 func (s *KeysService) Get(ctx context.Context, keyID uuid.UUID) (*Key, error) {
-	var resp keyResponse
+	var resp keyResponseWrapper
 	if err := s.client.get(ctx, fmt.Sprintf("/v1/keys/%s", keyID), &resp); err != nil {
 		return nil, err
 	}
-	return resp.toKey(), nil
+	return resp.Data.toKey(), nil
 }
 
 // ListOptions are options for listing keys.
@@ -207,13 +214,15 @@ func (s *KeysService) List(ctx context.Context, opts *ListOptions) ([]*Key, erro
 		path = fmt.Sprintf("/v1/keys?namespace_id=%s", opts.NamespaceID)
 	}
 
-	var resp []*keyResponse
+	var resp struct {
+		Data []*keyResponse `json:"data"`
+	}
 	if err := s.client.get(ctx, path, &resp); err != nil {
 		return nil, err
 	}
 
-	keys := make([]*Key, len(resp))
-	for i, k := range resp {
+	keys := make([]*Key, len(resp.Data))
+	for i, k := range resp.Data {
 		keys[i] = k.toKey()
 	}
 	return keys, nil
@@ -246,11 +255,11 @@ func (s *KeysService) Import(ctx context.Context, req ImportKeyRequest) (*Key, e
 		"exportable":   req.Exportable,
 	}
 
-	var resp keyResponse
+	var resp keyResponseWrapper
 	if err := s.client.post(ctx, "/v1/keys/import", apiReq, &resp); err != nil {
 		return nil, err
 	}
-	return resp.toKey(), nil
+	return resp.Data.toKey(), nil
 }
 
 // Export exports a key's private key material.
@@ -261,9 +270,11 @@ func (s *KeysService) Import(ctx context.Context, req ImportKeyRequest) (*Key, e
 //	result, err := client.Keys.Export(ctx, keyID)
 //	privateKey := result.PrivateKey // base64-encoded
 func (s *KeysService) Export(ctx context.Context, keyID uuid.UUID) (*ExportKeyResponse, error) {
-	var resp ExportKeyResponse
+	var resp struct {
+		Data ExportKeyResponse `json:"data"`
+	}
 	if err := s.client.post(ctx, fmt.Sprintf("/v1/keys/%s/export", keyID), nil, &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &resp.Data, nil
 }

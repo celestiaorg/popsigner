@@ -54,11 +54,13 @@ type CreateNamespaceRequest struct {
 //	    Name: "My Organization",
 //	})
 func (s *OrgsService) Create(ctx context.Context, req CreateOrgRequest) (*Organization, error) {
-	var resp Organization
+	var resp struct {
+		Data Organization `json:"data"`
+	}
 	if err := s.client.post(ctx, "/v1/organizations", req, &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &resp.Data, nil
 }
 
 // List returns all organizations the current user has access to.
@@ -67,11 +69,13 @@ func (s *OrgsService) Create(ctx context.Context, req CreateOrgRequest) (*Organi
 //
 //	orgs, err := client.Orgs.List(ctx)
 func (s *OrgsService) List(ctx context.Context) ([]*Organization, error) {
-	var resp []*Organization
+	var resp struct {
+		Data []*Organization `json:"data"`
+	}
 	if err := s.client.get(ctx, "/v1/organizations", &resp); err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return resp.Data, nil
 }
 
 // Get retrieves an organization by ID.
@@ -80,11 +84,13 @@ func (s *OrgsService) List(ctx context.Context) ([]*Organization, error) {
 //
 //	org, err := client.Orgs.Get(ctx, orgID)
 func (s *OrgsService) Get(ctx context.Context, orgID uuid.UUID) (*Organization, error) {
-	var resp Organization
+	var resp struct {
+		Data Organization `json:"data"`
+	}
 	if err := s.client.get(ctx, fmt.Sprintf("/v1/organizations/%s", orgID), &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &resp.Data, nil
 }
 
 // Update updates an organization.
@@ -95,11 +101,13 @@ func (s *OrgsService) Get(ctx context.Context, orgID uuid.UUID) (*Organization, 
 //	    Name: "New Name",
 //	})
 func (s *OrgsService) Update(ctx context.Context, orgID uuid.UUID, req UpdateOrgRequest) (*Organization, error) {
-	var resp Organization
+	var resp struct {
+		Data Organization `json:"data"`
+	}
 	if err := s.client.patch(ctx, fmt.Sprintf("/v1/organizations/%s", orgID), req, &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &resp.Data, nil
 }
 
 // Delete deletes an organization.
@@ -118,11 +126,13 @@ func (s *OrgsService) Delete(ctx context.Context, orgID uuid.UUID) error {
 //	limits, err := client.Orgs.GetLimits(ctx, orgID)
 //	fmt.Printf("Keys: %d/%d\n", limits.CurrentKeys, limits.MaxKeys)
 func (s *OrgsService) GetLimits(ctx context.Context, orgID uuid.UUID) (*PlanLimits, error) {
-	var resp PlanLimits
+	var resp struct {
+		Data PlanLimits `json:"data"`
+	}
 	if err := s.client.get(ctx, fmt.Sprintf("/v1/organizations/%s/limits", orgID), &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &resp.Data, nil
 }
 
 // ListMembers returns all members of an organization.
@@ -131,11 +141,13 @@ func (s *OrgsService) GetLimits(ctx context.Context, orgID uuid.UUID) (*PlanLimi
 //
 //	members, err := client.Orgs.ListMembers(ctx, orgID)
 func (s *OrgsService) ListMembers(ctx context.Context, orgID uuid.UUID) ([]*Member, error) {
-	var resp []*Member
+	var resp struct {
+		Data []*Member `json:"data"`
+	}
 	if err := s.client.get(ctx, fmt.Sprintf("/v1/organizations/%s/members", orgID), &resp); err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return resp.Data, nil
 }
 
 // InviteMember invites a user to join an organization.
@@ -147,11 +159,13 @@ func (s *OrgsService) ListMembers(ctx context.Context, orgID uuid.UUID) ([]*Memb
 //	    Role:  popsigner.RoleOperator,
 //	})
 func (s *OrgsService) InviteMember(ctx context.Context, orgID uuid.UUID, req InviteMemberRequest) (*Invitation, error) {
-	var resp Invitation
+	var resp struct {
+		Data Invitation `json:"data"`
+	}
 	if err := s.client.post(ctx, fmt.Sprintf("/v1/organizations/%s/members", orgID), req, &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &resp.Data, nil
 }
 
 // RemoveMember removes a member from an organization.
@@ -180,11 +194,13 @@ func (s *OrgsService) UpdateMemberRole(ctx context.Context, orgID, userID uuid.U
 //
 //	invitations, err := client.Orgs.ListInvitations(ctx, orgID)
 func (s *OrgsService) ListInvitations(ctx context.Context, orgID uuid.UUID) ([]*Invitation, error) {
-	var resp []*Invitation
+	var resp struct {
+		Data []*Invitation `json:"data"`
+	}
 	if err := s.client.get(ctx, fmt.Sprintf("/v1/organizations/%s/invitations", orgID), &resp); err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return resp.Data, nil
 }
 
 // CancelInvitation cancels a pending invitation.
@@ -202,11 +218,13 @@ func (s *OrgsService) CancelInvitation(ctx context.Context, orgID, invitationID 
 //
 //	namespaces, err := client.Orgs.ListNamespaces(ctx, orgID)
 func (s *OrgsService) ListNamespaces(ctx context.Context, orgID uuid.UUID) ([]*Namespace, error) {
-	var resp []*Namespace
+	var resp struct {
+		Data []*Namespace `json:"data"`
+	}
 	if err := s.client.get(ctx, fmt.Sprintf("/v1/organizations/%s/namespaces", orgID), &resp); err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return resp.Data, nil
 }
 
 // CreateNamespace creates a new namespace.
@@ -218,11 +236,13 @@ func (s *OrgsService) ListNamespaces(ctx context.Context, orgID uuid.UUID) ([]*N
 //	    Description: "Production keys",
 //	})
 func (s *OrgsService) CreateNamespace(ctx context.Context, orgID uuid.UUID, req CreateNamespaceRequest) (*Namespace, error) {
-	var resp Namespace
+	var resp struct {
+		Data Namespace `json:"data"`
+	}
 	if err := s.client.post(ctx, fmt.Sprintf("/v1/organizations/%s/namespaces", orgID), req, &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &resp.Data, nil
 }
 
 // GetNamespace retrieves a namespace by ID.
@@ -231,11 +251,13 @@ func (s *OrgsService) CreateNamespace(ctx context.Context, orgID uuid.UUID, req 
 //
 //	ns, err := client.Orgs.GetNamespace(ctx, orgID, namespaceID)
 func (s *OrgsService) GetNamespace(ctx context.Context, orgID, namespaceID uuid.UUID) (*Namespace, error) {
-	var resp Namespace
+	var resp struct {
+		Data Namespace `json:"data"`
+	}
 	if err := s.client.get(ctx, fmt.Sprintf("/v1/organizations/%s/namespaces/%s", orgID, namespaceID), &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &resp.Data, nil
 }
 
 // DeleteNamespace deletes a namespace.

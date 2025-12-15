@@ -116,7 +116,7 @@ func NewCelestiaKeyring(apiKey, keyID string, opts ...CelestiaKeyringOption) (*C
 
 	// Check if public key is present
 	if key.PublicKey == "" {
-		return nil, fmt.Errorf("key %s has no public key - key name: %q, algorithm: %q, address: %q", 
+		return nil, fmt.Errorf("key %s has no public key - key name: %q, algorithm: %q, address: %q",
 			keyID, key.Name, key.Algorithm, key.Address)
 	}
 
@@ -128,7 +128,7 @@ func NewCelestiaKeyring(apiKey, keyID string, opts ...CelestiaKeyringOption) (*C
 
 	// Validate public key length - must be 33 bytes (compressed secp256k1)
 	if len(pubKeyBytes) != 33 {
-		return nil, fmt.Errorf("invalid public key length for key %s: expected 33 bytes (compressed secp256k1), got %d bytes. Key name: %q, raw hex: %q", 
+		return nil, fmt.Errorf("invalid public key length for key %s: expected 33 bytes (compressed secp256k1), got %d bytes. Key name: %q, raw hex: %q",
 			keyID, len(pubKeyBytes), key.Name, key.PublicKey)
 	}
 

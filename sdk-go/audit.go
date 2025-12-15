@@ -128,11 +128,13 @@ func (s *AuditService) List(ctx context.Context, filter *AuditFilter) (*AuditLis
 //
 //	log, err := client.Audit.Get(ctx, logID)
 func (s *AuditService) Get(ctx context.Context, logID uuid.UUID) (*AuditLog, error) {
-	var resp auditLogResponse
+	var resp struct {
+		Data auditLogResponse `json:"data"`
+	}
 	if err := s.client.get(ctx, fmt.Sprintf("/v1/audit/logs/%s", logID), &resp); err != nil {
 		return nil, err
 	}
-	return resp.toAuditLog(), nil
+	return resp.Data.toAuditLog(), nil
 }
 
 // auditLogResponse is the internal API response format for audit logs.

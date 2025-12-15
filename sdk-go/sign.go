@@ -68,16 +68,18 @@ func (s *SignService) Sign(ctx context.Context, keyID uuid.UUID, data []byte, pr
 	}
 
 	var resp struct {
-		Signature  string `json:"signature"`
-		PublicKey  string `json:"public_key"`
-		KeyVersion int    `json:"key_version"`
+		Data struct {
+			Signature  string `json:"signature"`
+			PublicKey  string `json:"public_key"`
+			KeyVersion int    `json:"key_version"`
+		} `json:"data"`
 	}
 
 	if err := s.client.post(ctx, fmt.Sprintf("/v1/keys/%s/sign", keyID), req, &resp); err != nil {
 		return nil, err
 	}
 
-	sig, err := base64.StdEncoding.DecodeString(resp.Signature)
+	sig, err := base64.StdEncoding.DecodeString(resp.Data.Signature)
 	if err != nil {
 		return nil, fmt.Errorf("invalid signature encoding: %w", err)
 	}
@@ -85,8 +87,8 @@ func (s *SignService) Sign(ctx context.Context, keyID uuid.UUID, data []byte, pr
 	return &SignResponse{
 		KeyID:      keyID,
 		Signature:  sig,
-		PublicKey:  resp.PublicKey,
-		KeyVersion: resp.KeyVersion,
+		PublicKey:  resp.Data.PublicKey,
+		KeyVersion: resp.Data.KeyVersion,
 	}, nil
 }
 
@@ -120,22 +122,24 @@ func (s *SignService) SignBatch(ctx context.Context, req BatchSignRequest) ([]*B
 	}
 
 	var resp struct {
-		Signatures []struct {
-			KeyID      string `json:"key_id"`
-			Signature  string `json:"signature,omitempty"`
-			PublicKey  string `json:"public_key,omitempty"`
-			KeyVersion int    `json:"key_version,omitempty"`
-			Error      string `json:"error,omitempty"`
-		} `json:"signatures"`
-		Count int `json:"count"`
+		Data struct {
+			Signatures []struct {
+				KeyID      string `json:"key_id"`
+				Signature  string `json:"signature,omitempty"`
+				PublicKey  string `json:"public_key,omitempty"`
+				KeyVersion int    `json:"key_version,omitempty"`
+				Error      string `json:"error,omitempty"`
+			} `json:"signatures"`
+			Count int `json:"count"`
+		} `json:"data"`
 	}
 
 	if err := s.client.post(ctx, "/v1/sign/batch", apiReq, &resp); err != nil {
 		return nil, err
 	}
 
-	results := make([]*BatchSignResult, len(resp.Signatures))
-	for i, sig := range resp.Signatures {
+	results := make([]*BatchSignResult, len(resp.Data.Signatures))
+	for i, sig := range resp.Data.Signatures {
 		keyID, _ := uuid.Parse(sig.KeyID)
 		result := &BatchSignResult{
 			KeyID:      keyID,
