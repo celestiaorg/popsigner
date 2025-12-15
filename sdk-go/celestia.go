@@ -118,11 +118,11 @@ func NewCelestiaKeyring(apiKey, keyID string, opts ...CelestiaKeyringOption) (*C
 	// Create Cosmos SDK secp256k1 public key
 	pubKey := &secp256k1.PubKey{Key: pubKeyBytes}
 
-	// Get address from public key
+	// Derive address from public key (consistent source for both address formats)
 	address := sdk.AccAddress(pubKey.Address())
 
-	// Derive Celestia address from hex address
-	celestiaAddr := deriveCelestiaAddress(key.Address)
+	// Derive Celestia bech32 address from the same address bytes
+	celestiaAddr := deriveCelestiaAddressFromBytes(address)
 
 	return &CelestiaKeyring{
 		client:   client,
@@ -322,10 +322,9 @@ func (k *CelestiaKeyring) MigrateAll() ([]*keyring.Record, error) {
 	return k.List()
 }
 
-// deriveCelestiaAddress converts a hex address to bech32 celestia format.
-func deriveCelestiaAddress(hexAddr string) string {
-	addrBytes, err := hex.DecodeString(hexAddr)
-	if err != nil || len(addrBytes) != 20 {
+// deriveCelestiaAddressFromBytes converts address bytes to bech32 celestia format.
+func deriveCelestiaAddressFromBytes(addrBytes []byte) string {
+	if len(addrBytes) != 20 {
 		return ""
 	}
 
