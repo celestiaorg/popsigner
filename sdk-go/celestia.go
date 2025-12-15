@@ -73,20 +73,24 @@ func WithCelestiaBaseURL(url string) CelestiaKeyringOption {
 
 // NewCelestiaKeyring creates a new Celestia-compatible keyring backed by POPSigner.
 //
-// The apiKey is your POPSigner API key.
-// The keyIDOrName can be either a key UUID (e.g., "344399b0-1234-5678-9abc-def012345678")
-// or a key name (e.g., "my-signing-key"). If a name is provided, it will be looked up.
+// Parameters:
+//   - apiKey: Your POPSigner API key (e.g., "bbr_live_xxx")
+//   - keyNameOrID: Either the key NAME or the KEY_ID from the dashboard
 //
-// Example with UUID:
+// You can use either:
+//   - KEY_ID (UUID): The unique identifier shown in the dashboard, e.g., "9f43a7c5-5fe3-4eae-9eb2-e8662f45aee5"
+//   - Key Name: The human-readable name you gave the key, e.g., "blobcell-example"
 //
-//	kr, err := popsigner.NewCelestiaKeyring("psk_live_xxx", "344399b0-1234-5678-9abc-def012345678")
+// Example using KEY_ID from dashboard:
 //
-// Example with name:
+//	kr, err := popsigner.NewCelestiaKeyring("bbr_live_xxx", "9f43a7c5-5fe3-4eae-9eb2-e8662f45aee5")
 //
-//	kr, err := popsigner.NewCelestiaKeyring("psk_live_xxx", "blobcell-example")
+// Example using key name:
 //
-// Now use kr with celestia client.New(ctx, cfg, kr)
-func NewCelestiaKeyring(apiKey, keyIDOrName string, opts ...CelestiaKeyringOption) (*CelestiaKeyring, error) {
+//	kr, err := popsigner.NewCelestiaKeyring("bbr_live_xxx", "blobcell-example")
+//
+// Both work! Use whichever is more convenient.
+func NewCelestiaKeyring(apiKey, keyNameOrID string, opts ...CelestiaKeyringOption) (*CelestiaKeyring, error) {
 	cfg := &celestiaKeyringConfig{}
 	for _, opt := range opts {
 		opt(cfg)
@@ -104,12 +108,12 @@ func NewCelestiaKeyring(apiKey, keyIDOrName string, opts ...CelestiaKeyringOptio
 	var err error
 
 	// Try to parse as UUID first
-	keyUUID, err = uuid.Parse(keyIDOrName)
+	keyUUID, err = uuid.Parse(keyNameOrID)
 	if err == nil {
 		// It's a valid UUID - fetch by ID
 		key, err = client.Keys.Get(context.Background(), keyUUID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch key by ID %s: %w", keyIDOrName, err)
+			return nil, fmt.Errorf("failed to fetch key by ID %s: %w", keyNameOrID, err)
 		}
 	} else {
 		// Not a UUID - treat as key name, look it up
@@ -120,7 +124,7 @@ func NewCelestiaKeyring(apiKey, keyIDOrName string, opts ...CelestiaKeyringOptio
 
 		// Find key by name
 		for _, k := range keys {
-			if k.Name == keyIDOrName {
+			if k.Name == keyNameOrID {
 				key = k
 				keyUUID = k.ID
 				break
@@ -133,31 +137,31 @@ func NewCelestiaKeyring(apiKey, keyIDOrName string, opts ...CelestiaKeyringOptio
 			for _, k := range keys {
 				availableNames = append(availableNames, k.Name)
 			}
-			return nil, fmt.Errorf("key %q not found by name (available keys: %v)", keyIDOrName, availableNames)
+			return nil, fmt.Errorf("key %q not found by name (available keys: %v)", keyNameOrID, availableNames)
 		}
 	}
 
 	// Validate that we got a key back
 	if key == nil {
-		return nil, fmt.Errorf("key %s not found (nil response)", keyIDOrName)
+		return nil, fmt.Errorf("key %s not found (nil response)", keyNameOrID)
 	}
 
 	// Check if public key is present
 	if key.PublicKey == "" {
 		return nil, fmt.Errorf("key %s has no public key - key name: %q, algorithm: %q, address: %q",
-			keyIDOrName, key.Name, key.Algorithm, key.Address)
+			keyNameOrID, key.Name, key.Algorithm, key.Address)
 	}
 
 	// Decode public key
 	pubKeyBytes, err := hex.DecodeString(key.PublicKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode public key for key %s: %w (raw: %q)", keyIDOrName, err, key.PublicKey)
+		return nil, fmt.Errorf("failed to decode public key for key %s: %w (raw: %q)", keyNameOrID, err, key.PublicKey)
 	}
 
 	// Validate public key length - must be 33 bytes (compressed secp256k1)
 	if len(pubKeyBytes) != 33 {
 		return nil, fmt.Errorf("invalid public key length for key %s: expected 33 bytes (compressed secp256k1), got %d bytes. Key name: %q, raw hex: %q",
-			keyIDOrName, len(pubKeyBytes), key.Name, key.PublicKey)
+			keyNameOrID, len(pubKeyBytes), key.Name, key.PublicKey)
 	}
 
 	// Create Cosmos SDK secp256k1 public key
