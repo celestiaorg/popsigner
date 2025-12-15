@@ -349,7 +349,7 @@ func (s *keyService) Sign(ctx context.Context, orgID, keyID uuid.UUID, data []by
 	// Sign via BaoKeyring
 	sig, pubKey, err := s.baoKeyring.Sign(key.BaoKeyPath, data)
 	if err != nil {
-		return nil, fmt.Errorf("signing failed: %w", err)
+		return nil, apierrors.NewInternalError(fmt.Sprintf("signing failed: %v", err))
 	}
 
 	// Increment usage counter
