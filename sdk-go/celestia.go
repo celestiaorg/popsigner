@@ -115,6 +115,11 @@ func NewCelestiaKeyring(apiKey, keyID string, opts ...CelestiaKeyringOption) (*C
 		return nil, fmt.Errorf("failed to decode public key: %w", err)
 	}
 
+	// Validate public key length - must be 33 bytes (compressed secp256k1)
+	if len(pubKeyBytes) != 33 {
+		return nil, fmt.Errorf("invalid public key length: expected 33 bytes (compressed secp256k1), got %d bytes. Raw hex: %s", len(pubKeyBytes), key.PublicKey)
+	}
+
 	// Create Cosmos SDK secp256k1 public key
 	pubKey := &secp256k1.PubKey{Key: pubKeyBytes}
 
