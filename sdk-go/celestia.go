@@ -106,18 +106,30 @@ func NewCelestiaKeyring(apiKey, keyID string, opts ...CelestiaKeyringOption) (*C
 	// Fetch key info to validate it exists and get public key
 	key, err := client.Keys.Get(context.Background(), keyUUID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch key: %w", err)
+		return nil, fmt.Errorf("failed to fetch key %s: %w", keyID, err)
+	}
+
+	// Validate that we got a key back
+	if key == nil {
+		return nil, fmt.Errorf("key %s not found (nil response)", keyID)
+	}
+
+	// Check if public key is present
+	if key.PublicKey == "" {
+		return nil, fmt.Errorf("key %s has no public key - key name: %q, algorithm: %q, address: %q", 
+			keyID, key.Name, key.Algorithm, key.Address)
 	}
 
 	// Decode public key
 	pubKeyBytes, err := hex.DecodeString(key.PublicKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode public key: %w", err)
+		return nil, fmt.Errorf("failed to decode public key for key %s: %w (raw: %q)", keyID, err, key.PublicKey)
 	}
 
 	// Validate public key length - must be 33 bytes (compressed secp256k1)
 	if len(pubKeyBytes) != 33 {
-		return nil, fmt.Errorf("invalid public key length: expected 33 bytes (compressed secp256k1), got %d bytes. Raw hex: %s", len(pubKeyBytes), key.PublicKey)
+		return nil, fmt.Errorf("invalid public key length for key %s: expected 33 bytes (compressed secp256k1), got %d bytes. Key name: %q, raw hex: %q", 
+			keyID, len(pubKeyBytes), key.Name, key.PublicKey)
 	}
 
 	// Create Cosmos SDK secp256k1 public key
