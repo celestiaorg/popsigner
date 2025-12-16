@@ -20,8 +20,8 @@ import (
 // This allows the control plane to work with the core BaoKeyring library.
 type BaoKeyringInterface interface {
 	// NewAccountWithOptions creates a new key in OpenBao with the given options.
-	// Returns the public key bytes and address.
-	NewAccountWithOptions(uid string, opts KeyOptions) (pubKey []byte, address string, err error)
+	// Returns the public key bytes, address, and Ethereum address.
+	NewAccountWithOptions(uid string, opts KeyOptions) (pubKey []byte, address string, ethAddress string, err error)
 
 	// Sign signs a message with the given key.
 	// Returns the signature and public key.
@@ -34,8 +34,8 @@ type BaoKeyringInterface interface {
 	GetMetadata(uid string) (*KeyMetadata, error)
 
 	// ImportKey imports a key into OpenBao.
-	// Returns the public key bytes and address.
-	ImportKey(uid string, ciphertext string, exportable bool) (pubKey []byte, address string, err error)
+	// Returns the public key bytes, address, and Ethereum address.
+	ImportKey(uid string, ciphertext string, exportable bool) (pubKey []byte, address string, ethAddress string, err error)
 
 	// ExportKey exports a key from OpenBao.
 	ExportKey(uid string) (string, error)
@@ -52,6 +52,7 @@ type KeyMetadata struct {
 	Name        string
 	PubKeyBytes []byte
 	Address     string
+	EthAddress  string
 }
 
 // KeyService defines the interface for key management operations.
@@ -59,7 +60,7 @@ type KeyService interface {
 	// Single key operations
 	Create(ctx context.Context, req CreateKeyRequest) (*models.Key, error)
 	Get(ctx context.Context, orgID, keyID uuid.UUID) (*models.Key, error)
-	List(ctx context.Context, orgID uuid.UUID, namespaceID *uuid.UUID) ([]*models.Key, error)
+	List(ctx context.Context, orgID uuid.UUID, namespaceID *uuid.UUID, networkType *models.NetworkType) ([]*models.Key, error)
 	Delete(ctx context.Context, orgID, keyID uuid.UUID) error
 	Sign(ctx context.Context, orgID, keyID uuid.UUID, data []byte, prehashed bool) (*SignKeyResponse, error)
 
@@ -78,6 +79,7 @@ type CreateKeyRequest struct {
 	NamespaceID uuid.UUID         `json:"namespace_id" validate:"required"`
 	Name        string            `json:"name" validate:"required,min=1,max=100"`
 	Algorithm   string            `json:"algorithm" validate:"omitempty,oneof=secp256k1"`
+	NetworkType string            `json:"network_type" validate:"omitempty,oneof=celestia evm all"`
 	Exportable  bool              `json:"exportable"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
 }
@@ -166,7 +168,7 @@ func (s *keyService) Create(ctx context.Context, req CreateKeyRequest) (*models.
 	baoKeyName := fmt.Sprintf("%s_%s_%s", req.OrgID, req.NamespaceID, req.Name)
 
 	// Create in BaoKeyring
-	pubKey, address, err := s.baoKeyring.NewAccountWithOptions(baoKeyName, KeyOptions{
+	pubKey, address, ethAddress, err := s.baoKeyring.NewAccountWithOptions(baoKeyName, KeyOptions{
 		Exportable: req.Exportable,
 	})
 	if err != nil {
@@ -183,6 +185,15 @@ func (s *keyService) Create(ctx context.Context, req CreateKeyRequest) (*models.
 		}
 	}
 
+	// Determine network type (default to "all")
+	networkType := models.NetworkTypeAll
+	if req.NetworkType != "" {
+		networkType = models.NetworkType(req.NetworkType)
+		if !networkType.Valid() {
+			networkType = models.NetworkTypeAll
+		}
+	}
+
 	// Save metadata to database
 	key := &models.Key{
 		ID:          uuid.New(),
@@ -191,6 +202,8 @@ func (s *keyService) Create(ctx context.Context, req CreateKeyRequest) (*models.
 		Name:        req.Name,
 		PublicKey:   pubKey,
 		Address:     address,
+		EthAddress:  &ethAddress,
+		NetworkType: networkType,
 		Algorithm:   models.AlgorithmSecp256k1,
 		BaoKeyPath:  baoKeyName,
 		Exportable:  req.Exportable,
@@ -286,8 +299,11 @@ func (s *keyService) Get(ctx context.Context, orgID, keyID uuid.UUID) (*models.K
 	return key, nil
 }
 
-// List lists keys for an organization, optionally filtered by namespace.
-func (s *keyService) List(ctx context.Context, orgID uuid.UUID, namespaceID *uuid.UUID) ([]*models.Key, error) {
+// List lists keys for an organization, optionally filtered by namespace and network type.
+func (s *keyService) List(ctx context.Context, orgID uuid.UUID, namespaceID *uuid.UUID, networkType *models.NetworkType) ([]*models.Key, error) {
+	var keys []*models.Key
+	var err error
+
 	if namespaceID != nil {
 		// Verify namespace belongs to org
 		ns, err := s.orgRepo.GetNamespace(ctx, *namespaceID)
@@ -297,9 +313,26 @@ func (s *keyService) List(ctx context.Context, orgID uuid.UUID, namespaceID *uui
 		if ns == nil || ns.OrgID != orgID {
 			return nil, apierrors.NewNotFoundError("Namespace")
 		}
-		return s.keyRepo.ListByNamespace(ctx, *namespaceID)
+		keys, err = s.keyRepo.ListByNamespace(ctx, *namespaceID)
+	} else {
+		keys, err = s.keyRepo.ListByOrg(ctx, orgID)
 	}
-	return s.keyRepo.ListByOrg(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list keys: %w", err)
+	}
+
+	// Filter by network type if specified
+	if networkType != nil && *networkType != models.NetworkTypeAll {
+		filtered := make([]*models.Key, 0, len(keys))
+		for _, k := range keys {
+			if k.NetworkType == *networkType || k.NetworkType == models.NetworkTypeAll {
+				filtered = append(filtered, k)
+			}
+		}
+		keys = filtered
+	}
+
+	return keys, nil
 }
 
 // Delete deletes a key.
@@ -420,7 +453,7 @@ func (s *keyService) Import(ctx context.Context, req ImportKeyRequest) (*models.
 	baoKeyName := fmt.Sprintf("%s_%s_%s", req.OrgID, req.NamespaceID, req.Name)
 
 	// Import into BaoKeyring
-	pubKey, address, err := s.baoKeyring.ImportKey(baoKeyName, req.PrivateKey, req.Exportable)
+	pubKey, address, ethAddress, err := s.baoKeyring.ImportKey(baoKeyName, req.PrivateKey, req.Exportable)
 	if err != nil {
 		return nil, fmt.Errorf("failed to import key into OpenBao: %w", err)
 	}
@@ -433,6 +466,8 @@ func (s *keyService) Import(ctx context.Context, req ImportKeyRequest) (*models.
 		Name:        req.Name,
 		PublicKey:   pubKey,
 		Address:     address,
+		EthAddress:  &ethAddress,
+		NetworkType: models.NetworkTypeAll, // Imported keys default to all
 		Algorithm:   models.AlgorithmSecp256k1,
 		BaoKeyPath:  baoKeyName,
 		Exportable:  req.Exportable,

@@ -15,6 +15,30 @@ const (
 	AlgorithmEd25519   Algorithm = "ed25519"
 )
 
+// NetworkType represents the primary network for a key
+type NetworkType string
+
+const (
+	NetworkTypeCelestia NetworkType = "celestia"
+	NetworkTypeEVM      NetworkType = "evm"
+	NetworkTypeAll      NetworkType = "all" // Shows both (default)
+)
+
+// Valid returns true if the network type is valid
+func (n NetworkType) Valid() bool {
+	switch n {
+	case NetworkTypeCelestia, NetworkTypeEVM, NetworkTypeAll:
+		return true
+	default:
+		return false
+	}
+}
+
+// String returns the string representation
+func (n NetworkType) String() string {
+	return string(n)
+}
+
 // Key represents a cryptographic key's metadata.
 // The actual key material is stored in OpenBao.
 type Key struct {
@@ -23,7 +47,9 @@ type Key struct {
 	NamespaceID uuid.UUID       `json:"namespace_id" db:"namespace_id"`
 	Name        string          `json:"name" db:"name"`
 	PublicKey   []byte          `json:"public_key" db:"public_key"`
-	Address     string          `json:"address" db:"address"`
+	Address     string          `json:"address" db:"address"`                    // Cosmos address
+	EthAddress  *string         `json:"eth_address,omitempty" db:"eth_address"` // Ethereum address (EIP-55)
+	NetworkType NetworkType     `json:"network_type" db:"network_type"`
 	Algorithm   Algorithm       `json:"algorithm" db:"algorithm"`
 	BaoKeyPath  string          `json:"-" db:"bao_key_path"` // Internal path in OpenBao
 	Exportable  bool            `json:"exportable" db:"exportable"`
@@ -34,13 +60,33 @@ type Key struct {
 	UpdatedAt   time.Time       `json:"updated_at" db:"updated_at"`
 }
 
+// IsCelestia returns true if key is primarily for Celestia
+func (k *Key) IsCelestia() bool {
+	return k.NetworkType == NetworkTypeCelestia || k.NetworkType == NetworkTypeAll
+}
+
+// IsEVM returns true if key is primarily for EVM
+func (k *Key) IsEVM() bool {
+	return k.NetworkType == NetworkTypeEVM || k.NetworkType == NetworkTypeAll
+}
+
+// GetEthAddress returns the Ethereum address or empty string if not set
+func (k *Key) GetEthAddress() string {
+	if k.EthAddress != nil {
+		return *k.EthAddress
+	}
+	return ""
+}
+
 // KeyResponse is the API response format for keys.
 type KeyResponse struct {
 	ID          uuid.UUID              `json:"id"`
 	Name        string                 `json:"name"`
 	Namespace   string                 `json:"namespace"`
-	PublicKey   string                 `json:"public_key"` // Hex encoded
-	Address     string                 `json:"address"`
+	PublicKey   string                 `json:"public_key"`            // Hex encoded
+	Address     string                 `json:"address"`               // Cosmos address
+	EthAddress  string                 `json:"eth_address,omitempty"` // Ethereum address
+	NetworkType NetworkType            `json:"network_type"`
 	Algorithm   Algorithm              `json:"algorithm"`
 	Exportable  bool                   `json:"exportable"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`

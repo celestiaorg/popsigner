@@ -4,6 +4,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,8 +20,11 @@ type KeyRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Key, error)
 	GetByName(ctx context.Context, orgID, namespaceID uuid.UUID, name string) (*models.Key, error)
 	GetByAddress(ctx context.Context, orgID uuid.UUID, address string) (*models.Key, error)
+	GetByEthAddress(ctx context.Context, orgID uuid.UUID, ethAddress string) (*models.Key, error)
 	ListByOrg(ctx context.Context, orgID uuid.UUID) ([]*models.Key, error)
 	ListByNamespace(ctx context.Context, namespaceID uuid.UUID) ([]*models.Key, error)
+	ListByEthAddresses(ctx context.Context, orgID uuid.UUID, ethAddresses []string) (map[string]*models.Key, error)
+	ListEthAddresses(ctx context.Context, orgID uuid.UUID) ([]string, error)
 	CountByOrg(ctx context.Context, orgID uuid.UUID) (int, error)
 	Update(ctx context.Context, key *models.Key) error
 	SoftDelete(ctx context.Context, id uuid.UUID) error
@@ -39,8 +43,8 @@ func NewKeyRepository(pool *pgxpool.Pool) KeyRepository {
 // Create inserts a new key into the database.
 func (r *keyRepo) Create(ctx context.Context, key *models.Key) error {
 	query := `
-		INSERT INTO keys (id, org_id, namespace_id, name, public_key, address, algorithm, bao_key_path, exportable, metadata, version)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO keys (id, org_id, namespace_id, name, public_key, address, eth_address, network_type, algorithm, bao_key_path, exportable, metadata, version)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		RETURNING created_at, updated_at`
 
 	if key.ID == uuid.Nil {
@@ -57,6 +61,8 @@ func (r *keyRepo) Create(ctx context.Context, key *models.Key) error {
 		key.Name,
 		key.PublicKey,
 		key.Address,
+		key.EthAddress,
+		key.NetworkType,
 		key.Algorithm,
 		key.BaoKeyPath,
 		key.Exportable,
@@ -68,7 +74,7 @@ func (r *keyRepo) Create(ctx context.Context, key *models.Key) error {
 // GetByID retrieves a key by its UUID.
 func (r *keyRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Key, error) {
 	query := `
-		SELECT id, org_id, namespace_id, name, public_key, address, algorithm, 
+		SELECT id, org_id, namespace_id, name, public_key, address, eth_address, network_type, algorithm, 
 		       bao_key_path, exportable, metadata, version, deleted_at, created_at, updated_at
 		FROM keys WHERE id = $1`
 
@@ -80,6 +86,8 @@ func (r *keyRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Key, error
 		&key.Name,
 		&key.PublicKey,
 		&key.Address,
+		&key.EthAddress,
+		&key.NetworkType,
 		&key.Algorithm,
 		&key.BaoKeyPath,
 		&key.Exportable,
@@ -101,7 +109,7 @@ func (r *keyRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Key, error
 // GetByName retrieves a key by org, namespace, and name.
 func (r *keyRepo) GetByName(ctx context.Context, orgID, namespaceID uuid.UUID, name string) (*models.Key, error) {
 	query := `
-		SELECT id, org_id, namespace_id, name, public_key, address, algorithm, 
+		SELECT id, org_id, namespace_id, name, public_key, address, eth_address, network_type, algorithm, 
 		       bao_key_path, exportable, metadata, version, deleted_at, created_at, updated_at
 		FROM keys 
 		WHERE org_id = $1 AND namespace_id = $2 AND name = $3 AND deleted_at IS NULL`
@@ -114,6 +122,8 @@ func (r *keyRepo) GetByName(ctx context.Context, orgID, namespaceID uuid.UUID, n
 		&key.Name,
 		&key.PublicKey,
 		&key.Address,
+		&key.EthAddress,
+		&key.NetworkType,
 		&key.Algorithm,
 		&key.BaoKeyPath,
 		&key.Exportable,
@@ -132,10 +142,10 @@ func (r *keyRepo) GetByName(ctx context.Context, orgID, namespaceID uuid.UUID, n
 	return &key, nil
 }
 
-// GetByAddress retrieves a key by its address within an organization.
+// GetByAddress retrieves a key by its Cosmos address within an organization.
 func (r *keyRepo) GetByAddress(ctx context.Context, orgID uuid.UUID, address string) (*models.Key, error) {
 	query := `
-		SELECT id, org_id, namespace_id, name, public_key, address, algorithm, 
+		SELECT id, org_id, namespace_id, name, public_key, address, eth_address, network_type, algorithm, 
 		       bao_key_path, exportable, metadata, version, deleted_at, created_at, updated_at
 		FROM keys 
 		WHERE org_id = $1 AND address = $2 AND deleted_at IS NULL`
@@ -148,6 +158,48 @@ func (r *keyRepo) GetByAddress(ctx context.Context, orgID uuid.UUID, address str
 		&key.Name,
 		&key.PublicKey,
 		&key.Address,
+		&key.EthAddress,
+		&key.NetworkType,
+		&key.Algorithm,
+		&key.BaoKeyPath,
+		&key.Exportable,
+		&key.Metadata,
+		&key.Version,
+		&key.DeletedAt,
+		&key.CreatedAt,
+		&key.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &key, nil
+}
+
+// GetByEthAddress retrieves a key by its Ethereum address within an organization.
+// Lookup is case-insensitive.
+func (r *keyRepo) GetByEthAddress(ctx context.Context, orgID uuid.UUID, ethAddress string) (*models.Key, error) {
+	// Normalize address to lowercase for case-insensitive lookup
+	normalizedAddr := strings.ToLower(ethAddress)
+
+	query := `
+		SELECT id, org_id, namespace_id, name, public_key, address, eth_address, network_type, algorithm, 
+		       bao_key_path, exportable, metadata, version, deleted_at, created_at, updated_at
+		FROM keys 
+		WHERE org_id = $1 AND LOWER(eth_address) = $2 AND deleted_at IS NULL`
+
+	var key models.Key
+	err := r.pool.QueryRow(ctx, query, orgID, normalizedAddr).Scan(
+		&key.ID,
+		&key.OrgID,
+		&key.NamespaceID,
+		&key.Name,
+		&key.PublicKey,
+		&key.Address,
+		&key.EthAddress,
+		&key.NetworkType,
 		&key.Algorithm,
 		&key.BaoKeyPath,
 		&key.Exportable,
@@ -169,7 +221,7 @@ func (r *keyRepo) GetByAddress(ctx context.Context, orgID uuid.UUID, address str
 // ListByOrg retrieves all non-deleted keys for an organization.
 func (r *keyRepo) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]*models.Key, error) {
 	query := `
-		SELECT id, org_id, namespace_id, name, public_key, address, algorithm, 
+		SELECT id, org_id, namespace_id, name, public_key, address, eth_address, network_type, algorithm, 
 		       bao_key_path, exportable, metadata, version, deleted_at, created_at, updated_at
 		FROM keys 
 		WHERE org_id = $1 AND deleted_at IS NULL
@@ -191,6 +243,8 @@ func (r *keyRepo) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]*models.Key
 			&key.Name,
 			&key.PublicKey,
 			&key.Address,
+			&key.EthAddress,
+			&key.NetworkType,
 			&key.Algorithm,
 			&key.BaoKeyPath,
 			&key.Exportable,
@@ -210,7 +264,7 @@ func (r *keyRepo) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]*models.Key
 // ListByNamespace retrieves all non-deleted keys for a namespace.
 func (r *keyRepo) ListByNamespace(ctx context.Context, namespaceID uuid.UUID) ([]*models.Key, error) {
 	query := `
-		SELECT id, org_id, namespace_id, name, public_key, address, algorithm, 
+		SELECT id, org_id, namespace_id, name, public_key, address, eth_address, network_type, algorithm, 
 		       bao_key_path, exportable, metadata, version, deleted_at, created_at, updated_at
 		FROM keys 
 		WHERE namespace_id = $1 AND deleted_at IS NULL
@@ -232,6 +286,8 @@ func (r *keyRepo) ListByNamespace(ctx context.Context, namespaceID uuid.UUID) ([
 			&key.Name,
 			&key.PublicKey,
 			&key.Address,
+			&key.EthAddress,
+			&key.NetworkType,
 			&key.Algorithm,
 			&key.BaoKeyPath,
 			&key.Exportable,
@@ -246,6 +302,89 @@ func (r *keyRepo) ListByNamespace(ctx context.Context, namespaceID uuid.UUID) ([
 		keys = append(keys, &key)
 	}
 	return keys, rows.Err()
+}
+
+// ListByEthAddresses retrieves keys by multiple Ethereum addresses within an organization.
+// Returns a map of lowercase eth_address -> Key for efficient lookup.
+func (r *keyRepo) ListByEthAddresses(ctx context.Context, orgID uuid.UUID, ethAddresses []string) (map[string]*models.Key, error) {
+	if len(ethAddresses) == 0 {
+		return make(map[string]*models.Key), nil
+	}
+
+	// Normalize addresses to lowercase
+	normalizedAddrs := make([]string, len(ethAddresses))
+	for i, addr := range ethAddresses {
+		normalizedAddrs[i] = strings.ToLower(addr)
+	}
+
+	query := `
+		SELECT id, org_id, namespace_id, name, public_key, address, eth_address, network_type, algorithm, 
+		       bao_key_path, exportable, metadata, version, deleted_at, created_at, updated_at
+		FROM keys 
+		WHERE org_id = $1 AND LOWER(eth_address) = ANY($2) AND deleted_at IS NULL`
+
+	rows, err := r.pool.Query(ctx, query, orgID, normalizedAddrs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string]*models.Key)
+	for rows.Next() {
+		var key models.Key
+		if err := rows.Scan(
+			&key.ID,
+			&key.OrgID,
+			&key.NamespaceID,
+			&key.Name,
+			&key.PublicKey,
+			&key.Address,
+			&key.EthAddress,
+			&key.NetworkType,
+			&key.Algorithm,
+			&key.BaoKeyPath,
+			&key.Exportable,
+			&key.Metadata,
+			&key.Version,
+			&key.DeletedAt,
+			&key.CreatedAt,
+			&key.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		if key.EthAddress != nil {
+			result[strings.ToLower(*key.EthAddress)] = &key
+		}
+	}
+
+	return result, rows.Err()
+}
+
+// ListEthAddresses returns all Ethereum addresses for an organization.
+func (r *keyRepo) ListEthAddresses(ctx context.Context, orgID uuid.UUID) ([]string, error) {
+	query := `
+		SELECT eth_address
+		FROM keys
+		WHERE org_id = $1 AND eth_address IS NOT NULL AND deleted_at IS NULL
+		ORDER BY created_at DESC`
+
+	rows, err := r.pool.Query(ctx, query, orgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var addresses []string
+	for rows.Next() {
+		var addr string
+		if err := rows.Scan(&addr); err != nil {
+			return nil, err
+		}
+		addresses = append(addresses, addr)
+	}
+
+	return addresses, rows.Err()
 }
 
 // CountByOrg returns the count of non-deleted keys for an organization.

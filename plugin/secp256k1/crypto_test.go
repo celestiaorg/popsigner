@@ -3,6 +3,8 @@ package secp256k1
 import (
 	"bytes"
 	"encoding/hex"
+	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec/v2"
@@ -483,6 +485,463 @@ func TestCrossValidation(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, valid)
 	})
+}
+
+// ==============================================================================
+// Ethereum/EVM Crypto Tests
+// ==============================================================================
+
+func TestDeriveEthereumAddress(t *testing.T) {
+	t.Run("produces 20-byte address", func(t *testing.T) {
+		_, pubKey, err := GenerateKey()
+		require.NoError(t, err)
+
+		addr := deriveEthereumAddress(pubKey)
+		assert.Len(t, addr, 20)
+	})
+
+	t.Run("deterministic output", func(t *testing.T) {
+		_, pubKey, err := GenerateKey()
+		require.NoError(t, err)
+
+		addr1 := deriveEthereumAddress(pubKey)
+		addr2 := deriveEthereumAddress(pubKey)
+		assert.Equal(t, addr1, addr2)
+	})
+
+	t.Run("matches known test vector", func(t *testing.T) {
+		// Known Ethereum test vector
+		// Private key: 0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318
+		// Address: 0x2c7536E3605D9C16a7a3D7b1898e529396a65c23
+		privKeyHex := "4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318"
+		privKeyBytes, err := hex.DecodeString(privKeyHex)
+		require.NoError(t, err)
+
+		privKey, err := ParsePrivateKey(privKeyBytes)
+		require.NoError(t, err)
+
+		addr := deriveEthereumAddress(privKey.PubKey())
+		expectedAddr, err := hex.DecodeString("2c7536E3605D9C16a7a3D7b1898e529396a65c23")
+		require.NoError(t, err)
+
+		assert.Equal(t, strings.ToLower(hex.EncodeToString(expectedAddr)), strings.ToLower(hex.EncodeToString(addr)))
+	})
+
+	t.Run("different keys produce different addresses", func(t *testing.T) {
+		_, pubKey1, err := GenerateKey()
+		require.NoError(t, err)
+		_, pubKey2, err := GenerateKey()
+		require.NoError(t, err)
+
+		addr1 := deriveEthereumAddress(pubKey1)
+		addr2 := deriveEthereumAddress(pubKey2)
+		assert.NotEqual(t, addr1, addr2)
+	})
+}
+
+func TestDeriveEthereumAddressFromBytes(t *testing.T) {
+	t.Run("accepts compressed public key", func(t *testing.T) {
+		_, pubKey, err := GenerateKey()
+		require.NoError(t, err)
+
+		compressed := pubKey.SerializeCompressed()
+		addr, err := deriveEthereumAddressFromBytes(compressed)
+		require.NoError(t, err)
+		assert.Len(t, addr, 20)
+
+		// Should match direct derivation
+		directAddr := deriveEthereumAddress(pubKey)
+		assert.Equal(t, directAddr, addr)
+	})
+
+	t.Run("accepts uncompressed public key", func(t *testing.T) {
+		_, pubKey, err := GenerateKey()
+		require.NoError(t, err)
+
+		uncompressed := pubKey.SerializeUncompressed()
+		addr, err := deriveEthereumAddressFromBytes(uncompressed)
+		require.NoError(t, err)
+		assert.Len(t, addr, 20)
+
+		// Should match direct derivation
+		directAddr := deriveEthereumAddress(pubKey)
+		assert.Equal(t, directAddr, addr)
+	})
+
+	t.Run("rejects invalid public key", func(t *testing.T) {
+		_, err := deriveEthereumAddressFromBytes([]byte{0x01, 0x02, 0x03})
+		assert.Error(t, err)
+	})
+}
+
+func TestFormatEthereumAddress(t *testing.T) {
+	t.Run("applies EIP-55 checksum", func(t *testing.T) {
+		// Known checksummed address
+		addrBytes, err := hex.DecodeString("5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
+		require.NoError(t, err)
+
+		formatted := formatEthereumAddress(addrBytes)
+		assert.Equal(t, "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed", formatted)
+	})
+
+	t.Run("checksums known test vector address", func(t *testing.T) {
+		// Address from test vector: 0x2c7536E3605D9C16a7a3D7b1898e529396a65c23
+		addrBytes, err := hex.DecodeString("2c7536E3605D9C16a7a3D7b1898e529396a65c23")
+		require.NoError(t, err)
+
+		formatted := formatEthereumAddress(addrBytes)
+		assert.Equal(t, "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23", formatted)
+	})
+
+	t.Run("rejects invalid length", func(t *testing.T) {
+		formatted := formatEthereumAddress([]byte{0x01, 0x02, 0x03})
+		assert.Equal(t, "", formatted)
+	})
+
+	t.Run("all lowercase address", func(t *testing.T) {
+		// All lowercase hex address
+		addrBytes, err := hex.DecodeString("0000000000000000000000000000000000000000")
+		require.NoError(t, err)
+
+		formatted := formatEthereumAddress(addrBytes)
+		assert.Equal(t, "0x0000000000000000000000000000000000000000", formatted)
+	})
+}
+
+func TestSignEIP155(t *testing.T) {
+	t.Run("produces valid EIP-155 signature", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("test message"))
+		chainID := big.NewInt(1) // Ethereum mainnet
+
+		v, r, s, err := SignEIP155(privKey, hash, chainID)
+		require.NoError(t, err)
+
+		// v should be chainId * 2 + 35 + recovery_id (0 or 1)
+		// For chainId=1: v should be 37 or 38
+		assert.True(t, v.Cmp(big.NewInt(37)) >= 0 && v.Cmp(big.NewInt(38)) <= 0,
+			"v should be 37 or 38 for chainId=1, got %s", v.String())
+
+		// r and s should be 32 bytes max
+		assert.True(t, len(r.Bytes()) <= 32, "r should be at most 32 bytes")
+		assert.True(t, len(s.Bytes()) <= 32, "s should be at most 32 bytes")
+	})
+
+	t.Run("signature is recoverable", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("test message"))
+		chainID := big.NewInt(10) // OP Mainnet
+
+		v, r, s, err := SignEIP155(privKey, hash, chainID)
+		require.NoError(t, err)
+
+		// Construct signature bytes
+		sig := make([]byte, 65)
+		rBytes := r.Bytes()
+		sBytes := s.Bytes()
+		copy(sig[32-len(rBytes):32], rBytes)
+		copy(sig[64-len(sBytes):64], sBytes)
+		sig[64] = byte(v.Int64())
+
+		// Recover public key
+		recoveredPubKey, err := RecoverPubKeyFromSignature(hash, sig, chainID)
+		require.NoError(t, err)
+
+		assert.True(t, recoveredPubKey.IsEqual(privKey.PubKey()),
+			"recovered public key should match original")
+	})
+
+	t.Run("rejects invalid hash length", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		_, _, _, err = SignEIP155(privKey, []byte("short"), big.NewInt(1))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "hash must be 32 bytes")
+	})
+
+	t.Run("rejects nil private key", func(t *testing.T) {
+		hash := hashKeccak256([]byte("test"))
+		_, _, _, err := SignEIP155(nil, hash, big.NewInt(1))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "private key cannot be nil")
+	})
+
+	t.Run("rejects nil chain ID", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("test"))
+		_, _, _, err = SignEIP155(privKey, hash, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "chain ID cannot be nil")
+	})
+
+	t.Run("different chain IDs produce different v values", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("test message"))
+
+		v1, _, _, err := SignEIP155(privKey, hash, big.NewInt(1))
+		require.NoError(t, err)
+
+		v10, _, _, err := SignEIP155(privKey, hash, big.NewInt(10))
+		require.NoError(t, err)
+
+		// v values should reflect different chain IDs
+		// chainId=1: v=37 or 38
+		// chainId=10: v=55 or 56
+		assert.NotEqual(t, v1.Int64()/2, v10.Int64()/2,
+			"v values should differ for different chain IDs")
+	})
+}
+
+func TestSignLegacy(t *testing.T) {
+	t.Run("produces valid legacy signature", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("test message"))
+
+		v, r, s, err := SignLegacy(privKey, hash)
+		require.NoError(t, err)
+
+		// Legacy v should be 27 or 28
+		assert.True(t, v.Cmp(big.NewInt(27)) >= 0 && v.Cmp(big.NewInt(28)) <= 0,
+			"v should be 27 or 28, got %s", v.String())
+		assert.NotNil(t, r)
+		assert.NotNil(t, s)
+	})
+
+	t.Run("signature is recoverable", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("test message"))
+
+		v, r, s, err := SignLegacy(privKey, hash)
+		require.NoError(t, err)
+
+		// Construct signature bytes
+		sig := make([]byte, 65)
+		rBytes := r.Bytes()
+		sBytes := s.Bytes()
+		copy(sig[32-len(rBytes):32], rBytes)
+		copy(sig[64-len(sBytes):64], sBytes)
+		sig[64] = byte(v.Int64())
+
+		// Recover public key with nil chainID (legacy)
+		recoveredPubKey, err := RecoverPubKeyFromSignature(hash, sig, nil)
+		require.NoError(t, err)
+
+		assert.True(t, recoveredPubKey.IsEqual(privKey.PubKey()),
+			"recovered public key should match original")
+	})
+
+	t.Run("rejects invalid hash length", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		_, _, _, err = SignLegacy(privKey, []byte("short"))
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "hash must be 32 bytes")
+	})
+
+	t.Run("rejects nil private key", func(t *testing.T) {
+		hash := hashKeccak256([]byte("test"))
+		_, _, _, err := SignLegacy(nil, hash)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "private key cannot be nil")
+	})
+}
+
+func TestRecoverPubKeyFromSignature(t *testing.T) {
+	t.Run("recovers public key from EIP-155 signature", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("recovery test"))
+		chainID := big.NewInt(1)
+
+		v, r, s, err := SignEIP155(privKey, hash, chainID)
+		require.NoError(t, err)
+
+		sig := make([]byte, 65)
+		rBytes := r.Bytes()
+		sBytes := s.Bytes()
+		copy(sig[32-len(rBytes):32], rBytes)
+		copy(sig[64-len(sBytes):64], sBytes)
+		sig[64] = byte(v.Int64())
+
+		recovered, err := RecoverPubKeyFromSignature(hash, sig, chainID)
+		require.NoError(t, err)
+		assert.True(t, recovered.IsEqual(privKey.PubKey()))
+	})
+
+	t.Run("recovers public key from legacy signature", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("legacy recovery test"))
+
+		v, r, s, err := SignLegacy(privKey, hash)
+		require.NoError(t, err)
+
+		sig := make([]byte, 65)
+		rBytes := r.Bytes()
+		sBytes := s.Bytes()
+		copy(sig[32-len(rBytes):32], rBytes)
+		copy(sig[64-len(sBytes):64], sBytes)
+		sig[64] = byte(v.Int64())
+
+		recovered, err := RecoverPubKeyFromSignature(hash, sig, nil)
+		require.NoError(t, err)
+		assert.True(t, recovered.IsEqual(privKey.PubKey()))
+	})
+
+	t.Run("rejects invalid hash length", func(t *testing.T) {
+		_, err := RecoverPubKeyFromSignature([]byte("short"), make([]byte, 65), nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "hash must be 32 bytes")
+	})
+
+	t.Run("rejects invalid signature length", func(t *testing.T) {
+		hash := hashKeccak256([]byte("test"))
+		_, err := RecoverPubKeyFromSignature(hash, []byte("short"), nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "signature must be 65 bytes")
+	})
+}
+
+func TestVerifyRecovery(t *testing.T) {
+	t.Run("returns true for valid recovery", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("test"))
+		v, r, s, err := SignLegacy(privKey, hash)
+		require.NoError(t, err)
+
+		recoveryID := byte(v.Int64() - 27)
+		valid := verifyRecovery(hash, r, s, recoveryID, privKey.PubKey())
+		assert.True(t, valid)
+	})
+
+	t.Run("returns false for wrong public key", func(t *testing.T) {
+		privKey, _, err := GenerateKey()
+		require.NoError(t, err)
+		_, wrongPubKey, err := GenerateKey()
+		require.NoError(t, err)
+
+		hash := hashKeccak256([]byte("test"))
+		v, r, s, err := SignLegacy(privKey, hash)
+		require.NoError(t, err)
+
+		recoveryID := byte(v.Int64() - 27)
+		valid := verifyRecovery(hash, r, s, recoveryID, wrongPubKey)
+		assert.False(t, valid)
+	})
+}
+
+func TestEVMSigningRoundTrip(t *testing.T) {
+	t.Run("full EIP-155 round trip with address verification", func(t *testing.T) {
+		// Generate key
+		privKey, pubKey, err := GenerateKey()
+		require.NoError(t, err)
+
+		// Derive address
+		expectedAddr := deriveEthereumAddress(pubKey)
+
+		// Sign message
+		hash := hashKeccak256([]byte("verify me"))
+		chainID := big.NewInt(1)
+
+		v, r, s, err := SignEIP155(privKey, hash, chainID)
+		require.NoError(t, err)
+
+		// Construct signature
+		sig := make([]byte, 65)
+		rBytes := r.Bytes()
+		sBytes := s.Bytes()
+		copy(sig[32-len(rBytes):32], rBytes)
+		copy(sig[64-len(sBytes):64], sBytes)
+		sig[64] = byte(v.Int64())
+
+		// Recover public key
+		recovered, err := RecoverPubKeyFromSignature(hash, sig, chainID)
+		require.NoError(t, err)
+
+		// Derive address from recovered key
+		recoveredAddr := deriveEthereumAddress(recovered)
+
+		// Addresses should match
+		assert.Equal(t, expectedAddr, recoveredAddr,
+			"recovered address should match original")
+	})
+}
+
+func BenchmarkDeriveEthereumAddress(b *testing.B) {
+	_, pubKey, _ := GenerateKey()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = deriveEthereumAddress(pubKey)
+	}
+}
+
+func BenchmarkFormatEthereumAddress(b *testing.B) {
+	_, pubKey, _ := GenerateKey()
+	addr := deriveEthereumAddress(pubKey)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = formatEthereumAddress(addr)
+	}
+}
+
+func BenchmarkSignEIP155(b *testing.B) {
+	privKey, _, _ := GenerateKey()
+	hash := hashKeccak256([]byte("benchmark"))
+	chainID := big.NewInt(1)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _, _, _ = SignEIP155(privKey, hash, chainID)
+	}
+}
+
+func BenchmarkSignLegacy(b *testing.B) {
+	privKey, _, _ := GenerateKey()
+	hash := hashKeccak256([]byte("benchmark"))
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _, _, _ = SignLegacy(privKey, hash)
+	}
+}
+
+func BenchmarkRecoverPubKeyFromSignature(b *testing.B) {
+	privKey, _, _ := GenerateKey()
+	hash := hashKeccak256([]byte("benchmark"))
+	chainID := big.NewInt(1)
+
+	v, r, s, _ := SignEIP155(privKey, hash, chainID)
+	sig := make([]byte, 65)
+	rBytes := r.Bytes()
+	sBytes := s.Bytes()
+	copy(sig[32-len(rBytes):32], rBytes)
+	copy(sig[64-len(sBytes):64], sBytes)
+	sig[64] = byte(v.Int64())
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = RecoverPubKeyFromSignature(hash, sig, chainID)
+	}
 }
 
 func BenchmarkGenerateKey(b *testing.B) {

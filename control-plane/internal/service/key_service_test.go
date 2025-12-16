@@ -57,6 +57,39 @@ func (m *mockKeyRepo) GetByAddress(ctx context.Context, orgID uuid.UUID, address
 	return nil, nil
 }
 
+func (m *mockKeyRepo) GetByEthAddress(ctx context.Context, orgID uuid.UUID, ethAddress string) (*models.Key, error) {
+	for _, key := range m.keys {
+		if key.OrgID == orgID && key.EthAddress != nil && *key.EthAddress == ethAddress && key.DeletedAt == nil {
+			return key, nil
+		}
+	}
+	return nil, nil
+}
+
+func (m *mockKeyRepo) ListByEthAddresses(ctx context.Context, orgID uuid.UUID, ethAddresses []string) (map[string]*models.Key, error) {
+	result := make(map[string]*models.Key)
+	ethSet := make(map[string]bool)
+	for _, addr := range ethAddresses {
+		ethSet[addr] = true
+	}
+	for _, key := range m.keys {
+		if key.OrgID == orgID && key.DeletedAt == nil && key.EthAddress != nil && ethSet[*key.EthAddress] {
+			result[*key.EthAddress] = key
+		}
+	}
+	return result, nil
+}
+
+func (m *mockKeyRepo) ListEthAddresses(ctx context.Context, orgID uuid.UUID) ([]string, error) {
+	var result []string
+	for _, key := range m.keys {
+		if key.OrgID == orgID && key.DeletedAt == nil && key.EthAddress != nil && *key.EthAddress != "" {
+			result = append(result, *key.EthAddress)
+		}
+	}
+	return result, nil
+}
+
 func (m *mockKeyRepo) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]*models.Key, error) {
 	var result []*models.Key
 	for _, key := range m.keys {
@@ -445,6 +478,7 @@ type mockBaoKey struct {
 	name       string
 	pubKey     []byte
 	address    string
+	ethAddress string
 	exportable bool
 	privateKey string
 }
@@ -453,7 +487,7 @@ func newMockBaoKeyring() *mockBaoKeyring {
 	return &mockBaoKeyring{keys: make(map[string]*mockBaoKey)}
 }
 
-func (m *mockBaoKeyring) NewAccountWithOptions(uid string, opts KeyOptions) ([]byte, string, error) {
+func (m *mockBaoKeyring) NewAccountWithOptions(uid string, opts KeyOptions) ([]byte, string, string, error) {
 	// Generate a mock 33-byte compressed secp256k1 public key
 	pubKey := make([]byte, 33)
 	pubKey[0] = 0x02 // compressed format prefix
@@ -466,17 +500,19 @@ func (m *mockBaoKeyring) NewAccountWithOptions(uid string, opts KeyOptions) ([]b
 		nameLen = 39
 	}
 	address := "celestia1" + uid[:nameLen]
+	ethAddress := "0x" + uid[:40] // Mock eth address
 
 	key := &mockBaoKey{
 		name:       uid,
 		pubKey:     pubKey,
 		address:    address,
+		ethAddress: ethAddress,
 		exportable: opts.Exportable,
 		privateKey: base64.StdEncoding.EncodeToString([]byte("mock_private_key_" + uid)),
 	}
 	m.keys[uid] = key
 
-	return pubKey, address, nil
+	return pubKey, address, ethAddress, nil
 }
 
 func (m *mockBaoKeyring) Sign(uid string, msg []byte) ([]byte, []byte, error) {
@@ -510,10 +546,11 @@ func (m *mockBaoKeyring) GetMetadata(uid string) (*KeyMetadata, error) {
 		Name:        uid,
 		PubKeyBytes: key.pubKey,
 		Address:     key.address,
+		EthAddress:  key.ethAddress,
 	}, nil
 }
 
-func (m *mockBaoKeyring) ImportKey(uid string, ciphertext string, exportable bool) ([]byte, string, error) {
+func (m *mockBaoKeyring) ImportKey(uid string, ciphertext string, exportable bool) ([]byte, string, string, error) {
 	// Generate a mock public key
 	pubKey := make([]byte, 33)
 	pubKey[0] = 0x02
@@ -526,17 +563,19 @@ func (m *mockBaoKeyring) ImportKey(uid string, ciphertext string, exportable boo
 		nameLen = 39
 	}
 	address := "celestia1" + uid[:nameLen]
+	ethAddress := "0x" + uid[:40] // Mock eth address
 
 	key := &mockBaoKey{
 		name:       uid,
 		pubKey:     pubKey,
 		address:    address,
+		ethAddress: ethAddress,
 		exportable: exportable,
 		privateKey: ciphertext,
 	}
 	m.keys[uid] = key
 
-	return pubKey, address, nil
+	return pubKey, address, ethAddress, nil
 }
 
 func (m *mockBaoKeyring) ExportKey(uid string) (string, error) {
@@ -783,7 +822,7 @@ func TestKeyService_List(t *testing.T) {
 			})
 		}
 
-		keys, err := ts.svc.List(ctx, orgID, nil)
+		keys, err := ts.svc.List(ctx, orgID, nil, nil)
 		if err != nil {
 			t.Fatalf("List() error = %v", err)
 		}
@@ -818,13 +857,67 @@ func TestKeyService_List(t *testing.T) {
 			Name:        "prod-key",
 		})
 
-		keys, err := ts.svc.List(ctx, orgID, &nsID)
+		keys, err := ts.svc.List(ctx, orgID, &nsID, nil)
 		if err != nil {
 			t.Fatalf("List() error = %v", err)
 		}
 
 		if len(keys) != 1 {
 			t.Errorf("List() returned %d keys, want 1", len(keys))
+		}
+	})
+
+	t.Run("filters keys by network type", func(t *testing.T) {
+		ts := newTestKeyService()
+		orgID, nsID := ts.createTestOrgAndNamespace(models.PlanPro)
+
+		// Create keys with different network types
+		ts.svc.Create(ctx, CreateKeyRequest{
+			OrgID:       orgID,
+			NamespaceID: nsID,
+			Name:        "celestia-key",
+			NetworkType: "celestia",
+		})
+		ts.svc.Create(ctx, CreateKeyRequest{
+			OrgID:       orgID,
+			NamespaceID: nsID,
+			Name:        "evm-key",
+			NetworkType: "evm",
+		})
+		ts.svc.Create(ctx, CreateKeyRequest{
+			OrgID:       orgID,
+			NamespaceID: nsID,
+			Name:        "all-key",
+			NetworkType: "all",
+		})
+
+		// Filter by celestia - should get celestia-key and all-key
+		celestiaType := models.NetworkTypeCelestia
+		keys, err := ts.svc.List(ctx, orgID, nil, &celestiaType)
+		if err != nil {
+			t.Fatalf("List() error = %v", err)
+		}
+		if len(keys) != 2 {
+			t.Errorf("List(celestia) returned %d keys, want 2", len(keys))
+		}
+
+		// Filter by evm - should get evm-key and all-key
+		evmType := models.NetworkTypeEVM
+		keys, err = ts.svc.List(ctx, orgID, nil, &evmType)
+		if err != nil {
+			t.Fatalf("List() error = %v", err)
+		}
+		if len(keys) != 2 {
+			t.Errorf("List(evm) returned %d keys, want 2", len(keys))
+		}
+
+		// No filter - should get all 3
+		keys, err = ts.svc.List(ctx, orgID, nil, nil)
+		if err != nil {
+			t.Fatalf("List() error = %v", err)
+		}
+		if len(keys) != 3 {
+			t.Errorf("List(nil) returned %d keys, want 3", len(keys))
 		}
 	})
 }
@@ -928,7 +1021,7 @@ func TestKeyService_Delete(t *testing.T) {
 		}
 
 		// Should not appear in list
-		keys, _ := ts.svc.List(ctx, orgID, nil)
+		keys, _ := ts.svc.List(ctx, orgID, nil, nil)
 		if len(keys) != 0 {
 			t.Errorf("List() returned %d keys after delete, want 0", len(keys))
 		}

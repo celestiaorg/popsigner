@@ -11,6 +11,10 @@ type keyEntry struct {
 	// PublicKey is the compressed 33-byte secp256k1 public key.
 	PublicKey []byte `json:"public_key"`
 
+	// PublicKeyUncompressed is the uncompressed 65-byte public key (for EVM).
+	// Stored to avoid recomputation during Ethereum address derivation.
+	PublicKeyUncompressed []byte `json:"public_key_uncompressed,omitempty"`
+
 	// Exportable indicates whether the private key can be exported.
 	// Once set to false, this cannot be changed.
 	Exportable bool `json:"exportable"`
