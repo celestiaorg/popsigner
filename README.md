@@ -424,18 +424,6 @@ go install github.com/Bidon15/popsigner/cmd/popsigner@latest
 
 ---
 
-## Pricing
-
-| Tier | Monthly | Description |
-|------|---------|-------------|
-| **Shared POPSigner** | €49 | Shared POP infrastructure. For experimentation. |
-| **Priority POPSigner** | €499 | Priority lanes, region selection, 99.9% SLA |
-| **Dedicated POPSigner** | €19,999 | Region-pinned, CPU isolation, 99.99% SLA |
-
-Self-host option is always free. [View pricing details →](https://popsigner.com/pricing)
-
----
-
 ## About the Name
 
 POPSigner (formerly BanhBaoRing) reflects a clearer articulation of what the system is: **Point-of-Presence signing infrastructure**.
