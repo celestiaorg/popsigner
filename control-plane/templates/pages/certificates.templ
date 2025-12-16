@@ -1,0 +1,335 @@
+package pages
+
+import (
+	"time"
+
+	"github.com/Bidon15/popsigner/control-plane/internal/models"
+	"github.com/Bidon15/popsigner/control-plane/templates/layouts"
+)
+
+// CertificatesPageData contains all data for the certificates page.
+type CertificatesPageData struct {
+	layouts.DashboardData
+	Certificates []models.Certificate
+	Total        int
+}
+
+// CertificatesPage renders the certificates management page.
+templ CertificatesPage(data CertificatesPageData) {
+	@layouts.Dashboard("Certificates", data.DashboardData) {
+		<div class="space-y-6">
+			<!-- Page Header -->
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+				<div>
+					<h1 class="text-2xl font-bold text-[#FFB000] uppercase tracking-wide">_MTLS_CERTIFICATES</h1>
+					<p class="text-[#666600] mt-1 text-sm">Client certificates for Arbitrum Nitro integration</p>
+				</div>
+				<button hx-get="/settings/certificates/new"
+						hx-target="#modal-content"
+						@click="$dispatch('modal-open')"
+						class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FFB000] text-black font-bold uppercase 
+						       hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all duration-200">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+					</svg>
+					[ GENERATE CERTIFICATE ]
+				</button>
+			</div>
+			
+			<!-- Info Banner - CRT Style -->
+			<div class="p-4 bg-[#FFB000]/10 border border-[#FFB000] relative">
+				<!-- Scanlines -->
+				<div class="absolute inset-0 pointer-events-none opacity-10
+				            bg-[repeating-linear-gradient(0deg,transparent,transparent_1px,rgba(0,0,0,0.3)_1px,rgba(0,0,0,0.3)_2px)]"></div>
+				<div class="relative flex items-start gap-3">
+					<span class="text-[#FFB000] text-xl drop-shadow-[0_0_5px_#FFB000]">🔐</span>
+					<div>
+						<p class="font-bold text-[#FFB000] uppercase text-sm">ARBITRUM NITRO INTEGRATION</p>
+						<p class="text-sm text-[#CC8800] mt-1">
+							Generate client certificates for mTLS authentication with Arbitrum Nitro nodes.
+							Each certificate is bound to your organization and can be used with the batch poster or staker.
+						</p>
+					</div>
+				</div>
+			</div>
+			
+			<!-- Certificates List -->
+			<div id="certificates-list">
+				@CertificatesList(data.Certificates)
+			</div>
+			
+			<!-- Docs Link Banner -->
+			<a href="/docs#nitro" class="block p-4 bg-black border border-[#333300] group hover:border-[#12AAFF] transition-colors">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-3">
+						<div class="w-10 h-10 border border-[#12AAFF] flex items-center justify-center group-hover:bg-[#12AAFF]/10 transition-colors">
+							<svg class="w-5 h-5 text-[#12AAFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+							</svg>
+						</div>
+						<div>
+							<p class="font-bold text-[#FFB000] uppercase text-sm group-hover:text-[#12AAFF] transition-colors">NITRO INTEGRATION GUIDE</p>
+							<p class="text-xs text-[#666600]">Learn how to configure Batch Poster &amp; Staker with mTLS certificates</p>
+						</div>
+					</div>
+					<svg class="w-5 h-5 text-[#666600] group-hover:text-[#12AAFF] group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+					</svg>
+				</div>
+			</a>
+		</div>
+	}
+}
+
+// CertificatesList renders the list of certificates (for HTMX partial updates).
+templ CertificatesList(certs []models.Certificate) {
+	<div class="bg-black border border-[#333300]">
+		if len(certs) > 0 {
+			<div class="divide-y divide-[#333300]">
+				for _, cert := range certs {
+					@certificateRow(cert)
+				}
+			</div>
+		} else {
+			<div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+				<!-- CRT Certificate Icon -->
+				<div class="w-20 h-20 border-2 border-[#333300] flex items-center justify-center mb-4">
+					<svg class="w-10 h-10 text-[#666600]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+					</svg>
+				</div>
+				<h3 class="text-lg font-bold text-[#FFB000] mb-2 uppercase">NO CERTIFICATES YET</h3>
+				<p class="text-[#666600] text-sm max-w-sm mb-6">Generate your first client certificate to start using mTLS with Arbitrum Nitro.</p>
+				<button hx-get="/settings/certificates/new"
+						hx-target="#modal-content"
+						@click="$dispatch('modal-open')"
+						class="px-6 py-3 bg-[#FFB000] text-black font-bold uppercase 
+						       hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all">
+					[ GENERATE CERTIFICATE ]
+				</button>
+			</div>
+		}
+	</div>
+}
+
+// certificateRow renders a single certificate row.
+templ certificateRow(cert models.Certificate) {
+	<div class="flex items-center justify-between p-4 group hover:bg-[#0D1A0D] transition-colors">
+		<div class="flex items-center gap-4 min-w-0">
+			<div class={ certIconClass(cert) }>
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+				</svg>
+			</div>
+			<div class="min-w-0">
+				<div class="flex items-center gap-2">
+					<p class="font-bold text-[#FFB000] truncate uppercase">{ cert.Name }</p>
+					@certStatusBadge(cert)
+				</div>
+				<div class="flex items-center gap-3 mt-1">
+					<p class="text-sm font-mono text-[#33FF00]">{ truncateFingerprint(cert.Fingerprint) }</p>
+					<span class="text-[#333300]">│</span>
+					<p class="text-sm text-[#666600]">
+						Issued { cert.IssuedAt.Format("Jan 2, 2006") }
+					</p>
+					<span class="text-[#333300]">│</span>
+					<p class="text-sm text-[#666600]">
+						Expires { cert.ExpiresAt.Format("Jan 2, 2006") }
+					</p>
+				</div>
+				<!-- Serial Number -->
+				<div class="flex flex-wrap gap-1.5 mt-2">
+					<span class="px-2 py-0.5 text-xs font-mono bg-[#1A1A00] text-[#666600] border border-[#333300]">
+						SN: { truncateSerial(cert.SerialNumber) }
+					</span>
+					if isExpiringSoon(cert) && !cert.IsRevoked() {
+						<span class="px-2 py-0.5 text-xs font-bold bg-[#FFB000]/10 text-[#FFB000] border border-[#FFB000]">
+							⚠ EXPIRING SOON
+						</span>
+					}
+				</div>
+			</div>
+		</div>
+		
+		<div class="flex items-center gap-2">
+		if cert.Status() == models.CertificateStatusActive {
+			<button hx-post={ "/settings/certificates/" + cert.ID.String() + "/revoke" }
+					hx-confirm="Are you sure you want to revoke this certificate? This action cannot be undone and any services using this certificate will lose access."
+					hx-target="#certificates-list"
+					hx-swap="outerHTML"
+					class="px-3 py-1.5 text-sm font-bold text-[#FF3333] border border-[#FF3333] 
+					       hover:bg-[#FF3333]/20 hover:shadow-[0_0_10px_rgba(255,51,51,0.3)] 
+					       transition-all uppercase opacity-0 group-hover:opacity-100">
+				[ REVOKE ]
+			</button>
+		}
+		if cert.IsRevoked() {
+			<button hx-delete={ "/settings/certificates/" + cert.ID.String() }
+						hx-confirm="Delete this certificate record permanently?"
+						hx-target="#certificates-list"
+						hx-swap="outerHTML"
+						class="px-3 py-1.5 text-sm font-bold text-[#666600] border border-[#333300] 
+						       hover:text-[#FF3333] hover:border-[#FF3333] 
+						       transition-all uppercase opacity-0 group-hover:opacity-100">
+					[ DELETE ]
+				</button>
+			}
+		</div>
+	</div>
+}
+
+// certStatusBadge renders the status badge for a certificate.
+templ certStatusBadge(cert models.Certificate) {
+	switch cert.Status() {
+		case models.CertificateStatusActive:
+			<span class="px-2 py-0.5 text-xs font-bold bg-[#33FF00]/10 text-[#33FF00] border border-[#33FF00] uppercase">
+				● ACTIVE
+			</span>
+		case models.CertificateStatusExpired:
+			<span class="px-2 py-0.5 text-xs font-bold bg-[#FFB000]/10 text-[#FFB000] border border-[#FFB000] uppercase">
+				○ EXPIRED
+			</span>
+		case models.CertificateStatusRevoked:
+			<span class="px-2 py-0.5 text-xs font-bold bg-[#FF3333]/10 text-[#FF3333] border border-[#FF3333] uppercase">
+				✕ REVOKED
+			</span>
+	}
+}
+
+// CreateCertificateModal renders the create certificate modal.
+templ CreateCertificateModal() {
+	<div class="max-w-lg w-full bg-black border border-[#333300]">
+		<!-- Header -->
+		<div class="flex items-center justify-between p-5 border-b border-[#333300]">
+			<h3 class="text-lg font-bold text-[#FFB000] uppercase">_GENERATE_CERTIFICATE</h3>
+			<button @click="$dispatch('modal-close')" 
+					class="p-1.5 text-[#666600] hover:text-[#FFB000] hover:bg-[#FFB000]/10 transition-colors">
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+				</svg>
+			</button>
+		</div>
+		
+		<!-- Body -->
+		<div class="p-5">
+			<form hx-post="/settings/certificates"
+				  hx-target="#cert-result"
+				  hx-swap="innerHTML"
+				  class="space-y-6">
+				
+				<div id="cert-result">
+					<div>
+						<label for="name" class="block text-sm font-bold text-[#FFB000] mb-2 uppercase">
+							CERTIFICATE_NAME
+						</label>
+						<input type="text"
+							   id="name"
+							   name="name"
+							   placeholder="nitro-production"
+							   required
+							   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+							          placeholder:text-[#336633] focus:outline-none focus:border-[#33FF00] 
+							          focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] transition-all font-mono"/>
+						<p class="mt-1 text-xs text-[#666600]">A friendly name to identify this certificate</p>
+					</div>
+					
+					<div class="mt-6">
+						<label for="validity_period" class="block text-sm font-bold text-[#FFB000] mb-2 uppercase">
+							VALIDITY_PERIOD
+						</label>
+						<select id="validity_period"
+								name="validity_period"
+								class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+								       focus:outline-none focus:border-[#33FF00] 
+								       focus:shadow-[0_0_10px_rgba(51,255,0,0.3)] transition-all font-mono">
+							<option value="8760h">1 Year (Recommended)</option>
+							<option value="4380h">6 Months</option>
+							<option value="2190h">3 Months</option>
+							<option value="720h">30 Days</option>
+						</select>
+						<p class="mt-1 text-xs text-[#666600]">Certificate expiration period</p>
+					</div>
+					
+					<!-- Footer -->
+					<div class="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-[#333300]">
+						<button type="button"
+								@click="$dispatch('modal-close')"
+								class="px-4 py-2 text-sm font-bold text-[#666600] border border-[#333300] 
+								       hover:text-[#FFB000] hover:border-[#FFB000] transition-colors uppercase">
+							[ CANCEL ]
+						</button>
+						<button type="submit"
+								class="px-6 py-2 bg-[#FFB000] text-black font-bold uppercase
+								       hover:bg-[#FFCC00] hover:shadow-[0_0_15px_#FFB000] transition-all">
+							[ GENERATE ]
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+}
+
+// CertificateCreateError renders an error message for the create certificate form.
+templ CertificateCreateError(message string) {
+	<div class="space-y-6">
+		<div class="p-4 bg-[#FF3333]/10 border border-[#FF3333] relative">
+			<div class="absolute inset-0 pointer-events-none opacity-10
+			            bg-[repeating-linear-gradient(0deg,transparent,transparent_1px,rgba(0,0,0,0.3)_1px,rgba(0,0,0,0.3)_2px)]"></div>
+			<div class="relative flex items-start gap-3">
+				<span class="text-[#FF3333] text-xl drop-shadow-[0_0_5px_#FF3333]">✗</span>
+				<div>
+					<p class="font-bold text-[#FF3333] uppercase text-sm">ERROR</p>
+					<p class="text-sm text-[#CC2222] mt-1">{ message }</p>
+				</div>
+			</div>
+		</div>
+		
+		<div class="flex items-center justify-end gap-3 pt-6 border-t border-[#333300]">
+			<button type="button"
+					@click="$dispatch('modal-close')"
+					class="px-4 py-2 text-sm font-bold text-[#666600] border border-[#333300] 
+					       hover:text-[#FFB000] hover:border-[#FFB000] transition-colors uppercase">
+				[ CLOSE ]
+			</button>
+			<button type="button"
+					onclick="location.reload()"
+					class="px-6 py-2 bg-[#FFB000] text-black font-bold uppercase
+					       hover:bg-[#FFCC00] hover:shadow-[0_0_15px_#FFB000] transition-all">
+				[ TRY AGAIN ]
+			</button>
+		</div>
+	</div>
+}
+
+// Helper functions
+func certIconClass(cert models.Certificate) string {
+	base := "w-12 h-12 border flex items-center justify-center"
+	switch cert.Status() {
+	case models.CertificateStatusRevoked:
+		return base + " border-[#FF3333] text-[#FF3333] bg-[#FF3333]/10"
+	case models.CertificateStatusExpired:
+		return base + " border-[#FFB000] text-[#FFB000] bg-[#FFB000]/10"
+	default:
+		return base + " border-[#33FF00] text-[#33FF00] bg-[#33FF00]/10"
+	}
+}
+
+func truncateFingerprint(fp string) string {
+	if len(fp) > 16 {
+		return fp[:16] + "..."
+	}
+	return fp
+}
+
+func truncateSerial(sn string) string {
+	if len(sn) > 20 {
+		return sn[:20] + "..."
+	}
+	return sn
+}
+
+func isExpiringSoon(cert models.Certificate) bool {
+	return cert.ExpiresAt.Before(time.Now().Add(30 * 24 * time.Hour))
+}
+

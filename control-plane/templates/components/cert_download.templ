@@ -1,0 +1,149 @@
+package components
+
+import (
+	"encoding/base64"
+
+	"github.com/Bidon15/popsigner/control-plane/internal/models"
+)
+
+// CertDownloadModal renders the certificate download modal after successful generation.
+templ CertDownloadModal(bundle *models.CertificateBundle) {
+	<div class="max-w-2xl w-full bg-black border border-[#333300]">
+		<!-- Header -->
+		<div class="flex items-center justify-between p-5 border-b border-[#333300]">
+			<h3 class="text-lg font-bold text-[#33FF00] uppercase flex items-center gap-2">
+				<span class="drop-shadow-[0_0_10px_#33FF00]">✓</span>
+				CERTIFICATE_GENERATED
+			</h3>
+			<button @click="$dispatch('modal-close'); htmx.trigger('#main-content', 'refresh')" 
+					class="p-1.5 text-[#666600] hover:text-[#FFB000] hover:bg-[#FFB000]/10 transition-colors">
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+				</svg>
+			</button>
+		</div>
+		
+		<!-- Body -->
+		<div class="p-5 space-y-6">
+			<!-- Warning Banner -->
+			<div class="p-4 bg-[#FFB000]/10 border border-[#FFB000] relative">
+				<div class="absolute inset-0 pointer-events-none opacity-10
+				            bg-[repeating-linear-gradient(0deg,transparent,transparent_1px,rgba(0,0,0,0.3)_1px,rgba(0,0,0,0.3)_2px)]"></div>
+				<div class="relative flex items-start gap-3">
+					<span class="text-[#FFB000] text-xl drop-shadow-[0_0_5px_#FFB000]">⚠</span>
+					<div>
+						<p class="font-bold text-[#FFB000] uppercase text-sm">DOWNLOAD NOW - ONE TIME ACCESS</p>
+						<p class="text-sm text-[#CC8800] mt-1">
+							The private key will not be shown again. Make sure to download and securely store these files.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Download Buttons -->
+			<div class="grid grid-cols-3 gap-4">
+				<a href={ templ.SafeURL("data:application/x-pem-file;base64," + certBase64Encode(bundle.ClientCert)) }
+				   download="client.crt"
+				   class="flex flex-col items-center p-4 bg-[#0A0A0A] border border-[#333300] 
+				          hover:border-[#33FF00] hover:shadow-[0_0_10px_rgba(51,255,0,0.3)] transition-all group">
+					<span class="text-3xl mb-2 group-hover:drop-shadow-[0_0_8px_#33FF00] transition-all">📜</span>
+					<span class="text-sm font-bold text-[#33FF00] uppercase">client.crt</span>
+					<span class="text-xs text-[#666600]">Certificate</span>
+				</a>
+
+				<a href={ templ.SafeURL("data:application/x-pem-file;base64," + certBase64Encode(bundle.ClientKey)) }
+				   download="client.key"
+				   class="flex flex-col items-center p-4 bg-[#0A0A0A] border border-[#333300] 
+				          hover:border-[#FFB000] hover:shadow-[0_0_10px_rgba(255,176,0,0.3)] transition-all group">
+					<span class="text-3xl mb-2 group-hover:drop-shadow-[0_0_8px_#FFB000] transition-all">🔑</span>
+					<span class="text-sm font-bold text-[#FFB000] uppercase">client.key</span>
+					<span class="text-xs text-[#666600]">Private Key</span>
+				</a>
+
+				<a href={ templ.SafeURL("data:application/x-pem-file;base64," + certBase64Encode(bundle.CACert)) }
+				   download="popsigner-ca.crt"
+				   class="flex flex-col items-center p-4 bg-[#0A0A0A] border border-[#333300] 
+				          hover:border-[#33FF00] hover:shadow-[0_0_10px_rgba(51,255,0,0.3)] transition-all group">
+					<span class="text-3xl mb-2 group-hover:drop-shadow-[0_0_8px_#33FF00] transition-all">🏛️</span>
+					<span class="text-sm font-bold text-[#33FF00] uppercase">popsigner-ca.crt</span>
+					<span class="text-xs text-[#666600]">CA Certificate</span>
+				</a>
+			</div>
+
+			<!-- Nitro Configuration -->
+			<div>
+				<h4 class="text-sm font-bold text-[#FFB000] uppercase tracking-wide mb-2">
+					ARBITRUM NITRO CONFIGURATION
+				</h4>
+				<div class="relative bg-[#0A0A0A] border border-[#333300] p-4 overflow-x-auto">
+					<pre class="text-xs text-[#33FF00] font-mono"><code>{ bundle.NitroConfigTip }</code></pre>
+				</div>
+			</div>
+
+			<!-- Certificate Details -->
+			<div class="p-4 bg-[#0A0A0A] border border-[#333300]">
+				<h4 class="text-sm font-bold text-[#FFB000] uppercase tracking-wide mb-3">
+					CERTIFICATE_DETAILS
+				</h4>
+				<dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+					<dt class="text-[#666600]">Fingerprint:</dt>
+					<dd class="font-mono text-[#33FF00]">{ truncateCertFingerprint(bundle.Fingerprint) }</dd>
+					<dt class="text-[#666600]">Expires:</dt>
+					<dd class="text-[#33FF00]">{ bundle.ExpiresAt }</dd>
+				</dl>
+			</div>
+		</div>
+		
+		<!-- Footer -->
+		<div class="flex items-center justify-end gap-3 p-5 border-t border-[#333300]">
+			<button type="button"
+					@click="$dispatch('modal-close'); location.reload()"
+					class="px-6 py-2 bg-[#33FF00] text-black font-bold uppercase
+					       hover:shadow-[0_0_15px_#33FF00] transition-all">
+				[ DONE ]
+			</button>
+		</div>
+	</div>
+}
+
+// CertDownloadBundleOnly renders just the download links (for inline use).
+templ CertDownloadBundleOnly(bundle *models.CertificateBundle) {
+	<div class="space-y-4">
+		<div class="grid grid-cols-3 gap-3">
+			<a href={ templ.SafeURL("data:application/x-pem-file;base64," + certBase64Encode(bundle.ClientCert)) }
+			   download="client.crt"
+			   class="flex items-center gap-2 px-3 py-2 bg-black border border-[#333300] 
+			          hover:border-[#33FF00] transition-colors text-sm">
+				<span>📜</span>
+				<span class="text-[#33FF00]">client.crt</span>
+			</a>
+			<a href={ templ.SafeURL("data:application/x-pem-file;base64," + certBase64Encode(bundle.ClientKey)) }
+			   download="client.key"
+			   class="flex items-center gap-2 px-3 py-2 bg-black border border-[#333300] 
+			          hover:border-[#FFB000] transition-colors text-sm">
+				<span>🔑</span>
+				<span class="text-[#FFB000]">client.key</span>
+			</a>
+			<a href={ templ.SafeURL("data:application/x-pem-file;base64," + certBase64Encode(bundle.CACert)) }
+			   download="popsigner-ca.crt"
+			   class="flex items-center gap-2 px-3 py-2 bg-black border border-[#333300] 
+			          hover:border-[#33FF00] transition-colors text-sm">
+				<span>🏛️</span>
+				<span class="text-[#33FF00]">ca.crt</span>
+			</a>
+		</div>
+	</div>
+}
+
+// Helper function to base64 encode certificate data
+func certBase64Encode(data []byte) string {
+	return base64.StdEncoding.EncodeToString(data)
+}
+
+func truncateCertFingerprint(fp string) string {
+	if len(fp) > 32 {
+		return fp[:32] + "..."
+	}
+	return fp
+}
+
