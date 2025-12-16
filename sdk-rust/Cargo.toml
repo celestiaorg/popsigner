@@ -1,18 +1,16 @@
-[package]
-name = "popsigner"
-version = "1.0.0"
-edition = "2021"
-authors = ["POPSigner"]
-description = "POPSigner Rust SDK - Point-of-Presence signing infrastructure"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/Bidon15/popsigner"
-documentation = "https://docs.popsigner.com"
-homepage = "https://popsigner.com"
-keywords = ["signing", "cryptography", "celestia", "cosmos", "infrastructure"]
-categories = ["cryptography", "api-bindings"]
-readme = "README.md"
+[workspace]
+resolver = "2"
 
-[dependencies]
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.87"
+authors = ["POPSigner <hello@popsigner.com>"]
+homepage = "https://popsigner.com"
+repository = "https://github.com/Bidon15/popsigner"
+
+[workspace.dependencies]
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
@@ -21,11 +19,55 @@ thiserror = "1"
 base64 = "0.21"
 uuid = { version = "1", features = ["v4", "serde"] }
 async-trait = "0.1"
-
-[dev-dependencies]
+sha2 = "0.10"
+ripemd = "0.1"
+hex = "0.4"
 tokio-test = "0.4"
 wiremock = "0.5"
-sha2 = "0.10"
+
+# Lumina Celestia crates - follows Lumina semver
+celestia-rpc = { git = "https://github.com/eigerco/lumina", branch = "main" }
+celestia-grpc = { git = "https://github.com/eigerco/lumina", branch = "main" }
+celestia-types = { git = "https://github.com/eigerco/lumina", branch = "main" }
+
+[package]
+name = "popsigner"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = "POPSigner SDK - Point-of-Presence signing infrastructure for Celestia"
+readme = "README.md"
+keywords = ["signing", "celestia", "cosmos", "cryptography"]
+categories = ["api-bindings", "cryptography::cryptocurrencies"]
+
+[dependencies]
+reqwest.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+base64.workspace = true
+uuid.workspace = true
+async-trait.workspace = true
+sha2.workspace = true
+ripemd.workspace = true
+hex.workspace = true
+
+celestia-rpc = { workspace = true, optional = true }
+celestia-grpc = { workspace = true, optional = true }
+celestia-types = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio-test.workspace = true
+wiremock.workspace = true
+
+[features]
+default = []
+celestia = ["celestia-rpc", "celestia-grpc", "celestia-types"]
 
 [[example]]
 name = "basic"
@@ -34,3 +76,7 @@ path = "examples/basic.rs"
 [[example]]
 name = "parallel_workers"
 path = "examples/parallel_workers.rs"
+
+[[example]]
+name = "celestia_signer"
+path = "examples/celestia_signer.rs"

@@ -102,6 +102,7 @@
 //! ```
 
 pub mod audit;
+pub mod celestia;
 pub mod client;
 pub mod error;
 pub mod keys;

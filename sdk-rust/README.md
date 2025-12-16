@@ -6,12 +6,19 @@ POPSigner is Point-of-Presence signing infrastructure. Keys are stored in OpenBa
 
 ## Installation
 
-Add to your `Cargo.toml`:
-
 ```toml
 [dependencies]
 popsigner = "0.1"
 tokio = { version = "1", features = ["full"] }
+```
+
+### Celestia Integration
+
+For Celestia blob submission with secure remote signing:
+
+```toml
+[dependencies]
+popsigner = { version = "0.1", features = ["celestia"] }
 ```
 
 ## Quick Start
@@ -22,7 +29,6 @@ use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a client with your API key
     let client = Client::new("psk_live_xxxxx");
     
     // Create a key
@@ -35,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     println!("Created key: {} ({})", key.name, key.address);
     
-    // Sign inline with your execution
+    // Sign data
     let data = b"transaction data";
     let result = client.sign().sign(&key.id, data, false).await?;
     println!("Signature: {} bytes", result.signature.len());
@@ -48,125 +54,84 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 | Feature | Description |
 |---------|-------------|
-| **Authentication** | API key authentication |
-| **Key Management** | Create, get, list, delete, export keys |
+| **Key Management** | Create, list, delete, export keys |
+| **Signing** | Sign data with secp256k1 keys |
 | **Batch Operations** | Create and sign in batches |
-| **Signing** | Sign data inline with secp256k1 keys |
+| **Celestia** | Drop-in replacement for Lumina's client |
 | **Organizations** | Manage organizations and namespaces |
 | **Audit Logs** | Access audit logs for compliance |
 | **Exit Guarantee** | Export keys anytime—sovereignty by default |
 
-## Parallel Workers Pattern
+## Celestia Integration
 
-For worker-native workloads, use batch operations:
+POPSigner provides a **drop-in replacement** for Lumina's `celestia_client::Client`. Private keys never leave the secure enclave.
 
-```rust
-use popsigner::{Client, CreateBatchRequest, BatchSignRequest, BatchSignItem};
-use uuid::Uuid;
+### The Problem
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new("psk_live_xxxxx");
-    let namespace_id = Uuid::parse_str("...")?;
-    
-    // Create worker keys in one API call
-    let keys = client.keys().create_batch(CreateBatchRequest {
-        prefix: "blob-worker".to_string(),
-        count: 4,
-        namespace_id,
-        exportable: None,
-    }).await?;
-    // Creates: blob-worker-1, blob-worker-2, blob-worker-3, blob-worker-4
-    
-    // Sign transactions in parallel with one API call
-    let transactions = vec![b"tx1".to_vec(), b"tx2".to_vec(), b"tx3".to_vec(), b"tx4".to_vec()];
-    
-    let results = client.sign().sign_batch(BatchSignRequest {
-        requests: keys.iter().zip(transactions.iter()).map(|(key, tx)| {
-            BatchSignItem {
-                key_id: key.id,
-                data: tx.clone(),
-                prehashed: false,
-            }
-        }).collect(),
-    }).await?;
-    
-    println!("Signed {} transactions", results.len());
-    Ok(())
-}
-```
-
-## Client Configuration
+Lumina requires exposing private keys:
 
 ```rust
-use popsigner::{Client, ClientConfig};
-use std::time::Duration;
+// ❌ INSECURE: Private key in code
+use celestia_client::Client;
 
-// Default configuration
-let client = Client::new("psk_live_xxxxx");
-
-// Custom configuration
-let client = Client::with_config("psk_live_xxxxx", ClientConfig {
-    base_url: Some("https://api.staging.popsigner.com".to_string()),
-    timeout: Some(Duration::from_secs(60)),
-    user_agent: Some("my-app/1.0".to_string()),
-});
+let client = Client::builder()
+    .rpc_url("ws://localhost:26658")
+    .private_key_hex("393fdb5def075819...")  // Exposed!
+    .build()
+    .await?;
 ```
 
-## Error Handling
+### The Solution
 
-All operations return `Result<T, POPSignerError>`:
+Change one import:
 
 ```rust
-use popsigner::{Client, POPSignerError};
+// ✅ SECURE: Keys never exposed
+use popsigner::celestia::Client;
 
-#[tokio::main]
-async fn main() {
-    let client = Client::new("psk_live_xxxxx");
-    
-    match client.keys().list(None).await {
-        Ok(keys) => println!("Found {} keys", keys.len()),
-        Err(POPSignerError::Unauthorized) => {
-            println!("Invalid API key");
-        }
-        Err(POPSignerError::RateLimited) => {
-            println!("Rate limited—implement backoff");
-        }
-        Err(POPSignerError::QuotaExceeded(msg)) => {
-            println!("Quota exceeded: {}", msg);
-        }
-        Err(e) if e.is_retryable() => {
-            println!("Retryable error: {}", e);
-        }
-        Err(e) => {
-            println!("Error: {}", e);
-        }
-    }
-}
+let client = Client::builder()
+    .rpc_url("ws://localhost:26658")
+    .grpc_url("http://localhost:9090")
+    .popsigner("psk_live_xxx", "my-key")
+    .build()
+    .await?;
+
+// Same API as Lumina
+client.blob().submit(&[blob], TxConfig::default()).await?;
 ```
 
-### Error Types
+### Architecture
 
-| Error | Description |
-|-------|-------------|
-| `Unauthorized` | Invalid API key |
-| `RateLimited` | Too many requests |
-| `QuotaExceeded` | Monthly quota exceeded |
-| `KeyNotFound` | Key does not exist |
-| `Api` | Other API errors with code/message |
-| `Http` | Network/connection errors |
-| `Decode` | Base64 decoding errors |
+```
+┌─────────────────────────────────────────────────────┐
+│                  Your Application                   │
+└─────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────┐
+│            popsigner::celestia::Client              │
+│       (Drop-in replacement for celestia_client)     │
+└─────────────────────────────────────────────────────┘
+                 │                   │
+                 ▼                   ▼
+┌─────────────────────┐   ┌──────────────────────────┐
+│    Lumina Client    │   │     POPSigner API        │
+│  (RPC/gRPC reads)   │   │   (Remote Signing)       │
+└─────────────────────┘   └──────────────────────────┘
+```
+
+### Lumina Compatibility
+
+The `celestia` feature tracks [Lumina](https://github.com/eigerco/lumina) main branch. We follow Lumina's semver.
 
 ## API Reference
 
 ### Client
 
 ```rust
-// Create client
 let client = Client::new("api_key");
 let client = Client::with_config("api_key", config);
 
-// Access sub-clients
 client.keys()   // KeysClient
 client.sign()   // SignClient
 client.orgs()   // OrgsClient
@@ -176,113 +141,83 @@ client.audit()  // AuditClient
 ### KeysClient
 
 ```rust
-// Create a key
 client.keys().create(CreateKeyRequest { ... }).await?;
-
-// Create multiple keys
 client.keys().create_batch(CreateBatchRequest { ... }).await?;
-
-// Get a key by ID
 client.keys().get(&key_id).await?;
-
-// Get a key by name
 client.keys().get_by_name(&namespace_id, "key-name").await?;
-
-// List all keys (optionally filtered by namespace)
 client.keys().list(None).await?;
-client.keys().list(Some(&namespace_id)).await?;
-
-// Delete a key
 client.keys().delete(&key_id).await?;
-
-// Export a key (exit guarantee)
 client.keys().export(&key_id).await?;
 ```
 
 ### SignClient
 
 ```rust
-// Sign data inline
 client.sign().sign(&key_id, &data, false).await?;
-
-// Sign pre-hashed data
-client.sign().sign(&key_id, &hash, true).await?;
-
-// Batch sign (parallel)
+client.sign().sign(&key_id, &hash, true).await?;  // pre-hashed
 client.sign().sign_batch(BatchSignRequest { ... }).await?;
-
-// Verify signature
 client.sign().verify(&key_id, &data, &signature, false).await?;
 ```
 
 ### OrgsClient
 
 ```rust
-// Get current organization
 client.orgs().get_current().await?;
-
-// List namespaces
 client.orgs().list_namespaces().await?;
-
-// Create namespace
 client.orgs().create_namespace("production").await?;
-
-// Delete namespace
 client.orgs().delete_namespace(&namespace_id).await?;
 ```
 
 ### AuditClient
 
 ```rust
-// List audit logs
 client.audit().list(None).await?;
-
-// List with filters
-client.audit().list(Some(ListAuditLogsQuery {
-    event: Some("key.created".to_string()),
-    limit: Some(100),
-    ..Default::default()
-})).await?;
-
-// Get single log entry
+client.audit().list(Some(ListAuditLogsQuery { ... })).await?;
 client.audit().get(&log_id).await?;
-
-// List logs for a resource
 client.audit().list_for_resource("key", &key_id).await?;
 ```
 
+## Error Handling
+
+```rust
+use popsigner::{Client, POPSignerError};
+
+match client.keys().list(None).await {
+    Ok(keys) => println!("Found {} keys", keys.len()),
+    Err(POPSignerError::Unauthorized) => println!("Invalid API key"),
+    Err(POPSignerError::RateLimited) => println!("Rate limited"),
+    Err(POPSignerError::QuotaExceeded(msg)) => println!("Quota: {}", msg),
+    Err(e) if e.is_retryable() => println!("Retryable: {}", e),
+    Err(e) => println!("Error: {}", e),
+}
+```
+
+| Error | Description |
+|-------|-------------|
+| `Unauthorized` | Invalid API key |
+| `RateLimited` | Too many requests |
+| `QuotaExceeded` | Monthly quota exceeded |
+| `KeyNotFound` | Key does not exist |
+| `Api` | Other API errors |
+| `Http` | Network errors |
+
 ## Examples
 
-Run examples with:
-
 ```bash
-# Set environment variables
 export POPSIGNER_API_KEY=psk_live_xxxxx
 export NAMESPACE_ID=your-namespace-uuid
 
-# Run basic example
 cargo run --example basic
-
-# Run parallel workers example
 cargo run --example parallel_workers
-```
-
-## Testing
-
-```bash
-# Run all tests
-cargo test
-
-# Run with output
-cargo test -- --nocapture
+cargo run --features celestia --example celestia_signer
 ```
 
 ## License
 
-MIT OR Apache-2.0
+Apache-2.0
 
 ## Links
 
-- [POPSigner Documentation](https://docs.popsigner.com)
+- [Documentation](https://docs.popsigner.com)
 - [API Reference](https://docs.popsigner.com/api)
-- [GitHub Repository](https://github.com/popsigner/sdk-rust)
+- [GitHub](https://github.com/popsigner/sdk-rust)
