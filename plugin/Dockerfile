@@ -13,9 +13,11 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the plugin binary (arm64 for Scaleway K8s)
+# Build the plugin binary with cache mounts for faster incremental builds
 ARG TARGETARCH=arm64
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
     -ldflags="-w -s" \
     -o /popsigner-secp256k1 \
     ./cmd/plugin

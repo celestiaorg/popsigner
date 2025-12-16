@@ -17,10 +17,10 @@ COPY api/ api/
 COPY controllers/ controllers/
 COPY internal/ internal/
 
-# Build
-# the GOARCH has not a default value to allow the binary be built according to the host where the command
-# having the GOARCH://go:wasmimport wasi_snapshot_preview1 proc_exit
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
+# Build with cache mounts for faster incremental builds
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
