@@ -1,0 +1,7 @@
+# Ignore all certificate files - these are for local testing only
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+
