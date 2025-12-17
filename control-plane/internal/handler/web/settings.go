@@ -677,7 +677,7 @@ func (h *WebHandler) SettingsCertificatesDownload(w http.ResponseWriter, r *http
 
 	_, org, err := h.getUserAndOrg(r)
 	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -688,7 +688,7 @@ func (h *WebHandler) SettingsCertificatesDownload(w http.ResponseWriter, r *http
 
 	bundle, err := h.certService.DownloadBundle(r.Context(), org.ID.String(), certID)
 	if err != nil {
-		http.Error(w, "Certificate not found", http.StatusNotFound)
+		http.Error(w, "Certificate not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
