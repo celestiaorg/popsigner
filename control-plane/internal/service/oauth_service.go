@@ -258,7 +258,7 @@ func (s *oauthService) fetchGoogleUser(client *http.Client) (*OAuthUserInfo, err
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Google API returned status %d", resp.StatusCode)
+		return nil, fmt.Errorf("google API returned status %d", resp.StatusCode)
 	}
 
 	var data struct {

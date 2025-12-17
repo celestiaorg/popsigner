@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/Bidon15/popsigner/control-plane/internal/middleware"
 	"github.com/Bidon15/popsigner/control-plane/internal/models"
 	"github.com/Bidon15/popsigner/control-plane/internal/repository"
@@ -86,9 +88,10 @@ func TestMTLSAuthenticator_Authenticate(t *testing.T) {
 	}
 
 	// Create authenticator with mock repo
+	orgID := uuid.New()
 	repo := &mockCertRepo{
 		cert: &models.Certificate{
-			OrgID:       "org_test123",
+			OrgID:       orgID,
 			Fingerprint: fingerprint,
 			ExpiresAt:   time.Now().Add(time.Hour),
 		},
@@ -149,9 +152,10 @@ func TestMTLSAuthenticator_RevokedCert(t *testing.T) {
 
 	// Cert is revoked
 	now := time.Now()
+	orgID := uuid.New()
 	repo := &mockCertRepo{
 		cert: &models.Certificate{
-			OrgID:       "org_test123",
+			OrgID:       orgID,
 			Fingerprint: fingerprint,
 			ExpiresAt:   time.Now().Add(time.Hour),
 			RevokedAt:   &now,
@@ -179,9 +183,10 @@ func TestMTLSAuthenticator_ExpiredCert(t *testing.T) {
 	}
 
 	// Cert is expired
+	orgID := uuid.New()
 	repo := &mockCertRepo{
 		cert: &models.Certificate{
-			OrgID:       "org_test123",
+			OrgID:       orgID,
 			Fingerprint: fingerprint,
 			ExpiresAt:   time.Now().Add(-time.Hour), // Expired
 		},
@@ -232,9 +237,10 @@ func TestMTLSAuthenticator_CNMismatch(t *testing.T) {
 	}
 
 	// Cert in DB has different org ID
+	orgID := uuid.New()
 	repo := &mockCertRepo{
 		cert: &models.Certificate{
-			OrgID:       "org_different", // Different from cert CN
+			OrgID:       orgID, // Different from cert CN
 			Fingerprint: fingerprint,
 			ExpiresAt:   time.Now().Add(time.Hour),
 		},
@@ -261,9 +267,10 @@ func TestMTLSAuthenticator_InvalidCN(t *testing.T) {
 		PeerCertificates: []*x509.Certificate{clientCert},
 	}
 
+	orgID := uuid.New()
 	repo := &mockCertRepo{
 		cert: &models.Certificate{
-			OrgID:       "org_test123",
+			OrgID:       orgID,
 			Fingerprint: fingerprint,
 			ExpiresAt:   time.Now().Add(time.Hour),
 		},

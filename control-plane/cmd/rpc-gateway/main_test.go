@@ -152,8 +152,12 @@ func (m *mockCertRepo) Create(ctx context.Context, cert *models.Certificate) err
 }
 
 func (m *mockCertRepo) GetByID(ctx context.Context, id string) (*models.Certificate, error) {
+	parsedID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, nil
+	}
 	for _, cert := range m.certs {
-		if cert.ID == id {
+		if cert.ID == parsedID {
 			return cert, nil
 		}
 	}
@@ -651,15 +655,16 @@ func TestMTLSRPCGateway_HealthCheck(t *testing.T) {
 
 func TestMTLSRPCGateway_AcceptsValidCertificate(t *testing.T) {
 	// Use org_xxx format (required by models.OrgIDFromCN)
-	orgID := "org_test123"
+	orgUUID := uuid.New()
+	orgID := "org_" + orgUUID.String()
 	certs := generateTestCerts(t, orgID)
 
 	// Register cert in mock repo
 	certRepo := newMockCertRepo()
 	fingerprint := auth.CalculateCertFingerprint(certs.clientCert)
 	certRepo.Create(context.Background(), &models.Certificate{
-		ID:          "cert_test123",
-		OrgID:       orgID,
+		ID:          uuid.New(),
+		OrgID:       orgUUID,
 		Fingerprint: fingerprint,
 		CommonName:  orgID,
 		ExpiresAt:   time.Now().Add(time.Hour),
@@ -691,7 +696,8 @@ func TestMTLSRPCGateway_AcceptsValidCertificate(t *testing.T) {
 }
 
 func TestMTLSRPCGateway_RejectsUnregisteredCertificate(t *testing.T) {
-	orgID := "org_test123"
+	orgUUID := uuid.New()
+	orgID := "org_" + orgUUID.String()
 	certs := generateTestCerts(t, orgID)
 
 	// Don't register cert in repo
@@ -714,15 +720,16 @@ func TestMTLSRPCGateway_RejectsUnregisteredCertificate(t *testing.T) {
 }
 
 func TestMTLSRPCGateway_RejectsExpiredCertificate(t *testing.T) {
-	orgID := "org_test123"
+	orgUUID := uuid.New()
+	orgID := "org_" + orgUUID.String()
 	certs := generateTestCerts(t, orgID)
 
 	// Register cert but with expired timestamp
 	certRepo := newMockCertRepo()
 	fingerprint := auth.CalculateCertFingerprint(certs.clientCert)
 	certRepo.Create(context.Background(), &models.Certificate{
-		ID:          "cert_test123",
-		OrgID:       orgID,
+		ID:          uuid.New(),
+		OrgID:       orgUUID,
 		Fingerprint: fingerprint,
 		CommonName:  orgID,
 		ExpiresAt:   time.Now().Add(-time.Hour), // Expired
@@ -745,7 +752,8 @@ func TestMTLSRPCGateway_RejectsExpiredCertificate(t *testing.T) {
 }
 
 func TestMTLSRPCGateway_RejectsRevokedCertificate(t *testing.T) {
-	orgID := "org_test123"
+	orgUUID := uuid.New()
+	orgID := "org_" + orgUUID.String()
 	certs := generateTestCerts(t, orgID)
 
 	// Register cert but with revocation
@@ -753,8 +761,8 @@ func TestMTLSRPCGateway_RejectsRevokedCertificate(t *testing.T) {
 	fingerprint := auth.CalculateCertFingerprint(certs.clientCert)
 	now := time.Now()
 	certRepo.Create(context.Background(), &models.Certificate{
-		ID:          "cert_test123",
-		OrgID:       orgID,
+		ID:          uuid.New(),
+		OrgID:       orgUUID,
 		Fingerprint: fingerprint,
 		CommonName:  orgID,
 		ExpiresAt:   time.Now().Add(time.Hour),
@@ -779,15 +787,16 @@ func TestMTLSRPCGateway_RejectsRevokedCertificate(t *testing.T) {
 
 func TestMTLSRPCGateway_EthAccounts(t *testing.T) {
 	// Use org_xxx format (required by models.OrgIDFromCN)
-	orgID := "org_test123"
+	orgUUID := uuid.New()
+	orgID := "org_" + orgUUID.String()
 	certs := generateTestCerts(t, orgID)
 
 	// Register cert
 	certRepo := newMockCertRepo()
 	fingerprint := auth.CalculateCertFingerprint(certs.clientCert)
 	certRepo.Create(context.Background(), &models.Certificate{
-		ID:          "cert_test123",
-		OrgID:       orgID,
+		ID:          uuid.New(),
+		OrgID:       orgUUID,
 		Fingerprint: fingerprint,
 		CommonName:  orgID,
 		ExpiresAt:   time.Now().Add(time.Hour),
@@ -826,15 +835,16 @@ func TestMTLSRPCGateway_EthAccounts(t *testing.T) {
 }
 
 func TestMTLSRPCGateway_BatchRequests(t *testing.T) {
-	orgID := "org_test123"
+	orgUUID := uuid.New()
+	orgID := "org_" + orgUUID.String()
 	certs := generateTestCerts(t, orgID)
 
 	// Register cert
 	certRepo := newMockCertRepo()
 	fingerprint := auth.CalculateCertFingerprint(certs.clientCert)
 	certRepo.Create(context.Background(), &models.Certificate{
-		ID:          "cert_test123",
-		OrgID:       orgID,
+		ID:          uuid.New(),
+		OrgID:       orgUUID,
 		Fingerprint: fingerprint,
 		CommonName:  orgID,
 		ExpiresAt:   time.Now().Add(time.Hour),
@@ -889,14 +899,15 @@ func TestDualAuth_APIKeyOnAPIKeyPort(t *testing.T) {
 func TestDualAuth_MTLSOnMTLSPort(t *testing.T) {
 	// This test verifies that the mTLS server (port 8546)
 	// correctly accepts mTLS authentication
-	orgID := "org_test123"
+	orgUUID := uuid.New()
+	orgID := "org_" + orgUUID.String()
 	certs := generateTestCerts(t, orgID)
 
 	certRepo := newMockCertRepo()
 	fingerprint := auth.CalculateCertFingerprint(certs.clientCert)
 	certRepo.Create(context.Background(), &models.Certificate{
-		ID:          "cert_test123",
-		OrgID:       orgID,
+		ID:          uuid.New(),
+		OrgID:       orgUUID,
 		Fingerprint: fingerprint,
 		CommonName:  orgID,
 		ExpiresAt:   time.Now().Add(time.Hour),

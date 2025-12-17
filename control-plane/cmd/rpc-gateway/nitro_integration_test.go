@@ -446,7 +446,7 @@ func TestNitroMTLSRequired(t *testing.T) {
 
 // TestNitroInvalidCertificate tests that requests with invalid certificates are rejected.
 func TestNitroInvalidCertificate(t *testing.T) {
-	cfg := loadNitroTestConfig(t)
+	_ = loadNitroTestConfig(t)
 
 	// This test would require generating an invalid certificate
 	// For now, we just verify that the test infrastructure works

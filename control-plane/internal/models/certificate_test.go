@@ -9,6 +9,8 @@ import (
 	"math/big"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestCertificate_IsRevoked(t *testing.T) {
@@ -314,6 +316,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		longName[i] = 'a'
 	}
 
+	testOrgID := uuid.New()
 	tests := []struct {
 		name    string
 		req     CreateCertificateRequest
@@ -323,7 +326,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "valid with defaults",
 			req: CreateCertificateRequest{
-				OrgID: "org_123",
+				OrgID: testOrgID,
 				Name:  "test-cert",
 			},
 			wantErr: false,
@@ -331,7 +334,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "valid with custom validity",
 			req: CreateCertificateRequest{
-				OrgID:          "org_123",
+				OrgID:          testOrgID,
 				Name:           "test-cert",
 				ValidityPeriod: 30 * 24 * time.Hour, // 30 days
 			},
@@ -340,7 +343,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "valid with max validity",
 			req: CreateCertificateRequest{
-				OrgID:          "org_123",
+				OrgID:          testOrgID,
 				Name:           "test-cert",
 				ValidityPeriod: 5 * 365 * 24 * time.Hour, // 5 years
 			},
@@ -349,7 +352,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "valid with min validity",
 			req: CreateCertificateRequest{
-				OrgID:          "org_123",
+				OrgID:          testOrgID,
 				Name:           "test-cert",
 				ValidityPeriod: time.Hour,
 			},
@@ -366,7 +369,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "missing name",
 			req: CreateCertificateRequest{
-				OrgID: "org_123",
+				OrgID: testOrgID,
 			},
 			wantErr: true,
 			errMsg:  "name is required",
@@ -374,7 +377,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "name too long",
 			req: CreateCertificateRequest{
-				OrgID: "org_123",
+				OrgID: testOrgID,
 				Name:  string(longName),
 			},
 			wantErr: true,
@@ -383,7 +386,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "validity too short",
 			req: CreateCertificateRequest{
-				OrgID:          "org_123",
+				OrgID:          testOrgID,
 				Name:           "test-cert",
 				ValidityPeriod: time.Minute, // Less than 1 hour
 			},
@@ -393,7 +396,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "validity too long",
 			req: CreateCertificateRequest{
-				OrgID:          "org_123",
+				OrgID:          testOrgID,
 				Name:           "test-cert",
 				ValidityPeriod: 10 * 365 * 24 * time.Hour, // 10 years
 			},
@@ -403,7 +406,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "empty org_id",
 			req: CreateCertificateRequest{
-				OrgID: "",
+				OrgID: uuid.Nil,
 				Name:  "test-cert",
 			},
 			wantErr: true,
@@ -412,7 +415,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 		{
 			name: "empty name",
 			req: CreateCertificateRequest{
-				OrgID: "org_123",
+				OrgID: testOrgID,
 				Name:  "",
 			},
 			wantErr: true,
@@ -438,7 +441,7 @@ func TestCreateCertificateRequest_Validate(t *testing.T) {
 
 func TestCreateCertificateRequest_Validate_DefaultsValidityPeriod(t *testing.T) {
 	req := CreateCertificateRequest{
-		OrgID: "org_123",
+		OrgID: uuid.New(),
 		Name:  "test-cert",
 	}
 
@@ -469,8 +472,8 @@ func TestCertificate_ToResponse(t *testing.T) {
 		{
 			name: "active certificate",
 			cert: Certificate{
-				ID:           "01HY7XQKJ3ABCDEFGH1234567",
-				OrgID:        "org_01J5K7ABC123",
+				ID:           uuid.New(),
+				OrgID:        uuid.New(),
 				Name:         "my-cert",
 				Fingerprint:  "abc123def456",
 				CommonName:   "org_01J5K7ABC123",
@@ -484,8 +487,8 @@ func TestCertificate_ToResponse(t *testing.T) {
 		{
 			name: "revoked certificate",
 			cert: Certificate{
-				ID:               "01HY7XQKJ3ABCDEFGH7654321",
-				OrgID:            "org_01J5K7ABC456",
+				ID:               uuid.New(),
+				OrgID:            uuid.New(),
 				Name:             "revoked-cert",
 				Fingerprint:      "xyz789",
 				CommonName:       "org_01J5K7ABC456",

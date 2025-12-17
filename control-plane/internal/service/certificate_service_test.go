@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -87,7 +88,7 @@ func TestMockCertificateService_Issue(t *testing.T) {
 	ctx := context.Background()
 
 	req := &models.CreateCertificateRequest{
-		OrgID:          "org_01HQXYZ123456789ABCDEF",
+		OrgID:          uuid.New(),
 		Name:           "test-cert",
 		ValidityPeriod: 365 * 24 * time.Hour,
 	}
@@ -131,24 +132,26 @@ func TestMockCertificateService_Get(t *testing.T) {
 	mockSvc := new(MockCertificateService)
 	ctx := context.Background()
 
-	orgID := "org_01HQXYZ123456789ABCDEF"
-	certID := "01HQXYZ123456789ABCDEFGH"
+	orgID := uuid.New()
+	certID := uuid.New()
+	orgIDStr := orgID.String()
+	certIDStr := certID.String()
 
 	expectedCert := &models.Certificate{
 		ID:           certID,
 		OrgID:        orgID,
 		Name:         "test-cert",
 		Fingerprint:  "abc123fingerprint",
-		CommonName:   orgID,
+		CommonName:   orgIDStr,
 		SerialNumber: "1234567890",
 		IssuedAt:     time.Now(),
 		ExpiresAt:    time.Now().Add(365 * 24 * time.Hour),
 		CreatedAt:    time.Now(),
 	}
 
-	mockSvc.On("Get", ctx, orgID, certID).Return(expectedCert, nil)
+	mockSvc.On("Get", ctx, orgIDStr, certIDStr).Return(expectedCert, nil)
 
-	cert, err := mockSvc.Get(ctx, orgID, certID)
+	cert, err := mockSvc.Get(ctx, orgIDStr, certIDStr)
 	assert.NoError(t, err)
 	assert.NotNil(t, cert)
 	assert.Equal(t, certID, cert.ID)
@@ -175,27 +178,28 @@ func TestMockCertificateService_List(t *testing.T) {
 	mockSvc := new(MockCertificateService)
 	ctx := context.Background()
 
-	orgID := "org_01HQXYZ123456789ABCDEF"
+	orgID := uuid.New()
+	orgIDStr := orgID.String()
 
 	expectedResponse := &models.CertificateListResponse{
 		Certificates: []models.Certificate{
 			{
-				ID:           "01HQXYZ123456789ABCDEFGH",
+				ID:           uuid.New(),
 				OrgID:        orgID,
 				Name:         "cert-1",
 				Fingerprint:  "fp1",
-				CommonName:   orgID,
+				CommonName:   orgIDStr,
 				SerialNumber: "serial1",
 				IssuedAt:     time.Now(),
 				ExpiresAt:    time.Now().Add(365 * 24 * time.Hour),
 				CreatedAt:    time.Now(),
 			},
 			{
-				ID:           "01HQXYZ123456789ABCDEFGI",
+				ID:           uuid.New(),
 				OrgID:        orgID,
 				Name:         "cert-2",
 				Fingerprint:  "fp2",
-				CommonName:   orgID,
+				CommonName:   orgIDStr,
 				SerialNumber: "serial2",
 				IssuedAt:     time.Now(),
 				ExpiresAt:    time.Now().Add(365 * 24 * time.Hour),
@@ -205,9 +209,9 @@ func TestMockCertificateService_List(t *testing.T) {
 		Total: 2,
 	}
 
-	mockSvc.On("List", ctx, orgID, repository.CertificateFilterAll).Return(expectedResponse, nil)
+	mockSvc.On("List", ctx, orgIDStr, repository.CertificateFilterAll).Return(expectedResponse, nil)
 
-	resp, err := mockSvc.List(ctx, orgID, repository.CertificateFilterAll)
+	resp, err := mockSvc.List(ctx, orgIDStr, repository.CertificateFilterAll)
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Len(t, resp.Certificates, 2)
@@ -219,16 +223,17 @@ func TestMockCertificateService_List_WithFilter(t *testing.T) {
 	mockSvc := new(MockCertificateService)
 	ctx := context.Background()
 
-	orgID := "org_01HQXYZ123456789ABCDEF"
+	orgID := uuid.New()
+	orgIDStr := orgID.String()
 
 	expectedResponse := &models.CertificateListResponse{
 		Certificates: []models.Certificate{
 			{
-				ID:           "01HQXYZ123456789ABCDEFGH",
+				ID:           uuid.New(),
 				OrgID:        orgID,
 				Name:         "active-cert",
 				Fingerprint:  "fp1",
-				CommonName:   orgID,
+				CommonName:   orgIDStr,
 				SerialNumber: "serial1",
 				IssuedAt:     time.Now(),
 				ExpiresAt:    time.Now().Add(365 * 24 * time.Hour),
@@ -238,9 +243,9 @@ func TestMockCertificateService_List_WithFilter(t *testing.T) {
 		Total: 1,
 	}
 
-	mockSvc.On("List", ctx, orgID, repository.CertificateFilterActive).Return(expectedResponse, nil)
+	mockSvc.On("List", ctx, orgIDStr, repository.CertificateFilterActive).Return(expectedResponse, nil)
 
-	resp, err := mockSvc.List(ctx, orgID, repository.CertificateFilterActive)
+	resp, err := mockSvc.List(ctx, orgIDStr, repository.CertificateFilterActive)
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Len(t, resp.Certificates, 1)
@@ -385,6 +390,7 @@ func TestCalculateFingerprint_InvalidPEM(t *testing.T) {
 }
 
 func TestCertificateRequestValidation(t *testing.T) {
+	testOrgID := uuid.New()
 	tests := []struct {
 		name    string
 		req     *models.CreateCertificateRequest
@@ -394,7 +400,7 @@ func TestCertificateRequestValidation(t *testing.T) {
 		{
 			name: "valid request",
 			req: &models.CreateCertificateRequest{
-				OrgID:          "org_test",
+				OrgID:          testOrgID,
 				Name:           "test-cert",
 				ValidityPeriod: 365 * 24 * time.Hour,
 			},
@@ -412,7 +418,7 @@ func TestCertificateRequestValidation(t *testing.T) {
 		{
 			name: "missing name",
 			req: &models.CreateCertificateRequest{
-				OrgID:          "org_test",
+				OrgID:          testOrgID,
 				ValidityPeriod: 365 * 24 * time.Hour,
 			},
 			wantErr: true,
@@ -421,7 +427,7 @@ func TestCertificateRequestValidation(t *testing.T) {
 		{
 			name: "validity too short",
 			req: &models.CreateCertificateRequest{
-				OrgID:          "org_test",
+				OrgID:          testOrgID,
 				Name:           "test-cert",
 				ValidityPeriod: time.Minute,
 			},
@@ -431,7 +437,7 @@ func TestCertificateRequestValidation(t *testing.T) {
 		{
 			name: "validity too long",
 			req: &models.CreateCertificateRequest{
-				OrgID:          "org_test",
+				OrgID:          testOrgID,
 				Name:           "test-cert",
 				ValidityPeriod: 10 * 365 * 24 * time.Hour,
 			},
@@ -441,7 +447,7 @@ func TestCertificateRequestValidation(t *testing.T) {
 		{
 			name: "default validity",
 			req: &models.CreateCertificateRequest{
-				OrgID: "org_test",
+				OrgID: testOrgID,
 				Name:  "test-cert",
 				// ValidityPeriod not set, should default
 			},

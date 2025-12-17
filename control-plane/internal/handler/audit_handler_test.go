@@ -52,6 +52,11 @@ func (m *MockAuditService) GetByID(ctx context.Context, id uuid.UUID) (*models.A
 	return args.Get(0).(*models.AuditLog), args.Error(1)
 }
 
+func (m *MockAuditService) CountForPeriod(ctx context.Context, orgID uuid.UUID, start, end time.Time) (int64, error) {
+	args := m.Called(ctx, orgID, start, end)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 // Helper to create a request with org context
 func createAuditRequest(method, path string, orgID uuid.UUID) *http.Request {
 	req := httptest.NewRequest(method, path, nil)

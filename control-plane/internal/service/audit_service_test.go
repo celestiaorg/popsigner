@@ -45,6 +45,11 @@ func (m *MockAuditRepository) DeleteBefore(ctx context.Context, orgID uuid.UUID,
 	return args.Get(0).(int64), args.Error(1)
 }
 
+func (m *MockAuditRepository) CountByOrgAndPeriod(ctx context.Context, orgID uuid.UUID, start, end time.Time) (int64, error) {
+	args := m.Called(ctx, orgID, start, end)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 // MockOrgRepositoryForAudit is a mock implementation of repository.OrgRepository for audit tests.
 type MockOrgRepositoryForAudit struct {
 	mock.Mock
@@ -477,4 +482,3 @@ func TestLogKeySigned_Helper(t *testing.T) {
 	require.NoError(t, err)
 	mockAuditRepo.AssertExpectations(t)
 }
-

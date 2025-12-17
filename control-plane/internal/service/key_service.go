@@ -306,7 +306,8 @@ func (s *keyService) List(ctx context.Context, orgID uuid.UUID, namespaceID *uui
 
 	if namespaceID != nil {
 		// Verify namespace belongs to org
-		ns, err := s.orgRepo.GetNamespace(ctx, *namespaceID)
+		var ns *models.Namespace
+		ns, err = s.orgRepo.GetNamespace(ctx, *namespaceID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get namespace: %w", err)
 		}

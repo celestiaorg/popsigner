@@ -436,6 +436,16 @@ func (m *mockAuditRepo) DeleteBefore(ctx context.Context, orgID uuid.UUID, befor
 	return 0, nil
 }
 
+func (m *mockAuditRepo) CountByOrgAndPeriod(ctx context.Context, orgID uuid.UUID, start, end time.Time) (int64, error) {
+	var count int64
+	for _, log := range m.logs {
+		if log.OrgID == orgID && !log.CreatedAt.Before(start) && !log.CreatedAt.After(end) {
+			count++
+		}
+	}
+	return count, nil
+}
+
 type mockUsageRepo struct {
 	usage map[string]int64 // orgID_metric -> value
 }
