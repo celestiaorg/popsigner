@@ -1,0 +1,403 @@
+/**
+ * POPSigner Custom Viem Account
+ *
+ * Creates a Viem Account that delegates all signing operations to
+ * POPSigner's RPC Gateway via mTLS authentication. This enables
+ * secure remote signing for Nitro chain deployments.
+ *
+ * @module popsigner-account
+ */
+
+import * as https from 'https';
+import * as tls from 'tls';
+import {
+  type Address,
+  type Hex,
+  type SignableMessage,
+  type TransactionSerializable,
+  hashMessage,
+  isHex,
+} from 'viem';
+
+import {
+  type POPSignerConfig,
+  type JSONRPCRequest,
+  type JSONRPCResponse,
+  type TransactionParams,
+  POPSignerError,
+  MTLSConfigError,
+} from './types';
+
+/**
+ * Default timeout for RPC requests (30 seconds).
+ */
+const DEFAULT_TIMEOUT = 30000;
+
+/**
+ * Custom Account interface compatible with viem's Account type.
+ * This allows the account to be used with WalletClient.
+ */
+export interface POPSignerAccount {
+  address: Address;
+  type: 'local';
+  signMessage: (args: { message: SignableMessage }) => Promise<Hex>;
+  signTransaction: (transaction: TransactionSerializable) => Promise<Hex>;
+  signTypedData: (typedData: TypedDataInput) => Promise<Hex>;
+}
+
+/**
+ * EIP-712 Typed Data input format.
+ */
+export interface TypedDataInput {
+  domain?: {
+    name?: string;
+    version?: string;
+    chainId?: number | bigint;
+    verifyingContract?: Address;
+    salt?: Hex;
+  };
+  types: Record<string, Array<{ name: string; type: string }>>;
+  primaryType: string;
+  message: Record<string, unknown>;
+}
+
+/**
+ * Validates the POPSigner configuration.
+ * @throws {MTLSConfigError} If configuration is invalid.
+ */
+function validateConfig(config: POPSignerConfig): void {
+  if (!config.endpoint) {
+    throw new MTLSConfigError('POPSigner endpoint is required');
+  }
+
+  if (!config.endpoint.startsWith('https://')) {
+    throw new MTLSConfigError('POPSigner endpoint must use HTTPS for mTLS');
+  }
+
+  if (!config.address || !isHex(config.address)) {
+    throw new MTLSConfigError('Valid Ethereum address is required');
+  }
+
+  if (!config.clientCert) {
+    throw new MTLSConfigError('Client certificate (PEM) is required for mTLS');
+  }
+
+  if (!config.clientKey) {
+    throw new MTLSConfigError('Client private key (PEM) is required for mTLS');
+  }
+
+  // Validate PEM format (basic check)
+  if (!config.clientCert.includes('-----BEGIN CERTIFICATE-----')) {
+    throw new MTLSConfigError('Client certificate must be PEM-encoded');
+  }
+
+  if (
+    !config.clientKey.includes('-----BEGIN PRIVATE KEY-----') &&
+    !config.clientKey.includes('-----BEGIN RSA PRIVATE KEY-----') &&
+    !config.clientKey.includes('-----BEGIN EC PRIVATE KEY-----')
+  ) {
+    throw new MTLSConfigError('Client key must be PEM-encoded');
+  }
+}
+
+/**
+ * Creates an HTTPS agent configured for mTLS.
+ */
+function createMTLSAgent(config: POPSignerConfig): https.Agent {
+  const options: tls.SecureContextOptions = {
+    cert: config.clientCert,
+    key: config.clientKey,
+  };
+
+  if (config.caCert) {
+    options.ca = config.caCert;
+  }
+
+  return new https.Agent({
+    ...options,
+    rejectUnauthorized: true,
+    keepAlive: true,
+    keepAliveMsecs: 10000,
+  });
+}
+
+/**
+ * Converts a bigint to a hex string with 0x prefix.
+ */
+function bigintToHex(value: bigint | undefined): Hex | undefined {
+  if (value === undefined) return undefined;
+  return `0x${value.toString(16)}` as Hex;
+}
+
+/**
+ * Converts a number to a hex string with 0x prefix.
+ */
+function numberToHex(value: number | undefined): Hex | undefined {
+  if (value === undefined) return undefined;
+  return `0x${value.toString(16)}` as Hex;
+}
+
+/**
+ * Converts a Viem transaction to POPSigner transaction params.
+ */
+function toTransactionParams(
+  from: Address,
+  tx: TransactionSerializable,
+): TransactionParams {
+  const params: TransactionParams = {
+    from,
+    to: tx.to ?? undefined,
+    value: bigintToHex(tx.value),
+    data: tx.data,
+    nonce: numberToHex(tx.nonce),
+    chainId: numberToHex(tx.chainId),
+  };
+
+  // EIP-1559 transaction
+  if ('maxFeePerGas' in tx && tx.maxFeePerGas !== undefined) {
+    params.maxFeePerGas = bigintToHex(tx.maxFeePerGas);
+    params.maxPriorityFeePerGas = bigintToHex(tx.maxPriorityFeePerGas);
+    params.type = '0x2';
+  }
+  // Legacy transaction
+  else if ('gasPrice' in tx && tx.gasPrice !== undefined) {
+    params.gasPrice = bigintToHex(tx.gasPrice);
+    params.type = '0x0';
+  }
+
+  // Gas limit
+  if (tx.gas !== undefined) {
+    params.gas = bigintToHex(tx.gas);
+  }
+
+  // EIP-2930 access list
+  if ('accessList' in tx && tx.accessList) {
+    params.accessList = tx.accessList.map((item) => ({
+      address: item.address,
+      storageKeys: item.storageKeys,
+    }));
+    if (params.type === undefined || params.type === '0x0') {
+      params.type = '0x1';
+    }
+  }
+
+  return params;
+}
+
+/**
+ * Creates a Viem Account that delegates all signing to POPSigner RPC Gateway.
+ *
+ * This account uses mTLS (mutual TLS) for authentication, requiring a client
+ * certificate and key that are generated by POPSigner during key setup.
+ *
+ * @param config - POPSigner configuration including endpoint and mTLS certificates.
+ * @returns A Viem Account that can be used with WalletClient.
+ * @throws {MTLSConfigError} If the configuration is invalid.
+ *
+ * @example
+ * ```typescript
+ * import { createPOPSignerAccount } from './popsigner-account';
+ * import { createWalletClient, http } from 'viem';
+ * import { arbitrum } from 'viem/chains';
+ * import fs from 'fs';
+ *
+ * const account = createPOPSignerAccount({
+ *   endpoint: 'https://rpc.popsigner.com:8546',
+ *   address: '0x742d35Cc6634C0532925a3b844Bc9e7595f...',
+ *   clientCert: fs.readFileSync('./certs/client.crt', 'utf-8'),
+ *   clientKey: fs.readFileSync('./certs/client.key', 'utf-8'),
+ *   caCert: fs.readFileSync('./certs/popsigner-ca.crt', 'utf-8'),
+ * });
+ *
+ * const client = createWalletClient({
+ *   account,
+ *   chain: arbitrum,
+ *   transport: http('https://arb1.arbitrum.io/rpc'),
+ * });
+ *
+ * // Now use client for signing transactions
+ * const hash = await client.sendTransaction({
+ *   to: '0x...',
+ *   value: parseEther('0.1'),
+ * });
+ * ```
+ */
+export function createPOPSignerAccount(config: POPSignerConfig): POPSignerAccount {
+  // Validate configuration
+  validateConfig(config);
+
+  const { endpoint, address, timeout = DEFAULT_TIMEOUT } = config;
+
+  // Create mTLS agent
+  const httpsAgent = createMTLSAgent(config);
+
+  // Request ID counter
+  let requestId = 1;
+
+  /**
+   * Makes an RPC call to POPSigner.
+   */
+  async function rpcCall<T>(method: string, params: unknown[]): Promise<T> {
+    const request: JSONRPCRequest = {
+      jsonrpc: '2.0',
+      method,
+      params,
+      id: requestId++,
+    };
+
+    const url = new URL(endpoint);
+    const requestBody = JSON.stringify(request);
+
+    const response = await new Promise<string>((resolve, reject) => {
+      const req = https.request(
+        {
+          hostname: url.hostname,
+          port: url.port || 443,
+          path: url.pathname,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(requestBody),
+          },
+          agent: httpsAgent,
+          timeout,
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+          res.on('end', () => {
+            if (res.statusCode && res.statusCode >= 400) {
+              reject(
+                new POPSignerError(
+                  `HTTP error ${res.statusCode}: ${data}`,
+                  res.statusCode,
+                ),
+              );
+              return;
+            }
+            resolve(data);
+          });
+        },
+      );
+
+      req.on('error', (err) => {
+        reject(new POPSignerError(`Request failed: ${err.message}`, -32000));
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new POPSignerError('Request timeout', -32001));
+      });
+
+      req.write(requestBody);
+      req.end();
+    });
+
+    const json = JSON.parse(response) as JSONRPCResponse<T>;
+
+    if (json.error) {
+      throw new POPSignerError(
+        `POPSigner RPC error: ${json.error.message}`,
+        json.error.code,
+        json.error.data,
+      );
+    }
+
+    if (json.result === undefined) {
+      throw new POPSignerError('Empty response from POPSigner', -32002);
+    }
+
+    return json.result;
+  }
+
+  /**
+   * Converts a SignableMessage to a hash for eth_sign.
+   */
+  function getMessageHash(message: SignableMessage): Hex {
+    // hashMessage handles all message formats:
+    // - string messages (prefixed with EIP-191)
+    // - raw bytes (Uint8Array or hex)
+    return hashMessage(message);
+  }
+
+  // Return the Viem-compatible Account interface
+  return {
+    address,
+    type: 'local',
+
+    /**
+     * Signs a message using eth_sign.
+     * The message is hashed locally before being sent to POPSigner.
+     */
+    async signMessage({ message }: { message: SignableMessage }): Promise<Hex> {
+      const messageHash = getMessageHash(message);
+      return rpcCall<Hex>('eth_sign', [address, messageHash]);
+    },
+
+    /**
+     * Signs a transaction using eth_signTransaction.
+     * The transaction is serialized and sent to POPSigner for signing.
+     */
+    async signTransaction(transaction: TransactionSerializable): Promise<Hex> {
+      const txParams = toTransactionParams(address, transaction);
+      return rpcCall<Hex>('eth_signTransaction', [txParams]);
+    },
+
+    /**
+     * Signs EIP-712 typed data using eth_signTypedData_v4.
+     */
+    async signTypedData(typedData: TypedDataInput): Promise<Hex> {
+      // Format typed data for eth_signTypedData_v4
+      const formattedData = {
+        types: typedData.types,
+        primaryType: typedData.primaryType,
+        domain: typedData.domain,
+        message: typedData.message,
+      };
+
+      return rpcCall<Hex>('eth_signTypedData_v4', [
+        address,
+        JSON.stringify(formattedData),
+      ]);
+    },
+  };
+}
+
+/**
+ * Creates a POPSigner account from file paths.
+ * Convenience function for reading certificates from files.
+ *
+ * @param config - Configuration with file paths instead of PEM strings.
+ * @returns A Viem Account.
+ */
+export async function createPOPSignerAccountFromFiles(config: {
+  endpoint: string;
+  address: Address;
+  clientCertPath: string;
+  clientKeyPath: string;
+  caCertPath?: string;
+  timeout?: number;
+}): Promise<POPSignerAccount> {
+  const fs = await import('fs/promises');
+
+  const [clientCert, clientKey, caCert] = await Promise.all([
+    fs.readFile(config.clientCertPath, 'utf-8'),
+    fs.readFile(config.clientKeyPath, 'utf-8'),
+    config.caCertPath ? fs.readFile(config.caCertPath, 'utf-8') : undefined,
+  ]);
+
+  return createPOPSignerAccount({
+    endpoint: config.endpoint,
+    address: config.address,
+    clientCert,
+    clientKey,
+    caCert,
+    timeout: config.timeout,
+  });
+}
+
+// Re-export types for consumers
+export type { POPSignerConfig } from './types';
+export { POPSignerError, MTLSConfigError } from './types';
