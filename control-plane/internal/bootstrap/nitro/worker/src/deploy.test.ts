@@ -35,7 +35,7 @@ const validConfig: NitroDeploymentConfig = {
   validators: [VALID_ADDRESS],
   stakeToken: ZERO_ADDRESS,
   baseStake: '100000000000000000',
-  dataAvailability: 'anytrust',
+  dataAvailability: 'celestia',
   popsignerEndpoint: 'https://rpc.popsigner.com:8546',
   clientCert: TEST_CLIENT_CERT,
   clientKey: TEST_CLIENT_KEY,
@@ -57,7 +57,7 @@ describe('validateConfig', () => {
       'validators',
       'stakeToken',
       'baseStake',
-      'dataAvailability',
+      // dataAvailability is optional - defaults to 'celestia'
       'popsignerEndpoint',
       'clientCert',
       'clientKey',
@@ -130,29 +130,35 @@ describe('validateConfig', () => {
   });
 
   describe('dataAvailability validation', () => {
-    it('should accept rollup', () => {
+    it('should accept celestia (default)', () => {
+      expect(() =>
+        validateConfig({ ...validConfig, dataAvailability: 'celestia' }),
+      ).not.toThrow();
+    });
+
+    it('should accept rollup (legacy)', () => {
       expect(() =>
         validateConfig({ ...validConfig, dataAvailability: 'rollup' }),
       ).not.toThrow();
     });
 
-    it('should accept anytrust', () => {
+    it('should accept anytrust (legacy)', () => {
       expect(() =>
         validateConfig({ ...validConfig, dataAvailability: 'anytrust' }),
       ).not.toThrow();
     });
 
-    it('should accept celestia', () => {
-      expect(() =>
-        validateConfig({ ...validConfig, dataAvailability: 'celestia' }),
-      ).not.toThrow();
+    it('should accept undefined dataAvailability (defaults to celestia)', () => {
+      const config = { ...validConfig };
+      delete (config as Record<string, unknown>).dataAvailability;
+      expect(() => validateConfig(config as NitroDeploymentConfig)).not.toThrow();
     });
 
     it('should reject invalid dataAvailability', () => {
       expect(() =>
         validateConfig({
           ...validConfig,
-          dataAvailability: 'invalid' as 'anytrust',
+          dataAvailability: 'invalid' as 'celestia',
         }),
       ).toThrow('dataAvailability must be');
     });
@@ -177,7 +183,7 @@ describe('parseConfig', () => {
 
     expect(config.chainId).toBe(42069);
     expect(config.chainName).toBe('Test L3');
-    expect(config.dataAvailability).toBe('anytrust');
+    expect(config.dataAvailability).toBe('celestia');
   });
 
   it('should apply default values', () => {
@@ -191,7 +197,7 @@ describe('parseConfig', () => {
       validators: [VALID_ADDRESS],
       stakeToken: ZERO_ADDRESS,
       baseStake: '100000000000000000',
-      dataAvailability: 'anytrust',
+      dataAvailability: 'celestia',
       popsignerEndpoint: 'https://rpc.popsigner.com:8546',
       clientCert: TEST_CLIENT_CERT,
       clientKey: TEST_CLIENT_KEY,

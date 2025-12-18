@@ -73,7 +73,7 @@ export function validateConfig(config: NitroDeploymentConfig): void {
     'validators',
     'stakeToken',
     'baseStake',
-    'dataAvailability',
+    // dataAvailability is optional - defaults to 'celestia'
     'popsignerEndpoint',
     'clientCert',
     'clientKey',
@@ -113,10 +113,11 @@ export function validateConfig(config: NitroDeploymentConfig): void {
     throw new DeploymentConfigError('baseStake must be a valid integer string', 'baseStake');
   }
 
-  // Validate dataAvailability
-  if (!['rollup', 'anytrust', 'celestia'].includes(config.dataAvailability)) {
+  // Validate dataAvailability - default to celestia if not provided or invalid
+  // POPSigner deployments use Celestia DA by default
+  if (config.dataAvailability && !['rollup', 'anytrust', 'celestia'].includes(config.dataAvailability)) {
     throw new DeploymentConfigError(
-      'dataAvailability must be "rollup", "anytrust", or "celestia"',
+      'dataAvailability must be "celestia", "rollup", or "anytrust"',
       'dataAvailability',
     );
   }
@@ -196,11 +197,14 @@ export async function deployOrbitChain(
     });
 
     // Prepare chain configuration
+    // DataAvailabilityCommittee is true for external DA (Celestia/AnyTrust)
+    // POPSigner deployments always use Celestia DA
+    const dataAvailability = config.dataAvailability || 'celestia';
     const chainConfig = prepareChainConfig({
       chainId: config.chainId,
       arbitrum: {
         InitialChainOwner: config.owner,
-        DataAvailabilityCommittee: config.dataAvailability === 'anytrust',
+        DataAvailabilityCommittee: dataAvailability !== 'rollup',
       },
     });
 
@@ -317,16 +321,19 @@ export async function deployOrbitChain(
  */
 export function parseConfig(json: string): NitroDeploymentConfig {
   try {
-    const config = JSON.parse(json) as NitroDeploymentConfig;
+    const config = JSON.parse(json) as Partial<NitroDeploymentConfig>;
+    
+    // Apply defaults - POPSigner uses Celestia DA by default
     return {
-      // Apply defaults
       confirmPeriodBlocks: DEFAULTS.confirmPeriodBlocks,
       extraChallengeTimeBlocks: DEFAULTS.extraChallengeTimeBlocks,
       maxDataSize: DEFAULTS.maxDataSize,
       deployFactoriesToL2: DEFAULTS.deployFactoriesToL2,
       // Override with provided values
       ...config,
-    };
+      // Ensure dataAvailability defaults to celestia if not provided
+      dataAvailability: config.dataAvailability || 'celestia',
+    } as NitroDeploymentConfig;
   } catch (error) {
     throw new DeploymentConfigError(
       `Invalid JSON: ${error instanceof Error ? error.message : String(error)}`,

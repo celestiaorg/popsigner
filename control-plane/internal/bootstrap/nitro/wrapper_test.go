@@ -61,6 +61,14 @@ func (m *MockRepository) ListDeploymentsByStatus(ctx context.Context, status rep
 	return args.Get(0).([]*repository.Deployment), args.Error(1)
 }
 
+func (m *MockRepository) ListAllDeployments(ctx context.Context) ([]*repository.Deployment, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*repository.Deployment), args.Error(1)
+}
+
 func (m *MockRepository) RecordTransaction(ctx context.Context, tx *repository.Transaction) error {
 	args := m.Called(ctx, tx)
 	return args.Error(0)
@@ -115,7 +123,7 @@ func testConfig() *DeployConfig {
 		Validators:        []string{"0x742d35Cc6634C0532925a3b844Bc454b332"},
 		StakeToken:        "0x0000000000000000000000000000000000000000",
 		BaseStake:         "100000000000000000",
-		DataAvailability:  "anytrust",
+		DataAvailability:  "celestia",
 		PopsignerEndpoint: "https://rpc.popsigner.com:8546",
 		ClientCert:        "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----",
 		ClientKey:         "-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----",
@@ -184,7 +192,7 @@ func TestDeployConfig_Serialization(t *testing.T) {
 		assert.Equal(t, float64(42069), parsed["chainId"])
 		assert.Equal(t, "Test L3", parsed["chainName"])
 		assert.Equal(t, float64(421614), parsed["parentChainId"])
-		assert.Equal(t, "anytrust", parsed["dataAvailability"])
+		assert.Equal(t, "celestia", parsed["dataAvailability"])
 		assert.Equal(t, "https://rpc.popsigner.com:8546", parsed["popsignerEndpoint"])
 	})
 
@@ -195,7 +203,7 @@ func TestDeployConfig_Serialization(t *testing.T) {
 			ParentChainID:     421614,
 			ParentChainRpc:    "https://rpc.example.com",
 			Owner:             "0x123",
-			DataAvailability:  "anytrust",
+			DataAvailability:  "celestia",
 			PopsignerEndpoint: "https://rpc.popsigner.com:8546",
 			ClientCert:        "cert",
 			ClientKey:         "key",

@@ -146,8 +146,11 @@ export class MTLSConfigError extends Error {
 
 /**
  * Data availability type for the chain.
+ * Default: 'celestia' - POPSigner deployments use Celestia DA.
+ * Legacy values 'rollup' and 'anytrust' are accepted for backwards compatibility
+ * but will be treated as 'celestia'.
  */
-export type DataAvailabilityType = 'rollup' | 'anytrust' | 'celestia';
+export type DataAvailabilityType = 'celestia' | 'rollup' | 'anytrust';
 
 /**
  * Configuration for deploying a Nitro/Orbit chain.

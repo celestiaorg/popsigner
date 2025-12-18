@@ -38,8 +38,9 @@ type DeployConfig struct {
 	StakeToken string `json:"stakeToken"`
 	BaseStake  string `json:"baseStake"`
 
-	// Data availability
-	DataAvailability string `json:"dataAvailability"` // "rollup", "anytrust", "celestia"
+	// Data availability - defaults to "celestia" if empty
+	// POPSigner deployments use Celestia DA by default
+	DataAvailability string `json:"dataAvailability,omitempty"`
 
 	// Optional: custom gas token
 	NativeToken string `json:"nativeToken,omitempty"`

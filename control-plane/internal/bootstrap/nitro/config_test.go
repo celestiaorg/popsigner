@@ -25,7 +25,7 @@ func testDeployConfig() *DeployConfig {
 		Validators:       []string{"0x742d35Cc6634C0532925a3b844Bc454b332"},
 		StakeToken:       "0x0000000000000000000000000000000000000000",
 		BaseStake:        "100000000000000000",
-		DataAvailability: "anytrust",
+		DataAvailability: "celestia",
 	}
 }
 
@@ -98,9 +98,22 @@ func TestGenerateChainInfo(t *testing.T) {
 		assert.Equal(t, config.Owner, arbitrum["InitialChainOwner"])
 	})
 
-	t.Run("sets DataAvailabilityCommittee for anytrust", func(t *testing.T) {
+	t.Run("sets DataAvailabilityCommittee true for celestia (default)", func(t *testing.T) {
 		config := testDeployConfig()
-		config.DataAvailability = "anytrust"
+		config.DataAvailability = "celestia"
+		result := testDeployResult()
+
+		chainInfo, err := GenerateChainInfo(config, result)
+		require.NoError(t, err)
+
+		entry := (*chainInfo)[0]
+		arbitrum := entry.ChainConfig["arbitrum"].(map[string]interface{})
+		assert.Equal(t, true, arbitrum["DataAvailabilityCommittee"])
+	})
+
+	t.Run("sets DataAvailabilityCommittee true for empty DA (defaults to celestia)", func(t *testing.T) {
+		config := testDeployConfig()
+		config.DataAvailability = "" // Empty defaults to celestia behavior
 		result := testDeployResult()
 
 		chainInfo, err := GenerateChainInfo(config, result)
@@ -263,19 +276,7 @@ func TestGenerateNodeConfig(t *testing.T) {
 		assert.Equal(t, 9642, nodeConfig.Metrics.Server.Port)
 	})
 
-	t.Run("no DA config for anytrust by default", func(t *testing.T) {
-		config := testDeployConfig()
-		config.DataAvailability = "anytrust"
-		result := testDeployResult()
-
-		nodeConfig, err := GenerateNodeConfig(config, result)
-		require.NoError(t, err)
-
-		// AnyTrust doesn't need explicit DA config in node-config
-		assert.Nil(t, nodeConfig.Node.DataAvailability)
-	})
-
-	t.Run("includes Celestia DA config when enabled", func(t *testing.T) {
+	t.Run("includes Celestia DA config by default", func(t *testing.T) {
 		config := testDeployConfig()
 		config.DataAvailability = "celestia"
 		result := testDeployResult()
@@ -283,12 +284,38 @@ func TestGenerateNodeConfig(t *testing.T) {
 		nodeConfig, err := GenerateNodeConfig(config, result)
 		require.NoError(t, err)
 
+		// POPSigner deployments always use Celestia DA by default
 		require.NotNil(t, nodeConfig.Node.DataAvailability)
 		assert.True(t, nodeConfig.Node.DataAvailability.Enable)
 		assert.Equal(t, result.CoreContracts.SequencerInbox, nodeConfig.Node.DataAvailability.SequencerInboxAddr)
 		require.NotNil(t, nodeConfig.Node.DataAvailability.Celestia)
 		assert.True(t, nodeConfig.Node.DataAvailability.Celestia.Enable)
 		assert.Equal(t, "${CELESTIA_RPC_URL}", nodeConfig.Node.DataAvailability.Celestia.ServerURL)
+	})
+
+	t.Run("includes Celestia DA config for empty DA field (default)", func(t *testing.T) {
+		config := testDeployConfig()
+		config.DataAvailability = "" // Empty defaults to celestia
+		result := testDeployResult()
+
+		nodeConfig, err := GenerateNodeConfig(config, result)
+		require.NoError(t, err)
+
+		require.NotNil(t, nodeConfig.Node.DataAvailability)
+		assert.True(t, nodeConfig.Node.DataAvailability.Enable)
+		require.NotNil(t, nodeConfig.Node.DataAvailability.Celestia)
+	})
+
+	t.Run("no DA config for rollup mode", func(t *testing.T) {
+		config := testDeployConfig()
+		config.DataAvailability = "rollup"
+		result := testDeployResult()
+
+		nodeConfig, err := GenerateNodeConfig(config, result)
+		require.NoError(t, err)
+
+		// Only rollup mode has no DA config
+		assert.Nil(t, nodeConfig.Node.DataAvailability)
 	})
 
 	t.Run("uses template variables for user config", func(t *testing.T) {

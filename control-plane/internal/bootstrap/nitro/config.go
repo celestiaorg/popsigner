@@ -171,7 +171,9 @@ func buildChainConfig(config *DeployConfig) map[string]interface{} {
 		"arbitrum": map[string]interface{}{
 			"EnableArbOS":               true,
 			"AllowDebugPrecompiles":     false,
-			"DataAvailabilityCommittee": config.DataAvailability == "anytrust",
+			// DataAvailabilityCommittee is true for external DA (Celestia/AnyTrust)
+			// POPSigner deployments default to Celestia DA
+			"DataAvailabilityCommittee": config.DataAvailability != "rollup",
 			"InitialArbOSVersion":       20,
 			"InitialChainOwner":         config.Owner,
 			"GenesisBlockNum":           0,
@@ -361,8 +363,9 @@ func GenerateNodeConfig(config *DeployConfig, result *DeployResult) (*NitroNodeC
 		},
 	}
 
-	// Add Celestia DA configuration if enabled
-	if config.DataAvailability == "celestia" {
+	// Add Celestia DA configuration by default
+	// POPSigner deployments use Celestia DA unless explicitly set to "rollup"
+	if config.DataAvailability != "rollup" {
 		sequencerInbox := ""
 		if result != nil && result.CoreContracts != nil {
 			sequencerInbox = result.CoreContracts.SequencerInbox
