@@ -20,6 +20,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	bootstraphandler "github.com/Bidon15/popsigner/control-plane/internal/bootstrap/handler"
+	bootstraprepo "github.com/Bidon15/popsigner/control-plane/internal/bootstrap/repository"
 	"github.com/Bidon15/popsigner/control-plane/internal/config"
 	"github.com/Bidon15/popsigner/control-plane/internal/database"
 	"github.com/Bidon15/popsigner/control-plane/internal/handler"
@@ -121,6 +123,10 @@ func main() {
 	// Initialize API handlers
 	keyHandler := handler.NewKeyHandler(keySvc)
 	signHandler := handler.NewSignHandler(keySvc)
+
+	// Initialize bootstrap (deployment) handler
+	bootstrapRepo := bootstraprepo.NewPostgresRepository(db.Pool())
+	deploymentHandler := bootstraphandler.NewDeploymentHandler(bootstrapRepo, nil) // orchestrator added later
 
 	logger.Info("OAuth providers configured",
 		slog.Any("providers", oauthSvc.GetSupportedProviders()),
@@ -232,6 +238,9 @@ func main() {
 
 			// Batch signing endpoint
 			r.Mount("/sign", signHandler.Routes())
+
+			// Deployments API - chain deployment management
+			r.Mount("/deployments", deploymentHandler.Routes())
 
 			// Namespaces API - list namespaces for the authenticated org
 			r.Get("/namespaces", namespacesListHandler(orgRepo))
