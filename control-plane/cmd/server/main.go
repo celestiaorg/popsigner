@@ -412,16 +412,20 @@ func oauthRedirectHandler(oauthSvc service.OAuthService, provider string) http.H
 			// Check if coming from POPKins subdomain
 			host := strings.ToLower(r.Host)
 			if strings.HasPrefix(host, "popkins.") {
-				returnTo = "/deployments"
+				returnTo = "https://popkins.popsigner.com/deployments"
 			} else {
 				returnTo = "/dashboard"
 			}
 		}
+
+		// Set cookie domain to share across all subdomains
+		// This is needed because OAuth callback comes back to popsigner.com
 		http.SetCookie(w, &http.Cookie{
 			Name:     "oauth_return_to",
 			Value:    returnTo,
 			Path:     "/",
-			MaxAge:   300, // 5 minutes
+			Domain:   ".popsigner.com", // Share across all subdomains
+			MaxAge:   300,              // 5 minutes
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteLaxMode,
@@ -486,11 +490,12 @@ func oauthCallbackHandler(oauthSvc service.OAuthService, provider string, cfg *c
 			returnTo = cookie.Value
 		}
 
-		// Clear the return URL cookie
+		// Clear the return URL cookie (must match domain used when setting)
 		http.SetCookie(w, &http.Cookie{
 			Name:   "oauth_return_to",
 			Value:  "",
 			Path:   "/",
+			Domain: ".popsigner.com",
 			MaxAge: -1,
 		})
 
