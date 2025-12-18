@@ -19,7 +19,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	bootstraphandler "github.com/Bidon15/popsigner/control-plane/internal/bootstrap/handler"
@@ -133,17 +132,10 @@ func main() {
 
 	// Initialize POPKins (chain deployment) handler
 	// Uses same session store as main dashboard for SSO
-	sessionStore := sessions.NewCookieStore([]byte(cfg.Auth.JWTSecret))
-	sessionStore.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   7 * 24 * 60 * 60, // 7 days
-		HttpOnly: true,
-		Secure:   cfg.Server.Environment == "production",
-		SameSite: http.SameSiteLaxMode,
-	}
 	authSvc := service.NewAuthService(userRepo, sessionRepo, service.DefaultAuthServiceConfig())
 	orgSvc := service.NewOrgService(orgRepo, userRepo, service.DefaultOrgServiceConfig())
-	popkinsHandler := popkins.NewHandler(authSvc, orgSvc, keySvc, bootstrapRepo, nil, sessionStore)
+	// POPKins uses same session mechanism as main dashboard (cookie + DB lookup)
+	popkinsHandler := popkins.NewHandler(authSvc, orgSvc, keySvc, bootstrapRepo, nil, sessionRepo, userRepo)
 	logger.Info("POPKins handler initialized")
 
 	logger.Info("OAuth providers configured",

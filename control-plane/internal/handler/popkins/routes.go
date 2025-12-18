@@ -3,10 +3,9 @@ package popkins
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 
 	"github.com/Bidon15/popsigner/control-plane/internal/models"
 )
@@ -52,32 +51,32 @@ func (h *Handler) Routes() chi.Router {
 }
 
 // RequireAuth middleware ensures the user is authenticated.
+// Uses the same session mechanism as the main dashboard (cookie + DB lookup).
 func (h *Handler) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := h.sessionStore.Get(r, SessionCookieName)
+		// Get session cookie (same as main dashboard)
+		cookie, err := r.Cookie(SessionCookieName)
 		if err != nil {
 			h.handleAuthError(w, r)
 			return
 		}
 
-		userIDStr, ok := session.Values["user_id"].(string)
-		if !ok || userIDStr == "" {
+		// Look up session in database
+		session, err := h.sessionRepo.Get(r.Context(), cookie.Value)
+		if err != nil || session == nil {
 			h.handleAuthError(w, r)
 			return
 		}
 
-		userID, err := uuid.Parse(userIDStr)
-		if err != nil {
+		// Check if session is expired
+		if session.ExpiresAt.Before(time.Now()) {
 			h.handleAuthError(w, r)
 			return
 		}
 
 		// Load user from database
-		user, err := h.authService.GetUserByID(r.Context(), userID)
-		if err != nil {
-			// Session exists but user not found, clear session
-			session.Options.MaxAge = -1
-			session.Save(r, w)
+		user, err := h.userRepo.GetByID(r.Context(), session.UserID)
+		if err != nil || user == nil {
 			h.handleAuthError(w, r)
 			return
 		}
@@ -92,19 +91,5 @@ func (h *Handler) RequireAuth(next http.Handler) http.Handler {
 func GetUserFromContext(ctx context.Context) (*models.User, bool) {
 	user, ok := ctx.Value(ContextKeyUser).(*models.User)
 	return user, ok
-}
-
-// CreateSessionStore creates a new session store for POPKins.
-// This uses the same session store as the main dashboard for SSO.
-func CreateSessionStore(secret string) sessions.Store {
-	store := sessions.NewCookieStore([]byte(secret))
-	store.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   7 * 24 * 60 * 60, // 7 days
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	}
-	return store
 }
 

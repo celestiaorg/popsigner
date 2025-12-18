@@ -13,15 +13,16 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/bundle"
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/repository"
 	"github.com/Bidon15/popsigner/control-plane/internal/models"
+	mainrepo "github.com/Bidon15/popsigner/control-plane/internal/repository"
 	"github.com/Bidon15/popsigner/control-plane/internal/service"
 	"github.com/Bidon15/popsigner/control-plane/templates/components"
 	"github.com/Bidon15/popsigner/control-plane/templates/layouts"
@@ -35,12 +36,13 @@ const (
 
 // Handler handles POPKins-specific HTTP requests.
 type Handler struct {
-	authService  service.AuthService
-	orgService   service.OrgService
-	keyService   service.KeyService
-	deployRepo   repository.Repository
-	bundler      *bundle.Bundler
-	sessionStore sessions.Store
+	authService service.AuthService
+	orgService  service.OrgService
+	keyService  service.KeyService
+	deployRepo  repository.Repository
+	bundler     *bundle.Bundler
+	sessionRepo mainrepo.SessionRepository
+	userRepo    mainrepo.UserRepository
 }
 
 // NewHandler creates a new POPKins handler.
@@ -50,15 +52,17 @@ func NewHandler(
 	keyService service.KeyService,
 	deployRepo repository.Repository,
 	bundler *bundle.Bundler,
-	sessionStore sessions.Store,
+	sessionRepo mainrepo.SessionRepository,
+	userRepo mainrepo.UserRepository,
 ) *Handler {
 	return &Handler{
-		authService:  authService,
-		orgService:   orgService,
-		keyService:   keyService,
-		deployRepo:   deployRepo,
-		bundler:      bundler,
-		sessionStore: sessionStore,
+		authService: authService,
+		orgService:  orgService,
+		keyService:  keyService,
+		deployRepo:  deployRepo,
+		bundler:     bundler,
+		sessionRepo: sessionRepo,
+		userRepo:    userRepo,
 	}
 }
 
@@ -733,45 +737,36 @@ func (h *Handler) DeploymentResume(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 // getUserAndOrg retrieves the current user and organization from the session.
+// Uses the same session mechanism as the main dashboard (cookie + DB lookup).
 func (h *Handler) getUserAndOrg(r *http.Request) (*models.User, *models.Organization, error) {
-	session, err := h.sessionStore.Get(r, SessionCookieName)
+	// Get session cookie (same as main dashboard)
+	cookie, err := r.Cookie(SessionCookieName)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.New("no session cookie")
 	}
 
-	userID, ok := session.Values["user_id"].(string)
-	if !ok {
-		return nil, nil, errors.New("unauthorized")
+	// Look up session in database
+	session, err := h.sessionRepo.Get(r.Context(), cookie.Value)
+	if err != nil || session == nil {
+		return nil, nil, errors.New("invalid session")
 	}
 
-	uid, err := uuid.Parse(userID)
-	if err != nil {
-		return nil, nil, errors.New("unauthorized")
+	// Check if session is expired
+	if session.ExpiresAt.Before(time.Now()) {
+		return nil, nil, errors.New("session expired")
 	}
 
-	// Get user from auth service
-	user, err := h.authService.GetUserByID(r.Context(), uid)
-	if err != nil {
-		return nil, nil, err
+	// Get user from user repo
+	user, err := h.userRepo.GetByID(r.Context(), session.UserID)
+	if err != nil || user == nil {
+		return nil, nil, errors.New("user not found")
 	}
 
-	// Get current org from session or first org
-	orgID, ok := session.Values["org_id"].(string)
+	// Get first org for user
 	var org *models.Organization
-
-	if ok {
-		oid, err := uuid.Parse(orgID)
-		if err == nil {
-			org, _ = h.orgService.Get(r.Context(), oid)
-		}
-	}
-
-	if org == nil {
-		// Get first org for user
-		orgs, err := h.orgService.ListUserOrgs(r.Context(), uid)
-		if err == nil && len(orgs) > 0 {
-			org = orgs[0]
-		}
+	orgs, err := h.orgService.ListUserOrgs(r.Context(), session.UserID)
+	if err == nil && len(orgs) > 0 {
+		org = orgs[0]
 	}
 
 	if org == nil {
