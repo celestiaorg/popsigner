@@ -1,0 +1,113 @@
+package components
+
+// KeyOption represents a key available for selection
+type KeyOption struct {
+	ID         string
+	Name       string
+	Address    string // Ethereum address
+	CosmosAddr string // Cosmos address (if applicable)
+}
+
+// KeySelector renders a dropdown for selecting a signing key
+templ KeySelector(name, label, description string, keys []KeyOption, selectedID string) {
+	<div class="space-y-2">
+		<label class="block text-sm text-[#666600] uppercase">{ label }</label>
+		<p class="text-xs text-[#333300]">{ description }</p>
+		
+		if len(keys) == 0 {
+			<div class="p-4 border border-dashed border-[#333300] text-center">
+				<p class="text-[#666600] text-sm">No keys available</p>
+				<a href="https://dashboard.popsigner.com/keys" 
+				   target="_blank"
+				   class="text-[#FFB000] text-sm hover:underline">
+					Create keys in POPSigner Dashboard →
+				</a>
+			</div>
+		} else {
+			<select name={ name } 
+					required
+					class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+						   focus:border-[#33FF00] focus:outline-none appearance-none cursor-pointer
+						   bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20fill%3D%22%2333FF00%22%3E%3Cpath%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')]
+						   bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-10">
+				<option value="" class="bg-black text-[#666600]">Select a key...</option>
+				for _, key := range keys {
+					<option value={ key.ID } 
+							selected?={ key.ID == selectedID }
+							class="bg-black text-[#33FF00]">
+						{ key.Name } ({ truncateAddress(key.Address) })
+					</option>
+				}
+			</select>
+			
+			if selectedID != "" {
+				for _, key := range keys {
+					if key.ID == selectedID {
+						<div class="text-xs text-[#333300] font-mono mt-1">
+							{ key.Address }
+						</div>
+					}
+				}
+			}
+		}
+	</div>
+}
+
+// KeySelectorCard renders a more visual key selector with radio buttons
+templ KeySelectorCard(name, label, description string, keys []KeyOption, selectedID string) {
+	<div class="space-y-3">
+		<div>
+			<label class="block text-sm text-[#33FF00] uppercase font-bold">{ label }</label>
+			<p class="text-xs text-[#666600]">{ description }</p>
+		</div>
+		
+		if len(keys) == 0 {
+			<div class="p-6 border border-dashed border-[#333300] text-center bg-[#0a0a00]">
+				<div class="text-3xl mb-2">🔑</div>
+				<p class="text-[#666600] text-sm mb-3">No signing keys available</p>
+				<a href="https://dashboard.popsigner.com/keys" 
+				   target="_blank"
+				   class="inline-block px-4 py-2 bg-[#FFB000] text-black text-sm font-bold uppercase hover:bg-[#FFCC00]">
+					CREATE KEYS →
+				</a>
+			</div>
+		} else {
+			<div class="space-y-2">
+				for _, key := range keys {
+					<label class="block cursor-pointer">
+						<input type="radio" name={ name } value={ key.ID } 
+							   class="hidden peer"
+							   required
+							   checked?={ key.ID == selectedID }/>
+						<div class="p-3 border border-[#333300] 
+									peer-checked:border-[#33FF00] peer-checked:bg-[#33FF00]/5
+									hover:border-[#666600] transition-colors">
+							<div class="flex items-center justify-between">
+								<div>
+									<span class="text-[#33FF00] font-bold">{ key.Name }</span>
+								</div>
+								<span class="text-xs text-[#333300] peer-checked:text-[#33FF00]">
+									<svg class="w-4 h-4 inline opacity-0 peer-checked:opacity-100" fill="currentColor" viewBox="0 0 20 20">
+										<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+									</svg>
+								</span>
+							</div>
+							<div class="text-xs text-[#666600] font-mono mt-1">
+								{ key.Address }
+							</div>
+						</div>
+					</label>
+				}
+			</div>
+		}
+	</div>
+}
+
+// truncateAddress shortens an Ethereum address for display
+func truncateAddress(addr string) string {
+	if len(addr) <= 12 {
+		return addr
+	}
+	return addr[:6] + "..." + addr[len(addr)-4:]
+}
+

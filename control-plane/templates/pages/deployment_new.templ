@@ -1,0 +1,520 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+	"github.com/Bidon15/popsigner/control-plane/templates/layouts"
+	"github.com/Bidon15/popsigner/control-plane/templates/components"
+)
+
+// DeploymentNewData holds data for the new deployment wizard
+type DeploymentNewData struct {
+	layouts.PopkinsData // Use POPKins layout, NOT Dashboard
+	Keys      []components.KeyOption
+	Step      int // 1-4
+	FormData  DeploymentFormData
+	ErrorMsg  string
+}
+
+// DeploymentFormData holds form values across wizard steps
+type DeploymentFormData struct {
+	Stack       string // "opstack" or "nitro"
+	ChainName   string
+	ChainID     string
+	L1RPC       string
+	L1ChainID   string
+	DA          string // "celestia", "anytrust", or "calldata"
+	DeployerKey string
+	BatcherKey  string
+	ProposerKey string
+}
+
+// DeploymentNewPage renders the 4-step deployment wizard using POPKins layout
+templ DeploymentNewPage(data DeploymentNewData) {
+	@layouts.Popkins("Deploy New Chain", data.PopkinsData) {
+		<div class="max-w-2xl mx-auto p-6">
+			<!-- Header -->
+			<div class="mb-8">
+				<a href="/popkins/deployments" class="text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block">
+					← BACK TO MY CHAINS
+				</a>
+				<h1 class="text-2xl font-bold text-[#33FF00] uppercase tracking-wider flex items-center gap-3">
+					<span class="text-[#FFB000]">▸</span>
+					DEPLOY_NEW_CHAIN
+				</h1>
+				<p class="text-[#666600] mt-1 text-sm uppercase">Configure and launch your rollup</p>
+			</div>
+
+			<!-- Progress Steps -->
+			<div class="flex items-center mb-8 text-sm">
+				@DeployWizardStep(1, "STACK", data.Step)
+				<div class={ "flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 1), templ.KV("bg-[#333300]", data.Step <= 1) }></div>
+				@DeployWizardStep(2, "CONFIG", data.Step)
+				<div class={ "flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 2), templ.KV("bg-[#333300]", data.Step <= 2) }></div>
+				@DeployWizardStep(3, "KEYS", data.Step)
+				<div class={ "flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 3), templ.KV("bg-[#333300]", data.Step <= 3) }></div>
+				@DeployWizardStep(4, "DEPLOY", data.Step)
+			</div>
+
+			<!-- Error Message -->
+			if data.ErrorMsg != "" {
+				<div class="mb-6 p-4 bg-[#1a0000] border border-[#FF3300] text-[#FF3300] text-sm flex items-start gap-3">
+					<span class="text-lg">⚠</span>
+					<span>{ data.ErrorMsg }</span>
+				</div>
+			}
+
+			<!-- Step Content -->
+			<div class="bg-black border border-[#333300] p-6">
+				switch data.Step {
+				case 1:
+					@DeploymentStep1Stack(data)
+				case 2:
+					@DeploymentStep2Config(data)
+				case 3:
+					@DeploymentStep3Keys(data)
+				case 4:
+					@DeploymentStep4Review(data)
+				default:
+					@DeploymentStep1Stack(data)
+				}
+			</div>
+		</div>
+	}
+}
+
+// DeployWizardStep renders a single step in the progress bar
+templ DeployWizardStep(step int, label string, currentStep int) {
+	<div class={ "flex items-center gap-2", 
+				 templ.KV("text-[#33FF00]", step <= currentStep), 
+				 templ.KV("text-[#333300]", step > currentStep) }>
+		<span class={ "w-7 h-7 flex items-center justify-center border text-xs font-bold",
+					  templ.KV("border-[#33FF00] bg-[#33FF00]/20", step < currentStep),
+					  templ.KV("border-[#33FF00] bg-[#33FF00] text-black", step == currentStep),
+					  templ.KV("border-[#333300]", step > currentStep) }>
+			if step < currentStep {
+				✓
+			} else {
+				{ fmt.Sprintf("%d", step) }
+			}
+		</span>
+		<span class="uppercase text-xs hidden sm:inline">{ label }</span>
+	</div>
+}
+
+// DeploymentStep1Stack - Select rollup stack
+templ DeploymentStep1Stack(data DeploymentNewData) {
+	<form action="/popkins/deployments/new?step=2" method="POST" class="space-y-6">
+		<div>
+			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Select Rollup Stack</h2>
+			<p class="text-[#666600] text-sm">Choose the technology stack for your chain</p>
+		</div>
+		
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<!-- OP Stack Option -->
+			<label class="cursor-pointer group">
+				<input type="radio" name="stack" value="opstack" class="hidden peer" 
+					   checked?={ data.FormData.Stack == "opstack" || data.FormData.Stack == "" }/>
+				<div class="p-5 border border-[#333300] 
+							peer-checked:border-[#33FF00] peer-checked:bg-[#33FF00]/5 
+							hover:border-[#666600] transition-all h-full">
+					<div class="flex items-center justify-between mb-3">
+						<span class="text-2xl">⚡</span>
+						<span class="w-4 h-4 border border-[#333300] rounded-full 
+									 peer-checked:bg-[#33FF00] peer-checked:border-[#33FF00]
+									 group-[:has(input:checked)]:bg-[#33FF00] group-[:has(input:checked)]:border-[#33FF00]"></span>
+					</div>
+					<div class="text-[#33FF00] font-bold uppercase text-lg">OP Stack</div>
+					<div class="text-[#666600] text-sm mt-2">
+						Optimism's battle-tested modular architecture. Powers Base, Zora, and more.
+					</div>
+					<div class="text-[#333300] text-xs mt-3 pt-3 border-t border-[#1a1a00]">
+						~35 deployment transactions • Celestia DA support
+					</div>
+				</div>
+			</label>
+
+			<!-- Nitro Option -->
+			<label class="cursor-pointer group">
+				<input type="radio" name="stack" value="nitro" class="hidden peer"
+					   checked?={ data.FormData.Stack == "nitro" }/>
+				<div class="p-5 border border-[#333300] 
+							peer-checked:border-[#33FF00] peer-checked:bg-[#33FF00]/5 
+							hover:border-[#666600] transition-all h-full">
+					<div class="flex items-center justify-between mb-3">
+						<span class="text-2xl">🚀</span>
+						<span class="w-4 h-4 border border-[#333300] rounded-full 
+									 peer-checked:bg-[#33FF00] peer-checked:border-[#33FF00]
+									 group-[:has(input:checked)]:bg-[#33FF00] group-[:has(input:checked)]:border-[#33FF00]"></span>
+					</div>
+					<div class="text-[#33FF00] font-bold uppercase text-lg">Arbitrum Nitro</div>
+					<div class="text-[#666600] text-sm mt-2">
+						Arbitrum Orbit SDK for Nitro chains. Single atomic deployment.
+					</div>
+					<div class="text-[#333300] text-xs mt-3 pt-3 border-t border-[#1a1a00]">
+						1 atomic transaction • AnyTrust DA option
+					</div>
+				</div>
+			</label>
+		</div>
+
+		<button type="submit" 
+				class="w-full py-3 bg-[#33FF00] text-black font-bold uppercase 
+					   hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] transition-all">
+			CONTINUE →
+		</button>
+	</form>
+}
+
+// DeploymentStep2Config - Chain configuration
+templ DeploymentStep2Config(data DeploymentNewData) {
+	<form action="/popkins/deployments/new?step=3" method="POST" class="space-y-6">
+		<!-- Hidden field from previous step -->
+		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
+		
+		<div>
+			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Chain Configuration</h2>
+			<p class="text-[#666600] text-sm">Configure your chain parameters</p>
+		</div>
+		
+		<div class="space-y-4">
+			<div>
+				<label class="block text-sm text-[#666600] uppercase mb-2">Chain Name</label>
+				<input type="text" name="chain_name" required
+					   value={ data.FormData.ChainName }
+					   placeholder="my-rollup"
+					   pattern="[a-z0-9-]+"
+					   title="Lowercase letters, numbers, and hyphens only"
+					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+							  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none"/>
+				<p class="text-xs text-[#333300] mt-1">Lowercase letters, numbers, and hyphens only</p>
+			</div>
+
+			<div>
+				<label class="block text-sm text-[#666600] uppercase mb-2">Chain ID</label>
+				<input type="number" name="chain_id" required
+					   value={ data.FormData.ChainID }
+					   placeholder="42069"
+					   min="1"
+					   max="9999999999"
+					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+							  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none"/>
+				<p class="text-xs text-[#333300] mt-1">Pick a unique chain ID not already in use</p>
+			</div>
+
+			<div>
+				<label class="block text-sm text-[#666600] uppercase mb-2">L1 RPC URL</label>
+				<input type="url" name="l1_rpc" required
+					   value={ data.FormData.L1RPC }
+					   placeholder="https://eth-sepolia.g.alchemy.com/v2/..."
+					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+							  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none"/>
+				<p class="text-xs text-[#333300] mt-1">Your L1 node RPC endpoint (Alchemy, Infura, etc.)</p>
+			</div>
+
+			<div>
+				<label class="block text-sm text-[#666600] uppercase mb-2">L1 Network</label>
+				<select name="l1_chain_id" required
+						class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+							   focus:border-[#33FF00] focus:outline-none appearance-none cursor-pointer
+							   bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20fill%3D%22%2333FF00%22%3E%3Cpath%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')]
+							   bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-10">
+					<option value="11155111" selected?={ data.FormData.L1ChainID == "11155111" || data.FormData.L1ChainID == "" } class="bg-black">
+						Sepolia (Testnet) - Recommended
+					</option>
+					<option value="17000" selected?={ data.FormData.L1ChainID == "17000" } class="bg-black">
+						Holesky (Testnet)
+					</option>
+					<option value="1" selected?={ data.FormData.L1ChainID == "1" } class="bg-black">
+						Ethereum Mainnet
+					</option>
+				</select>
+			</div>
+
+			<!-- DA Selection for Nitro -->
+			if data.FormData.Stack == "nitro" {
+				<div>
+					<label class="block text-sm text-[#666600] uppercase mb-2">Data Availability</label>
+					<div class="grid grid-cols-2 gap-3">
+						<label class="cursor-pointer">
+							<input type="radio" name="da" value="anytrust" class="hidden peer"
+								   checked?={ data.FormData.DA == "anytrust" || data.FormData.DA == "" }/>
+							<div class="p-3 border border-[#333300] text-center
+										peer-checked:border-[#33FF00] peer-checked:bg-[#33FF00]/5
+										hover:border-[#666600] transition-colors">
+								<div class="text-[#33FF00] font-bold uppercase">AnyTrust</div>
+								<div class="text-[#666600] text-xs mt-1">Lower cost, DAC</div>
+							</div>
+						</label>
+						<label class="cursor-pointer">
+							<input type="radio" name="da" value="calldata" class="hidden peer"
+								   checked?={ data.FormData.DA == "calldata" }/>
+							<div class="p-3 border border-[#333300] text-center
+										peer-checked:border-[#33FF00] peer-checked:bg-[#33FF00]/5
+										hover:border-[#666600] transition-colors">
+								<div class="text-[#33FF00] font-bold uppercase">Rollup</div>
+								<div class="text-[#666600] text-xs mt-1">Full security</div>
+							</div>
+						</label>
+					</div>
+				</div>
+			} else {
+				<!-- DA Selection for OP Stack -->
+				<div>
+					<label class="block text-sm text-[#666600] uppercase mb-2">Data Availability</label>
+					<div class="grid grid-cols-2 gap-3">
+						<label class="cursor-pointer">
+							<input type="radio" name="da" value="celestia" class="hidden peer"
+								   checked?={ data.FormData.DA == "celestia" || data.FormData.DA == "" }/>
+							<div class="p-3 border border-[#333300] text-center
+										peer-checked:border-[#33FF00] peer-checked:bg-[#33FF00]/5
+										hover:border-[#666600] transition-colors">
+								<div class="text-[#33FF00] font-bold uppercase">Celestia</div>
+								<div class="text-[#666600] text-xs mt-1">Lower cost DA</div>
+							</div>
+						</label>
+						<label class="cursor-pointer">
+							<input type="radio" name="da" value="calldata" class="hidden peer"
+								   checked?={ data.FormData.DA == "calldata" }/>
+							<div class="p-3 border border-[#333300] text-center
+										peer-checked:border-[#33FF00] peer-checked:bg-[#33FF00]/5
+										hover:border-[#666600] transition-colors">
+								<div class="text-[#33FF00] font-bold uppercase">Calldata</div>
+								<div class="text-[#666600] text-xs mt-1">L1 security</div>
+							</div>
+						</label>
+					</div>
+				</div>
+			}
+		</div>
+
+		<div class="flex gap-4 pt-4">
+			<a href="/popkins/deployments/new?step=1" 
+			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase 
+					  hover:border-[#666600] hover:text-[#999] transition-colors">
+				← BACK
+			</a>
+			<button type="submit" 
+					class="flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase 
+						   hover:bg-[#44FF11] transition-colors">
+				CONTINUE →
+			</button>
+		</div>
+	</form>
+}
+
+// DeploymentStep3Keys - Assign signing keys
+templ DeploymentStep3Keys(data DeploymentNewData) {
+	<form action="/popkins/deployments/new?step=4" method="POST" class="space-y-6">
+		<!-- Hidden fields from previous steps -->
+		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
+		<input type="hidden" name="chain_name" value={ data.FormData.ChainName }/>
+		<input type="hidden" name="chain_id" value={ data.FormData.ChainID }/>
+		<input type="hidden" name="l1_rpc" value={ data.FormData.L1RPC }/>
+		<input type="hidden" name="l1_chain_id" value={ data.FormData.L1ChainID }/>
+		<input type="hidden" name="da" value={ data.FormData.DA }/>
+		
+		<div>
+			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Assign Signing Keys</h2>
+			<p class="text-[#666600] text-sm">
+				Select which of your POPSigner keys to use for each role. 
+				Keys will be funded automatically during deployment.
+			</p>
+		</div>
+
+		<div class="p-4 bg-[#0a1a0a] border border-[#33FF00]/30 text-sm mb-6">
+			<p class="text-[#33FF00] mb-1">💡 <strong>Tip:</strong> Use different keys for each role</p>
+			<p class="text-[#666600]">
+				This improves security and makes it easier to manage key permissions.
+			</p>
+		</div>
+
+		<div class="space-y-6">
+			@components.KeySelector("deployer_key", "Deployer Key", 
+				"Deploys and configures L1 contracts. Needs most ETH for gas.", 
+				data.Keys, data.FormData.DeployerKey)
+			
+			if data.FormData.Stack == "opstack" {
+				@components.KeySelector("batcher_key", "Batcher Key", 
+					"Submits L2 transaction batches to L1. Needs ongoing ETH.", 
+					data.Keys, data.FormData.BatcherKey)
+				@components.KeySelector("proposer_key", "Proposer Key", 
+					"Submits L2 state roots to L1 for withdrawals.", 
+					data.Keys, data.FormData.ProposerKey)
+			} else {
+				@components.KeySelector("batcher_key", "Batch Poster Key", 
+					"Posts L2 transaction data to L1/DA layer.", 
+					data.Keys, data.FormData.BatcherKey)
+				@components.KeySelector("proposer_key", "Validator Key", 
+					"Validates state and posts assertions to L1.", 
+					data.Keys, data.FormData.ProposerKey)
+			}
+		</div>
+
+		<div class="flex gap-4 pt-4">
+			<a href="/popkins/deployments/new?step=2" 
+			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase 
+					  hover:border-[#666600] hover:text-[#999] transition-colors">
+				← BACK
+			</a>
+			<button type="submit" 
+					class="flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase 
+						   hover:bg-[#44FF11] transition-colors">
+				CONTINUE →
+			</button>
+		</div>
+	</form>
+}
+
+// DeploymentStep4Review - Review and deploy
+templ DeploymentStep4Review(data DeploymentNewData) {
+	<form action="/popkins/deployments" method="POST" class="space-y-6">
+		<!-- All hidden fields -->
+		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
+		<input type="hidden" name="chain_name" value={ data.FormData.ChainName }/>
+		<input type="hidden" name="chain_id" value={ data.FormData.ChainID }/>
+		<input type="hidden" name="l1_rpc" value={ data.FormData.L1RPC }/>
+		<input type="hidden" name="l1_chain_id" value={ data.FormData.L1ChainID }/>
+		<input type="hidden" name="da" value={ data.FormData.DA }/>
+		<input type="hidden" name="deployer_key" value={ data.FormData.DeployerKey }/>
+		<input type="hidden" name="batcher_key" value={ data.FormData.BatcherKey }/>
+		<input type="hidden" name="proposer_key" value={ data.FormData.ProposerKey }/>
+		
+		<div>
+			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Review & Deploy</h2>
+			<p class="text-[#666600] text-sm">Verify your chain configuration before deploying</p>
+		</div>
+
+		<!-- Configuration Summary -->
+		<div class="bg-[#0a0a00] border border-[#333300] divide-y divide-[#1a1a00]">
+			@ReviewRow("Rollup Stack", getStackDisplayName(data.FormData.Stack))
+			@ReviewRow("Chain Name", data.FormData.ChainName)
+			@ReviewRow("Chain ID", data.FormData.ChainID)
+			@ReviewRow("L1 Network", getNetworkName(data.FormData.L1ChainID))
+			@ReviewRow("Data Availability", getDADisplayName(data.FormData.DA))
+		</div>
+
+		<!-- Keys Summary -->
+		<div class="bg-[#0a0a00] border border-[#333300] p-4">
+			<h3 class="text-sm text-[#666600] uppercase mb-3">Assigned Keys</h3>
+			<div class="space-y-2 text-sm">
+				@ReviewKeyRow("Deployer", getKeyName(data.Keys, data.FormData.DeployerKey))
+				if data.FormData.Stack == "opstack" {
+					@ReviewKeyRow("Batcher", getKeyName(data.Keys, data.FormData.BatcherKey))
+					@ReviewKeyRow("Proposer", getKeyName(data.Keys, data.FormData.ProposerKey))
+				} else {
+					@ReviewKeyRow("Batch Poster", getKeyName(data.Keys, data.FormData.BatcherKey))
+					@ReviewKeyRow("Validator", getKeyName(data.Keys, data.FormData.ProposerKey))
+				}
+			</div>
+		</div>
+
+		<!-- Warning Box -->
+		<div class="p-4 bg-[#1a1500] border border-[#FFB000]/50">
+			<p class="text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2">
+				<span>⚠</span>
+				<span>Before You Deploy</span>
+			</p>
+			<ul class="text-[#999] text-sm space-y-1.5">
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span>Deployment will take <strong class="text-[#FFB000]">5-15 minutes</strong> depending on network congestion</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span>Deployer key needs <strong class="text-[#FFB000]">~0.5 ETH</strong> { "for" } gas (testnet ETH on Sepolia)</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span>You can <strong>resume</strong> { "if" } deployment is interrupted</span>
+				</li>
+			</ul>
+		</div>
+
+		<div class="flex gap-4 pt-4">
+			<a href="/popkins/deployments/new?step=3" 
+			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase 
+					  hover:border-[#666600] hover:text-[#999] transition-colors">
+				← BACK
+			</a>
+			<button type="submit" 
+					class="flex-1 py-4 bg-[#FFB000] text-black font-bold uppercase text-lg
+						   hover:bg-[#FFCC00] hover:shadow-[0_0_30px_#FFB000] transition-all
+						   flex items-center justify-center gap-2">
+				<span>🚀</span>
+				<span>DEPLOY CHAIN</span>
+			</button>
+		</div>
+	</form>
+}
+
+// ReviewRow renders a single row in the review summary
+templ ReviewRow(label, value string) {
+	<div class="flex justify-between items-center px-4 py-3">
+		<span class="text-[#666600] uppercase text-sm">{ label }</span>
+		<span class="text-[#33FF00] font-bold">{ value }</span>
+	</div>
+}
+
+// ReviewKeyRow renders a key assignment row
+templ ReviewKeyRow(role, keyName string) {
+	<div class="flex justify-between items-center">
+		<span class="text-[#666600]">{ role }:</span>
+		<span class="text-[#33FF00]">{ keyName }</span>
+	</div>
+}
+
+// Helper functions
+
+func getStackDisplayName(stack string) string {
+	switch stack {
+	case "opstack":
+		return "OP STACK"
+	case "nitro":
+		return "ARBITRUM NITRO"
+	default:
+		return strings.ToUpper(stack)
+	}
+}
+
+func getNetworkName(chainID string) string {
+	switch chainID {
+	case "1":
+		return "Ethereum Mainnet"
+	case "11155111":
+		return "Sepolia (Testnet)"
+	case "17000":
+		return "Holesky (Testnet)"
+	default:
+		return "Chain " + chainID
+	}
+}
+
+func getDADisplayName(da string) string {
+	switch da {
+	case "celestia":
+		return "Celestia"
+	case "anytrust":
+		return "AnyTrust DAC"
+	case "calldata":
+		return "L1 Calldata"
+	default:
+		if da == "" {
+			return "Default"
+		}
+		return strings.ToUpper(da)
+	}
+}
+
+func getKeyName(keys []components.KeyOption, keyID string) string {
+	for _, k := range keys {
+		if k.ID == keyID {
+			return k.Name
+		}
+	}
+	if keyID == "" {
+		return "(not selected)"
+	}
+	return keyID[:8] + "..."
+}
+

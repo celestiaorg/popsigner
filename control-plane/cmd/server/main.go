@@ -142,7 +142,7 @@ func main() {
 	}
 	authSvc := service.NewAuthService(userRepo, sessionRepo, service.DefaultAuthServiceConfig())
 	orgSvc := service.NewOrgService(orgRepo, userRepo, service.DefaultOrgServiceConfig())
-	popkinsHandler := popkins.NewHandler(authSvc, orgSvc, bootstrapRepo, nil, sessionStore)
+	popkinsHandler := popkins.NewHandler(authSvc, orgSvc, keySvc, bootstrapRepo, nil, sessionStore)
 	logger.Info("POPKins handler initialized")
 
 	logger.Info("OAuth providers configured",
