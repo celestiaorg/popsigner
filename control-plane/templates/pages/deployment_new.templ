@@ -110,24 +110,26 @@ templ DeploymentStep1Stack(data DeploymentNewData) {
 			<p class="text-[#666600] text-sm">Choose the technology stack for your chain</p>
 		</div>
 		
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4" x-data="{ selected: '{ getSelectedStack(data.FormData.Stack) }' }">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4" x-data="{ selected: '' }">
 			<!-- OP Stack Option -->
 			<div class="cursor-pointer" @click="selected = 'opstack'; $refs.opstack.checked = true">
 				<input type="radio" name="stack" value="opstack" x-ref="opstack"
 					   class="hidden"
-					   checked?={ data.FormData.Stack == "opstack" || data.FormData.Stack == "" }/>
+					   checked?={ data.FormData.Stack == "opstack" }/>
 				<div class="p-5 border transition-all h-full"
-					 :class="selected === 'opstack' ? 'border-[#33FF00] bg-[#33FF00]/5' : 'border-[#333300] hover:border-[#666600]'">
-					<div class="flex items-center justify-between mb-3">
-						<span class="text-2xl">⚡</span>
-						<span class="w-4 h-4 border rounded-full transition-all"
-							  :class="selected === 'opstack' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#333300]'"></span>
+					 :class="selected === 'opstack' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'">
+					<div class="flex items-center justify-between mb-4">
+						<span class="text-3xl">⚡</span>
+						<span class="w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center"
+							  :class="selected === 'opstack' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'">
+							<span x-show="selected === 'opstack'" class="text-black text-xs">✓</span>
+						</span>
 					</div>
-					<div class="text-[#33FF00] font-bold uppercase text-lg">OP Stack</div>
-					<div class="text-[#666600] text-sm mt-2 break-words">
+					<div class="text-[#33FF00] font-bold uppercase text-xl mb-2">OP Stack</div>
+					<div class="text-[#AAAAAA] text-sm leading-relaxed">
 						Optimism's battle-tested modular architecture. Powers Base, Zora, and more.
 					</div>
-					<div class="text-[#333300] text-xs mt-3 pt-3 border-t border-[#1a1a00] break-words">
+					<div class="text-[#888888] text-xs mt-4 pt-3 border-t border-[#333300]">
 						~35 deployment transactions • Celestia DA support
 					</div>
 				</div>
@@ -139,28 +141,34 @@ templ DeploymentStep1Stack(data DeploymentNewData) {
 					   class="hidden"
 					   checked?={ data.FormData.Stack == "nitro" }/>
 				<div class="p-5 border transition-all h-full"
-					 :class="selected === 'nitro' ? 'border-[#33FF00] bg-[#33FF00]/5' : 'border-[#333300] hover:border-[#666600]'">
-					<div class="flex items-center justify-between mb-3">
-						<span class="text-2xl">🚀</span>
-						<span class="w-4 h-4 border rounded-full transition-all"
-							  :class="selected === 'nitro' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#333300]'"></span>
+					 :class="selected === 'nitro' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'">
+					<div class="flex items-center justify-between mb-4">
+						<span class="text-3xl">🚀</span>
+						<span class="w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center"
+							  :class="selected === 'nitro' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'">
+							<span x-show="selected === 'nitro'" class="text-black text-xs">✓</span>
+						</span>
 					</div>
-					<div class="text-[#33FF00] font-bold uppercase text-lg">Arbitrum Nitro</div>
-					<div class="text-[#666600] text-sm mt-2 break-words">
+					<div class="text-[#33FF00] font-bold uppercase text-xl mb-2">Arbitrum Nitro</div>
+					<div class="text-[#AAAAAA] text-sm leading-relaxed">
 						Arbitrum Orbit SDK for Nitro chains. Single atomic deployment.
 					</div>
-					<div class="text-[#333300] text-xs mt-3 pt-3 border-t border-[#1a1a00] break-words">
+					<div class="text-[#888888] text-xs mt-4 pt-3 border-t border-[#333300]">
 						1 atomic transaction • AnyTrust DA option
 					</div>
 				</div>
 			</div>
-		</div>
 
-		<button type="submit" 
-				class="w-full py-3 bg-[#33FF00] text-black font-bold uppercase 
-					   hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] transition-all">
-			CONTINUE →
-		</button>
+			<!-- Continue Button - disabled until selection made -->
+			<div class="col-span-1 md:col-span-2 mt-2">
+				<button type="submit" 
+						:disabled="!selected"
+						:class="selected ? 'bg-[#33FF00] text-black hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] cursor-pointer' : 'bg-[#333300] text-[#666600] cursor-not-allowed'"
+						class="w-full py-4 font-bold uppercase transition-all">
+					CONTINUE →
+				</button>
+			</div>
+		</div>
 	</form>
 }
 

@@ -355,17 +355,17 @@ func DeploymentStep1Stack(data DeploymentNewData) templ.Component {
 			templ_7745c5c3_Var17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<form action=\"/deployments/new?step=2\" method=\"POST\" class=\"space-y-6\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Select Rollup Stack</h2><p class=\"text-[#666600] text-sm\">Choose the technology stack for your chain</p></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\" x-data=\"{ selected: '{ getSelectedStack(data.FormData.Stack) }' }\"><!-- OP Stack Option --><div class=\"cursor-pointer\" @click=\"selected = 'opstack'; $refs.opstack.checked = true\"><input type=\"radio\" name=\"stack\" value=\"opstack\" x-ref=\"opstack\" class=\"hidden\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<form action=\"/deployments/new?step=2\" method=\"POST\" class=\"space-y-6\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Select Rollup Stack</h2><p class=\"text-[#666600] text-sm\">Choose the technology stack for your chain</p></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\" x-data=\"{ selected: '' }\"><!-- OP Stack Option --><div class=\"cursor-pointer\" @click=\"selected = 'opstack'; $refs.opstack.checked = true\"><input type=\"radio\" name=\"stack\" value=\"opstack\" x-ref=\"opstack\" class=\"hidden\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.FormData.Stack == "opstack" || data.FormData.Stack == "" {
+		if data.FormData.Stack == "opstack" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'opstack' ? 'border-[#33FF00] bg-[#33FF00]/5' : 'border-[#333300] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-3\"><span class=\"text-2xl\">⚡</span> <span class=\"w-4 h-4 border rounded-full transition-all\" :class=\"selected === 'opstack' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#333300]'\"></span></div><div class=\"text-[#33FF00] font-bold uppercase text-lg\">OP Stack</div><div class=\"text-[#666600] text-sm mt-2 break-words\">Optimism's battle-tested modular architecture. Powers Base, Zora, and more.</div><div class=\"text-[#333300] text-xs mt-3 pt-3 border-t border-[#1a1a00] break-words\">~35 deployment transactions • Celestia DA support</div></div></div><!-- Nitro Option --><div class=\"cursor-pointer\" @click=\"selected = 'nitro'; $refs.nitro.checked = true\"><input type=\"radio\" name=\"stack\" value=\"nitro\" x-ref=\"nitro\" class=\"hidden\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'opstack' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-4\"><span class=\"text-3xl\">⚡</span> <span class=\"w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"selected === 'opstack' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'\"><span x-show=\"selected === 'opstack'\" class=\"text-black text-xs\">✓</span></span></div><div class=\"text-[#33FF00] font-bold uppercase text-xl mb-2\">OP Stack</div><div class=\"text-[#AAAAAA] text-sm leading-relaxed\">Optimism's battle-tested modular architecture. Powers Base, Zora, and more.</div><div class=\"text-[#888888] text-xs mt-4 pt-3 border-t border-[#333300]\">~35 deployment transactions • Celestia DA support</div></div></div><!-- Nitro Option --><div class=\"cursor-pointer\" @click=\"selected = 'nitro'; $refs.nitro.checked = true\"><input type=\"radio\" name=\"stack\" value=\"nitro\" x-ref=\"nitro\" class=\"hidden\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -375,7 +375,7 @@ func DeploymentStep1Stack(data DeploymentNewData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'nitro' ? 'border-[#33FF00] bg-[#33FF00]/5' : 'border-[#333300] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-3\"><span class=\"text-2xl\">🚀</span> <span class=\"w-4 h-4 border rounded-full transition-all\" :class=\"selected === 'nitro' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#333300]'\"></span></div><div class=\"text-[#33FF00] font-bold uppercase text-lg\">Arbitrum Nitro</div><div class=\"text-[#666600] text-sm mt-2 break-words\">Arbitrum Orbit SDK for Nitro chains. Single atomic deployment.</div><div class=\"text-[#333300] text-xs mt-3 pt-3 border-t border-[#1a1a00] break-words\">1 atomic transaction • AnyTrust DA option</div></div></div></div><button type=\"submit\" class=\"w-full py-3 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t\t   hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] transition-all\">CONTINUE →</button></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'nitro' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-4\"><span class=\"text-3xl\">🚀</span> <span class=\"w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"selected === 'nitro' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'\"><span x-show=\"selected === 'nitro'\" class=\"text-black text-xs\">✓</span></span></div><div class=\"text-[#33FF00] font-bold uppercase text-xl mb-2\">Arbitrum Nitro</div><div class=\"text-[#AAAAAA] text-sm leading-relaxed\">Arbitrum Orbit SDK for Nitro chains. Single atomic deployment.</div><div class=\"text-[#888888] text-xs mt-4 pt-3 border-t border-[#333300]\">1 atomic transaction • AnyTrust DA option</div></div></div><!-- Continue Button - disabled until selection made --><div class=\"col-span-1 md:col-span-2 mt-2\"><button type=\"submit\" :disabled=\"!selected\" :class=\"selected ? 'bg-[#33FF00] text-black hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] cursor-pointer' : 'bg-[#333300] text-[#666600] cursor-not-allowed'\" class=\"w-full py-4 font-bold uppercase transition-all\">CONTINUE →</button></div></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -412,7 +412,7 @@ func DeploymentStep2Config(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 171, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 179, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -425,7 +425,7 @@ func DeploymentStep2Config(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 182, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 190, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -438,7 +438,7 @@ func DeploymentStep2Config(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 194, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 202, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -451,7 +451,7 @@ func DeploymentStep2Config(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 206, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 214, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -579,7 +579,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 308, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 316, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -592,7 +592,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 309, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 317, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -605,7 +605,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 310, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 318, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
@@ -618,7 +618,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 311, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 319, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
@@ -631,7 +631,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1ChainID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 312, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 320, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -644,7 +644,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DA)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 313, Col: 57}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 321, Col: 57}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -732,7 +732,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 371, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 379, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -745,7 +745,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 372, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 380, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -758,7 +758,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 373, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 381, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -771,7 +771,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 374, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 382, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -784,7 +784,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1ChainID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 375, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 383, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
@@ -797,7 +797,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DA)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 376, Col: 57}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 384, Col: 57}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 		if templ_7745c5c3_Err != nil {
@@ -810,7 +810,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DeployerKey)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 377, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 385, Col: 76}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -823,7 +823,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var38 string
 		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.BatcherKey)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 378, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 386, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
@@ -836,7 +836,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ProposerKey)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 379, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 387, Col: 76}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
@@ -908,7 +908,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs("for")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 423, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 431, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
@@ -921,7 +921,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs("if")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 427, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 435, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
@@ -964,7 +964,7 @@ func ReviewRow(label, value string) templ.Component {
 		var templ_7745c5c3_Var43 string
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 452, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 460, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {
@@ -977,7 +977,7 @@ func ReviewRow(label, value string) templ.Component {
 		var templ_7745c5c3_Var44 string
 		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 453, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 461, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 		if templ_7745c5c3_Err != nil {
@@ -1020,7 +1020,7 @@ func ReviewKeyRow(role, keyName string) templ.Component {
 		var templ_7745c5c3_Var46 string
 		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(role)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 460, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 468, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 		if templ_7745c5c3_Err != nil {
@@ -1033,7 +1033,7 @@ func ReviewKeyRow(role, keyName string) templ.Component {
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(keyName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 461, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 469, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
