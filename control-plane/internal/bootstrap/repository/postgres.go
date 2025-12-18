@@ -147,6 +147,33 @@ func (r *PostgresRepository) ListDeploymentsByStatus(ctx context.Context, status
 	return deployments, rows.Err()
 }
 
+// ListAllDeployments retrieves all deployments ordered by creation date.
+func (r *PostgresRepository) ListAllDeployments(ctx context.Context) ([]*Deployment, error) {
+	query := `
+		SELECT id, chain_id, stack, status, current_stage, config, error_message, created_at, updated_at
+		FROM deployments
+		ORDER BY created_at DESC`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("ListAllDeployments: %w", err)
+	}
+	defer rows.Close()
+
+	var deployments []*Deployment
+	for rows.Next() {
+		var d Deployment
+		if err := rows.Scan(
+			&d.ID, &d.ChainID, &d.Stack, &d.Status, &d.CurrentStage,
+			&d.Config, &d.ErrorMessage, &d.CreatedAt, &d.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("ListAllDeployments scan: %w", err)
+		}
+		deployments = append(deployments, &d)
+	}
+	return deployments, rows.Err()
+}
+
 // RecordTransaction inserts a new transaction record.
 func (r *PostgresRepository) RecordTransaction(ctx context.Context, tx *Transaction) error {
 	if tx.ID == uuid.Nil {

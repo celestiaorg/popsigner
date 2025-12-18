@@ -1,0 +1,242 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/Bidon15/popsigner/control-plane/templates/layouts"
+)
+
+// DeploymentsListData holds data for the deployments list page
+type DeploymentsListData struct {
+	layouts.PopkinsData        // Use POPKins layout data
+	Deployments []DeploymentSummary
+	Total       int
+}
+
+// DeploymentSummary represents a deployment in the list view
+type DeploymentSummary struct {
+	ID        string
+	ChainName string
+	ChainID   uint64
+	Stack     string // "opstack" or "nitro"
+	Status    string // "pending", "running", "completed", "failed", "paused"
+	CreatedAt string
+}
+
+// DeploymentsListPage renders the deployments list page using POPKins layout
+templ DeploymentsListPage(data DeploymentsListData) {
+	@layouts.Popkins("My Chains", data.PopkinsData) {
+		<div class="p-6 space-y-6 max-w-7xl mx-auto">
+			<!-- Header with title and action -->
+			<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+				<div>
+					<h1 class="text-2xl font-bold text-[#33FF00] uppercase tracking-wider flex items-center gap-3">
+						<span class="text-[#FFB000]">▸</span>
+						MY_CHAINS
+					</h1>
+					<p class="text-[#666600] mt-1 text-sm uppercase">
+						Deploy and manage your rollup chains
+					</p>
+				</div>
+				<a href="/popkins/deployments/new"
+				   class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#FFB000] text-black font-bold uppercase 
+						  hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all duration-200 whitespace-nowrap">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+					</svg>
+					NEW CHAIN
+				</a>
+			</div>
+
+			<!-- Stats Bar -->
+			if data.Total > 0 {
+				<div class="flex items-center gap-6 text-sm text-[#666600] uppercase border-b border-[#333300] pb-4">
+					<span>
+						Total: <span class="text-[#33FF00] font-bold">{ fmt.Sprintf("%d", data.Total) }</span>
+					</span>
+					<span>
+						Active: <span class="text-[#33FF00]">{ countByStatus(data.Deployments, "completed") }</span>
+					</span>
+					<span>
+						Deploying: <span class="text-[#FFB000]">{ countByStatus(data.Deployments, "running") }</span>
+					</span>
+				</div>
+			}
+
+			<!-- Deployments List or Empty State -->
+			if len(data.Deployments) == 0 {
+				@DeploymentsEmptyState()
+			} else {
+				@DeploymentsTable(data.Deployments)
+			}
+		</div>
+	}
+}
+
+// DeploymentsEmptyState shows when there are no deployments
+templ DeploymentsEmptyState() {
+	<div class="text-center py-20 border border-dashed border-[#333300] bg-black">
+		<div class="text-7xl mb-6">🚀</div>
+		<h2 class="text-2xl text-[#33FF00] mb-3 uppercase font-bold">No Chains Deployed Yet</h2>
+		<p class="text-[#666600] mb-8 max-w-md mx-auto">
+			Deploy your first rollup chain in minutes. Choose between OP Stack or Nitro architectures.
+		</p>
+		<a href="/popkins/deployments/new"
+		   class="inline-flex items-center gap-3 px-8 py-4 bg-[#33FF00] text-black font-bold uppercase 
+				  hover:bg-[#44FF11] hover:shadow-[0_0_30px_#33FF00] transition-all duration-200 text-lg">
+			<span>DEPLOY YOUR FIRST CHAIN</span>
+			<span>→</span>
+		</a>
+		
+		<div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+			<div class="p-4 border border-[#333300] bg-[#0a0a00] text-left">
+				<div class="text-[#FFB000] font-bold uppercase mb-2">OP Stack</div>
+				<p class="text-[#666600] text-sm">Optimism-based rollups with battle-tested security.</p>
+			</div>
+			<div class="p-4 border border-[#333300] bg-[#0a0a00] text-left">
+				<div class="text-[#FFB000] font-bold uppercase mb-2">Nitro (Orbit)</div>
+				<p class="text-[#666600] text-sm">Arbitrum Orbit chains with Nitro technology.</p>
+			</div>
+		</div>
+	</div>
+}
+
+// DeploymentsTable renders the table of deployments
+templ DeploymentsTable(deployments []DeploymentSummary) {
+	<div class="border border-[#333300] bg-black overflow-hidden">
+		<table class="w-full">
+			<thead class="border-b border-[#333300] bg-[#0a0a00]">
+				<tr class="text-left text-xs text-[#666600] uppercase tracking-wider">
+					<th class="px-4 py-3 font-medium">Chain Name</th>
+					<th class="px-4 py-3 font-medium">Chain ID</th>
+					<th class="px-4 py-3 font-medium">Stack</th>
+					<th class="px-4 py-3 font-medium">Status</th>
+					<th class="px-4 py-3 font-medium">Created</th>
+					<th class="px-4 py-3 font-medium text-right">Actions</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-[#1a1a00]">
+				for _, d := range deployments {
+					<tr class="hover:bg-[#0d1a0d] transition-colors group">
+						<td class="px-4 py-4">
+							<div class="flex items-center gap-3">
+								<span class="text-[#33FF00] text-lg">
+									if d.Stack == "opstack" {
+										⬡
+									} else {
+										◇
+									}
+								</span>
+								<span class="text-[#33FF00] font-bold uppercase">{ d.ChainName }</span>
+							</div>
+						</td>
+						<td class="px-4 py-4 text-[#999] font-mono">{ fmt.Sprintf("%d", d.ChainID) }</td>
+						<td class="px-4 py-4">
+							@StackBadge(d.Stack)
+						</td>
+						<td class="px-4 py-4">
+							@DeploymentStatusBadge(d.Status)
+						</td>
+						<td class="px-4 py-4 text-[#666600] text-sm">{ d.CreatedAt }</td>
+						<td class="px-4 py-4 text-right">
+							@DeploymentActions(d)
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+// StackBadge renders the stack type badge
+templ StackBadge(stack string) {
+	if stack == "opstack" {
+		<span class="inline-flex items-center gap-1 px-2 py-1 text-xs uppercase bg-[#1a0a1a] text-[#FF6B6B] border border-[#FF6B6B]/30 font-bold">
+			OP STACK
+		</span>
+	} else {
+		<span class="inline-flex items-center gap-1 px-2 py-1 text-xs uppercase bg-[#0a1a1a] text-[#12AAFF] border border-[#12AAFF]/30 font-bold">
+			NITRO
+		</span>
+	}
+}
+
+// DeploymentStatusBadge renders the status badge with appropriate styling
+templ DeploymentStatusBadge(status string) {
+	switch status {
+	case "completed":
+		<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs uppercase bg-[#003300] text-[#33FF00] border border-[#33FF00]/50 font-bold">
+			<span class="inline-block w-1.5 h-1.5 bg-[#33FF00] rounded-full"></span>
+			READY
+		</span>
+	case "running":
+		<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs uppercase bg-[#1a1500] text-[#FFB000] border border-[#FFB000]/50 font-bold animate-pulse">
+			<span class="inline-block w-1.5 h-1.5 bg-[#FFB000] rounded-full"></span>
+			DEPLOYING
+		</span>
+	case "failed":
+		<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs uppercase bg-[#1a0000] text-[#FF3300] border border-[#FF3300]/50 font-bold">
+			<span class="inline-block w-1.5 h-1.5 bg-[#FF3300] rounded-full"></span>
+			FAILED
+		</span>
+	case "paused":
+		<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs uppercase bg-[#1a1a00] text-[#FFB000] border border-[#FFB000]/30 font-bold">
+			<span class="inline-block w-1.5 h-1.5 bg-[#FFB000] rounded-full"></span>
+			PAUSED
+		</span>
+	default:
+		<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs uppercase bg-[#1a1a1a] text-[#666600] border border-[#333300] font-bold">
+			<span class="inline-block w-1.5 h-1.5 bg-[#666600] rounded-full"></span>
+			PENDING
+		</span>
+	}
+}
+
+// DeploymentActions renders the action buttons based on status
+templ DeploymentActions(d DeploymentSummary) {
+	<div class="flex items-center justify-end gap-2">
+		switch d.Status {
+		case "completed":
+			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID + "/complete") }
+			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#33FF00] border border-[#33FF00]/50 
+					  hover:bg-[#33FF00]/10 transition-colors">
+				VIEW →
+			</a>
+		case "running":
+			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID + "/status") }
+			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#FFB000] border border-[#FFB000]/50 
+					  hover:bg-[#FFB000]/10 transition-colors animate-pulse">
+				PROGRESS →
+			</a>
+		case "failed":
+			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID) }
+			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#FF3300] border border-[#FF3300]/50 
+					  hover:bg-[#FF3300]/10 transition-colors">
+				DETAILS →
+			</a>
+		case "paused":
+			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID) }
+			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#FFB000] border border-[#FFB000]/50 
+					  hover:bg-[#FFB000]/10 transition-colors">
+				RESUME →
+			</a>
+		default:
+			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID) }
+			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#666600] border border-[#333300] 
+					  hover:text-[#33FF00] hover:border-[#33FF00]/50 transition-colors">
+				DETAILS →
+			</a>
+		}
+	</div>
+}
+
+// Helper function to count deployments by status
+func countByStatus(deployments []DeploymentSummary, status string) string {
+	count := 0
+	for _, d := range deployments {
+		if d.Status == status {
+			count++
+		}
+	}
+	return fmt.Sprintf("%d", count)
+}
+

@@ -6,8 +6,11 @@ package popkins
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -19,6 +22,7 @@ import (
 	"github.com/Bidon15/popsigner/control-plane/internal/models"
 	"github.com/Bidon15/popsigner/control-plane/internal/service"
 	"github.com/Bidon15/popsigner/control-plane/templates/layouts"
+	"github.com/Bidon15/popsigner/control-plane/templates/pages"
 )
 
 // Session constants (shared with main web handler)
@@ -56,7 +60,7 @@ func NewHandler(
 // Placeholder Page Handlers (to be implemented in TASK-041 to TASK-044)
 // ============================================
 
-// DeploymentsList renders the list of deployments (TASK-041)
+// DeploymentsList renders the list of deployments
 func (h *Handler) DeploymentsList(w http.ResponseWriter, r *http.Request) {
 	user, org, err := h.getUserAndOrg(r)
 	if err != nil {
@@ -64,17 +68,63 @@ func (h *Handler) DeploymentsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := layouts.PopkinsData{
-		UserName:   getUserName(user),
-		UserEmail:  user.Email,
-		AvatarURL:  getAvatarURL(user),
-		OrgName:    org.Name,
-		ActivePath: "/popkins/deployments",
+	// Fetch all deployments from repository
+	deployments, err := h.deployRepo.ListAllDeployments(r.Context())
+	if err != nil {
+		slog.Error("failed to list deployments", "error", err)
+		// Continue with empty list
+		deployments = []*repository.Deployment{}
 	}
 
-	// Render layout with placeholder content
+	// Convert to template format
+	summaries := make([]pages.DeploymentSummary, 0, len(deployments))
+	for _, d := range deployments {
+		summaries = append(summaries, pages.DeploymentSummary{
+			ID:        d.ID.String(),
+			ChainName: extractChainName(d),
+			ChainID:   uint64(d.ChainID),
+			Stack:     string(d.Stack),
+			Status:    string(d.Status),
+			CreatedAt: d.CreatedAt.Format("Jan 2, 2006"),
+		})
+	}
+
+	data := pages.DeploymentsListData{
+		PopkinsData: layouts.PopkinsData{
+			UserName:   getUserName(user),
+			UserEmail:  user.Email,
+			AvatarURL:  getAvatarURL(user),
+			OrgName:    org.Name,
+			ActivePath: "/popkins/deployments",
+		},
+		Deployments: summaries,
+		Total:       len(summaries),
+	}
+
+	// Render deployments list page
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	layouts.PopkinsWithContent("My Chains", data, placeholderDeploymentsList()).Render(r.Context(), w)
+	pages.DeploymentsListPage(data).Render(r.Context(), w)
+}
+
+// extractChainName extracts the chain name from deployment config
+func extractChainName(d *repository.Deployment) string {
+	// Try to extract name from config JSON
+	if d.Config != nil {
+		var config struct {
+			ChainName string `json:"chain_name"`
+			Name      string `json:"name"`
+		}
+		if err := json.Unmarshal(d.Config, &config); err == nil {
+			if config.ChainName != "" {
+				return config.ChainName
+			}
+			if config.Name != "" {
+				return config.Name
+			}
+		}
+	}
+	// Fallback to Chain ID based name
+	return fmt.Sprintf("Chain %d", d.ChainID)
 }
 
 // DeploymentsNew renders the new deployment form (TASK-042)

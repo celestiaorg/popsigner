@@ -66,7 +66,7 @@ Each task file follows a standard format:
 | Task                                                                   | Status  | Agent | Description                           |
 | ---------------------------------------------------------------------- | ------- | ----- | ------------------------------------- |
 | [TASK-040: POPKins App Shell](./TASK-040-deployments-nav.md)           | ✅ Done | Agent-UI1 | Separate app layout + navigation      |
-| [TASK-041: Deployments List](./TASK-041-deployments-list.md)           | 🔲 Open | -     | List all chain deployments            |
+| [TASK-041: Deployments List](./TASK-041-deployments-list.md)           | ✅ Done | Agent-UI2 | List all chain deployments            |
 | [TASK-042: Create Deployment Form](./TASK-042-deployment-create.md)    | 🔲 Open | -     | Multi-step chain configuration wizard |
 | [TASK-043: Deployment Detail](./TASK-043-deployment-detail.md)         | 🔲 Open | -     | View deployment configuration         |
 | [TASK-044: Deployment Progress](./TASK-044-deployment-progress.md)     | 🔲 Open | -     | Real-time deployment status           |
