@@ -1,0 +1,143 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/Bidon15/popsigner/control-plane/templates/layouts"
+	"github.com/Bidon15/popsigner/control-plane/templates/components"
+)
+
+// DeploymentProgressData holds data for the deployment progress page
+type DeploymentProgressData struct {
+	layouts.PopkinsData // Use POPKins layout, NOT Dashboard
+	DeploymentID    string
+	ChainName       string
+	ChainID         int64
+	Stack           string // "opstack" or "nitro"
+	Status          string // "pending", "running", "completed", "failed", "paused"
+	CurrentStage    string
+	TotalStages     int
+	CompletedStages int
+	Stages          []components.StageInfo
+	LatestTx        *components.TxInfo
+	ErrorMsg        *string
+	L1ChainID       string // For explorer links
+}
+
+// DeploymentProgressPage renders the full deployment progress page with HTMX polling
+templ DeploymentProgressPage(data DeploymentProgressData) {
+	@layouts.Popkins("Deployment Progress", data.PopkinsData) {
+		<div class="max-w-3xl mx-auto p-6">
+			<!-- Back link -->
+			<a href="/popkins/deployments" class="text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block">
+				← BACK TO MY CHAINS
+			</a>
+			
+			<!-- HTMX Polling Container -->
+			<div id="progress-container"
+				 hx-get={ "/popkins/deployments/" + data.DeploymentID + "/progress-partial" }
+				 hx-trigger="every 5s"
+				 hx-swap="innerHTML"
+				 hx-target="#progress-container">
+				@DeploymentProgressContent(data)
+			</div>
+		</div>
+	}
+}
+
+// DeploymentProgressContent renders just the progress content (for HTMX partial updates)
+templ DeploymentProgressContent(data DeploymentProgressData) {
+	<!-- Auto-redirect script for completed deployments -->
+	if data.Status == "completed" {
+		<script>
+			window.location.href = "/popkins/deployments/" + { data.DeploymentID } + "/complete";
+		</script>
+		<div class="text-center py-12">
+			<div class="text-5xl mb-4">✅</div>
+			<h2 class="text-2xl text-[#33FF00] font-bold uppercase mb-2">Deployment Complete!</h2>
+			<p class="text-[#666600]">Redirecting...</p>
+		</div>
+	} else {
+		<!-- Header -->
+		<div class="mb-6">
+			<div class="flex items-center gap-3 mb-2">
+				if data.Status == "running" {
+					<span class="inline-flex items-center gap-2 px-3 py-1 bg-[#FFB000]/20 border border-[#FFB000]/50 text-[#FFB000] text-xs uppercase font-bold">
+						<span class="w-2 h-2 bg-[#FFB000] rounded-full animate-pulse"></span>
+						DEPLOYING
+					</span>
+				} else if data.Status == "failed" {
+					<span class="inline-flex items-center gap-2 px-3 py-1 bg-[#FF3300]/20 border border-[#FF3300]/50 text-[#FF3300] text-xs uppercase font-bold">
+						<span class="w-2 h-2 bg-[#FF3300] rounded-full"></span>
+						FAILED
+					</span>
+				} else if data.Status == "paused" {
+					<span class="inline-flex items-center gap-2 px-3 py-1 bg-[#FFB000]/20 border border-[#FFB000]/50 text-[#FFB000] text-xs uppercase font-bold">
+						<span class="w-2 h-2 bg-[#FFB000] rounded-full"></span>
+						PAUSED
+					</span>
+				} else {
+					<span class="inline-flex items-center gap-2 px-3 py-1 bg-[#333300]/20 border border-[#333300]/50 text-[#666600] text-xs uppercase font-bold">
+						<span class="w-2 h-2 bg-[#666600] rounded-full"></span>
+						PENDING
+					</span>
+				}
+			</div>
+			<h1 class="text-2xl font-bold text-[#33FF00] uppercase tracking-wider">
+				{ data.ChainName }
+			</h1>
+			<p class="text-[#666600] mt-1 text-sm uppercase flex items-center gap-3">
+				<span>
+					if data.Stack == "opstack" {
+						⚡ OP Stack
+					} else {
+						🚀 Arbitrum Nitro
+					}
+				</span>
+				<span>•</span>
+				<span>Chain ID: { fmt.Sprintf("%d", data.ChainID) }</span>
+				if data.CurrentStage != "" {
+					<span>•</span>
+					<span class="text-[#FFB000]">{ data.CurrentStage }</span>
+				}
+			</p>
+		</div>
+
+		<!-- Progress Bar -->
+		<div class="mb-8">
+			@components.ProgressBar(data.CompletedStages, data.TotalStages)
+		</div>
+
+		<!-- Error State -->
+		if data.ErrorMsg != nil && *data.ErrorMsg != "" {
+			<div class="mb-6">
+				@components.ErrorAlert(data.DeploymentID, *data.ErrorMsg)
+			</div>
+		}
+
+		<!-- Stages List -->
+		<div class="bg-black border border-[#333300] mb-6 overflow-hidden">
+			<div class="px-4 py-3 border-b border-[#333300] bg-[#0a0a00]">
+				<h3 class="text-sm text-[#666600] uppercase font-bold">Deployment Stages</h3>
+			</div>
+			<div class="divide-y divide-[#1a1a00]">
+				@components.ProgressStages(data.Stages)
+			</div>
+		</div>
+
+		<!-- Latest Transaction -->
+		if data.LatestTx != nil && data.LatestTx.Hash != "" {
+			<div class="mb-6">
+				@components.LatestTransaction(*data.LatestTx, data.L1ChainID)
+			</div>
+		}
+
+		<!-- Auto-refresh Notice -->
+		@components.AutoRefreshNotice()
+	}
+}
+
+// DeploymentProgressPartial is a standalone template for HTMX partial updates
+templ DeploymentProgressPartial(data DeploymentProgressData) {
+	@DeploymentProgressContent(data)
+}
+

@@ -454,17 +454,245 @@ func (h *Handler) DeploymentStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := layouts.PopkinsData{
-		UserName:   getUserName(user),
-		UserEmail:  user.Email,
-		AvatarURL:  getAvatarURL(user),
-		OrgName:    org.Name,
-		ActivePath: "/popkins/deployments",
+	// Get deployment ID from URL
+	deploymentID := chi.URLParam(r, "id")
+	if deploymentID == "" {
+		http.Redirect(w, r, "/popkins/deployments", http.StatusFound)
+		return
 	}
 
-	// Render layout with placeholder content
+	deploymentUUID, err := uuid.Parse(deploymentID)
+	if err != nil {
+		http.Redirect(w, r, "/popkins/deployments", http.StatusFound)
+		return
+	}
+
+	// Get deployment from repository
+	deployment, err := h.deployRepo.GetDeployment(r.Context(), deploymentUUID)
+	if err != nil {
+		slog.Error("failed to get deployment", "id", deploymentID, "error", err)
+		http.Redirect(w, r, "/popkins/deployments", http.StatusFound)
+		return
+	}
+
+	// If completed, redirect to complete page
+	if deployment.Status == repository.StatusCompleted {
+		http.Redirect(w, r, "/popkins/deployments/"+deploymentID+"/complete", http.StatusFound)
+		return
+	}
+
+	// Build progress data
+	data := h.buildProgressData(user, org, deployment)
+
+	// Render progress page
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	layouts.PopkinsWithContent("Deployment Progress", data, placeholderDeploymentProgress()).Render(r.Context(), w)
+	pages.DeploymentProgressPage(data).Render(r.Context(), w)
+}
+
+// DeploymentProgressPartial returns just the progress content for HTMX polling
+func (h *Handler) DeploymentProgressPartial(w http.ResponseWriter, r *http.Request) {
+	user, org, err := h.getUserAndOrg(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Get deployment ID from URL
+	deploymentID := chi.URLParam(r, "id")
+	if deploymentID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	deploymentUUID, err := uuid.Parse(deploymentID)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Get deployment from repository
+	deployment, err := h.deployRepo.GetDeployment(r.Context(), deploymentUUID)
+	if err != nil {
+		slog.Error("failed to get deployment for partial", "id", deploymentID, "error", err)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	// Build progress data
+	data := h.buildProgressData(user, org, deployment)
+
+	// Render just the progress content (partial)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	pages.DeploymentProgressPartial(data).Render(r.Context(), w)
+}
+
+// buildProgressData constructs the progress page data from a deployment
+func (h *Handler) buildProgressData(user *models.User, org *models.Organization, deployment *repository.Deployment) pages.DeploymentProgressData {
+	// Build stage list based on stack
+	stages := h.buildStagesInfo(deployment)
+
+	// Get latest transaction if available
+	var latestTx *components.TxInfo
+	txs, err := h.deployRepo.GetTransactionsByDeployment(context.Background(), deployment.ID)
+	if err == nil && len(txs) > 0 {
+		lastTx := txs[len(txs)-1]
+		explorerURL := getExplorerURL(lastTx.TxHash, extractL1ChainID(deployment))
+		latestTx = &components.TxInfo{
+			Hash:        lastTx.TxHash,
+			Status:      "confirmed",
+			ExplorerURL: explorerURL,
+		}
+	}
+
+	// Get error message if any
+	var errorMsg *string
+	if deployment.ErrorMessage != nil && *deployment.ErrorMessage != "" {
+		errorMsg = deployment.ErrorMessage
+	}
+
+	// Count completed stages
+	completedCount := 0
+	for _, s := range stages {
+		if s.Status == "completed" {
+			completedCount++
+		}
+	}
+
+	currentStage := ""
+	if deployment.CurrentStage != nil {
+		currentStage = *deployment.CurrentStage
+	}
+
+	return pages.DeploymentProgressData{
+		PopkinsData: layouts.PopkinsData{
+			UserName:   getUserName(user),
+			UserEmail:  user.Email,
+			AvatarURL:  getAvatarURL(user),
+			OrgName:    org.Name,
+			ActivePath: "/popkins/deployments",
+		},
+		DeploymentID:    deployment.ID.String(),
+		ChainName:       extractChainName(deployment),
+		ChainID:         deployment.ChainID,
+		Stack:           string(deployment.Stack),
+		Status:          string(deployment.Status),
+		CurrentStage:    currentStage,
+		TotalStages:     len(stages),
+		CompletedStages: completedCount,
+		Stages:          stages,
+		LatestTx:        latestTx,
+		ErrorMsg:        errorMsg,
+		L1ChainID:       extractL1ChainID(deployment),
+	}
+}
+
+// buildStagesInfo creates stage info list for the progress display
+func (h *Handler) buildStagesInfo(deployment *repository.Deployment) []components.StageInfo {
+	var stages []components.StageInfo
+
+	currentStage := ""
+	if deployment.CurrentStage != nil {
+		currentStage = *deployment.CurrentStage
+	}
+
+	if deployment.Stack == repository.StackOPStack {
+		// OP Stack stages
+		stages = []components.StageInfo{
+			{Name: "Initialize Configuration", Status: "pending", TxCount: 0},
+			{Name: "Validate Settings", Status: "pending", TxCount: 0},
+			{Name: "Deploy L1 Contracts", Status: "pending", TxCount: 35},
+			{Name: "Generate Genesis", Status: "pending", TxCount: 0},
+			{Name: "Configure Sequencer", Status: "pending", TxCount: 0},
+			{Name: "Finalize Deployment", Status: "pending", TxCount: 0},
+		}
+	} else {
+		// Nitro stages
+		stages = []components.StageInfo{
+			{Name: "Initialize Configuration", Status: "pending", TxCount: 0},
+			{Name: "Validate Settings", Status: "pending", TxCount: 0},
+			{Name: "Deploy Rollup Contracts", Status: "pending", TxCount: 1},
+			{Name: "Configure Validator", Status: "pending", TxCount: 0},
+			{Name: "Finalize Deployment", Status: "pending", TxCount: 0},
+		}
+	}
+
+	// Update stages based on deployment status
+	if deployment.Status == repository.StatusCompleted {
+		// All stages complete
+		for i := range stages {
+			stages[i].Status = "completed"
+			stages[i].TxComplete = stages[i].TxCount
+		}
+	} else if deployment.Status == repository.StatusFailed {
+		// Mark stages up to current as complete, current as failed
+		foundCurrent := false
+		for i := range stages {
+			if !foundCurrent {
+				if stages[i].Name == currentStage {
+					stages[i].Status = "failed"
+					foundCurrent = true
+				} else if currentStage == "" {
+					// No current stage means first stage
+					stages[0].Status = "failed"
+					foundCurrent = true
+				} else {
+					stages[i].Status = "completed"
+					stages[i].TxComplete = stages[i].TxCount
+				}
+			}
+		}
+	} else if deployment.Status == repository.StatusRunning {
+		// Mark stages up to current as complete, current as in_progress
+		foundCurrent := false
+		for i := range stages {
+			if !foundCurrent {
+				if stages[i].Name == currentStage {
+					stages[i].Status = "in_progress"
+					stages[i].TxComplete = stages[i].TxCount / 2 // Estimate 50% for demo
+					stages[i].Details = "Processing..."
+					foundCurrent = true
+				} else if currentStage == "" && i == 0 {
+					stages[i].Status = "in_progress"
+					foundCurrent = true
+				} else {
+					stages[i].Status = "completed"
+					stages[i].TxComplete = stages[i].TxCount
+				}
+			}
+		}
+	} else if deployment.Status == repository.StatusPending {
+		// First stage is pending/waiting
+		stages[0].Status = "pending"
+	}
+
+	return stages
+}
+
+// getExplorerURL returns the block explorer URL for a transaction hash
+func getExplorerURL(txHash, l1ChainID string) string {
+	switch l1ChainID {
+	case "1":
+		return "https://etherscan.io/tx/" + txHash
+	case "11155111":
+		return "https://sepolia.etherscan.io/tx/" + txHash
+	case "17000":
+		return "https://holesky.etherscan.io/tx/" + txHash
+	default:
+		return "https://etherscan.io/tx/" + txHash
+	}
+}
+
+// extractL1ChainID extracts L1 chain ID from deployment config
+func extractL1ChainID(d *repository.Deployment) string {
+	if d.Config != nil {
+		var config struct {
+			L1ChainID string `json:"l1_chain_id"`
+		}
+		if err := json.Unmarshal(d.Config, &config); err == nil && config.L1ChainID != "" {
+			return config.L1ChainID
+		}
+	}
+	return "11155111" // Default to Sepolia
 }
 
 // DeploymentComplete renders the deployment complete page (reuses TASK-032)

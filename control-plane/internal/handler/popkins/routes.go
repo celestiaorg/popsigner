@@ -39,11 +39,12 @@ func (h *Handler) Routes() chi.Router {
 
 		// Individual deployment routes
 		r.Route("/{id}", func(r chi.Router) {
-			r.Get("/", h.DeploymentDetail)           // GET /popkins/deployments/{id}
-			r.Get("/status", h.DeploymentStatus)     // GET /popkins/deployments/{id}/status
-			r.Get("/complete", h.DeploymentComplete) // GET /popkins/deployments/{id}/complete
-			r.Get("/bundle", h.DownloadBundle)       // GET /popkins/deployments/{id}/bundle
-			r.Post("/resume", h.DeploymentResume)    // POST /popkins/deployments/{id}/resume
+			r.Get("/", h.DeploymentDetail)                   // GET /popkins/deployments/{id}
+			r.Get("/status", h.DeploymentStatus)             // GET /popkins/deployments/{id}/status
+			r.Get("/progress-partial", h.DeploymentProgressPartial) // GET /popkins/deployments/{id}/progress-partial (HTMX)
+			r.Get("/complete", h.DeploymentComplete)         // GET /popkins/deployments/{id}/complete
+			r.Get("/bundle", h.DownloadBundle)               // GET /popkins/deployments/{id}/bundle
+			r.Post("/resume", h.DeploymentResume)            // POST /popkins/deployments/{id}/resume
 		})
 	})
 

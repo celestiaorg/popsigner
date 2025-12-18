@@ -1,0 +1,225 @@
+package components
+
+import "fmt"
+
+// StageInfo represents a deployment stage with its status
+type StageInfo struct {
+	Name       string
+	Status     string // "completed", "in_progress", "pending", "failed"
+	TxCount    int
+	TxComplete int
+	Details    string // Optional detail message
+}
+
+// TxInfo represents a blockchain transaction
+type TxInfo struct {
+	Hash       string
+	Status     string // "pending", "confirming", "confirmed", "failed"
+	ExplorerURL string
+}
+
+// ProgressStages renders the list of deployment stages with status indicators
+templ ProgressStages(stages []StageInfo) {
+	<div class="space-y-2">
+		for i, stage := range stages {
+			@ProgressStageRow(i+1, stage)
+		}
+	</div>
+}
+
+// ProgressStageRow renders a single stage row with status
+templ ProgressStageRow(index int, stage StageInfo) {
+	<div class={ "flex items-center gap-3 py-3 px-4 border-l-2 transition-colors",
+				 templ.KV("border-[#33FF00] bg-[#33FF00]/5", stage.Status == "completed"),
+				 templ.KV("border-[#FFB000] bg-[#FFB000]/5", stage.Status == "in_progress"),
+				 templ.KV("border-[#FF3300] bg-[#FF3300]/5", stage.Status == "failed"),
+				 templ.KV("border-[#333300] bg-transparent", stage.Status == "pending") }>
+		
+		<!-- Status Icon -->
+		<div class="w-6 h-6 flex items-center justify-center">
+			switch stage.Status {
+			case "completed":
+				<span class="text-[#33FF00] text-lg">✓</span>
+			case "in_progress":
+				<span class="text-[#FFB000] animate-pulse">
+					<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+					</svg>
+				</span>
+			case "failed":
+				<span class="text-[#FF3300] text-lg">✗</span>
+			default:
+				<span class="text-[#333300] text-lg">○</span>
+			}
+		</div>
+
+		<!-- Stage Number and Name -->
+		<div class="flex-1 min-w-0">
+			<div class="flex items-center gap-2">
+				<span class={ "text-xs font-bold",
+							  templ.KV("text-[#33FF00]", stage.Status == "completed"),
+							  templ.KV("text-[#FFB000]", stage.Status == "in_progress"),
+							  templ.KV("text-[#FF3300]", stage.Status == "failed"),
+							  templ.KV("text-[#666600]", stage.Status == "pending") }>
+					{ fmt.Sprintf("STAGE %d", index) }
+				</span>
+			</div>
+			<div class={ "text-sm uppercase",
+						 templ.KV("text-[#33FF00]", stage.Status == "completed"),
+						 templ.KV("text-[#FFB000]", stage.Status == "in_progress"),
+						 templ.KV("text-[#FF3300]", stage.Status == "failed"),
+						 templ.KV("text-[#666600]", stage.Status == "pending") }>
+				{ stage.Name }
+			</div>
+			if stage.Details != "" && stage.Status == "in_progress" {
+				<div class="text-xs text-[#999] mt-1">
+					{ stage.Details }
+				</div>
+			}
+		</div>
+
+		<!-- Transaction Counter (for OP Stack) -->
+		if stage.TxCount > 0 {
+			<div class="text-right">
+				<div class={ "text-sm font-mono",
+							 templ.KV("text-[#33FF00]", stage.Status == "completed"),
+							 templ.KV("text-[#FFB000]", stage.Status == "in_progress"),
+							 templ.KV("text-[#666600]", stage.Status == "pending") }>
+					{ fmt.Sprintf("%d/%d", stage.TxComplete, stage.TxCount) }
+				</div>
+				<div class="text-xs text-[#333300] uppercase">TX</div>
+			</div>
+		}
+
+		<!-- Status Badge -->
+		<div class={ "px-3 py-1 text-xs uppercase font-bold border whitespace-nowrap",
+					 templ.KV("text-[#33FF00] border-[#33FF00]/40 bg-[#33FF00]/10", stage.Status == "completed"),
+					 templ.KV("text-[#FFB000] border-[#FFB000]/40 bg-[#FFB000]/10", stage.Status == "in_progress"),
+					 templ.KV("text-[#FF3300] border-[#FF3300]/40 bg-[#FF3300]/10", stage.Status == "failed"),
+					 templ.KV("text-[#666600] border-[#333300] bg-transparent", stage.Status == "pending") }>
+			switch stage.Status {
+			case "completed":
+				COMPLETE
+			case "in_progress":
+				IN PROGRESS
+			case "failed":
+				FAILED
+			default:
+				PENDING
+			}
+		</div>
+	</div>
+}
+
+// ProgressBar renders a progress bar with percentage
+templ ProgressBar(completed, total int) {
+	<div class="space-y-2">
+		<div class="flex justify-between text-sm">
+			<span class="text-[#666600] uppercase">
+				Stage { fmt.Sprintf("%d", min(completed+1, total)) } of { fmt.Sprintf("%d", total) }
+			</span>
+			<span class="text-[#33FF00] font-bold">
+				{ calculateProgressPercent(completed, total) }%
+			</span>
+		</div>
+		<div class="h-3 bg-[#1a1a00] border border-[#333300] overflow-hidden">
+			<div class="h-full bg-gradient-to-r from-[#228B22] to-[#33FF00] transition-all duration-500 ease-out"
+				 style={ fmt.Sprintf("width: %s%%", calculateProgressPercent(completed, total)) }>
+			</div>
+		</div>
+	</div>
+}
+
+// LatestTransaction renders the latest transaction info with explorer link
+templ LatestTransaction(tx TxInfo, l1ChainID string) {
+	<div class="bg-[#0a0a00] border border-[#333300] p-4">
+		<div class="flex items-center justify-between mb-2">
+			<span class="text-[#666600] text-xs uppercase">Latest Transaction</span>
+			<span class={ "text-xs uppercase px-2 py-0.5 border",
+						  templ.KV("text-[#33FF00] border-[#33FF00]/40", tx.Status == "confirmed"),
+						  templ.KV("text-[#FFB000] border-[#FFB000]/40 animate-pulse", tx.Status == "confirming" || tx.Status == "pending"),
+						  templ.KV("text-[#FF3300] border-[#FF3300]/40", tx.Status == "failed") }>
+				switch tx.Status {
+				case "confirmed":
+					CONFIRMED
+				case "confirming":
+					CONFIRMING...
+				case "pending":
+					PENDING...
+				default:
+					{ tx.Status }
+				}
+			</span>
+		</div>
+		<div class="flex items-center justify-between gap-4">
+			<code class="text-[#33FF00] text-sm font-mono truncate">
+				{ truncateTxHash(tx.Hash) }
+			</code>
+			if tx.ExplorerURL != "" {
+				<a href={ templ.SafeURL(tx.ExplorerURL) } target="_blank" 
+				   class="text-[#FFB000] text-sm hover:underline whitespace-nowrap flex items-center gap-1">
+					<span>View on Explorer</span>
+					<span>→</span>
+				</a>
+			}
+		</div>
+	</div>
+}
+
+// ErrorAlert renders an error message with resume button
+templ ErrorAlert(deploymentID string, errorMsg string) {
+	<div class="bg-[#1a0000] border border-[#FF3300] p-5">
+		<div class="flex items-start gap-3">
+			<span class="text-[#FF3300] text-xl">⚠</span>
+			<div class="flex-1">
+				<p class="text-[#FF3300] font-bold uppercase mb-2">Deployment Failed</p>
+				<p class="text-[#FF9999] text-sm mb-4">{ errorMsg }</p>
+				<form action={ templ.SafeURL("/popkins/deployments/" + deploymentID + "/resume") } method="POST">
+					<button type="submit" 
+							class="px-5 py-2 bg-[#FFB000] text-black font-bold uppercase hover:bg-[#FFCC00] transition-colors">
+						RESUME DEPLOYMENT
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}
+
+// AutoRefreshNotice renders the auto-refresh indicator
+templ AutoRefreshNotice() {
+	<div class="text-center py-4 border-t border-[#333300] mt-6">
+		<div class="flex items-center justify-center gap-2 text-[#333300] text-xs uppercase">
+			<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle>
+				<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+			</svg>
+			<span>This page auto-refreshes every 5 seconds</span>
+		</div>
+	</div>
+}
+
+// Helper functions
+
+func calculateProgressPercent(completed, total int) string {
+	if total == 0 {
+		return "0"
+	}
+	percent := (completed * 100) / total
+	return fmt.Sprintf("%d", percent)
+}
+
+func truncateTxHash(hash string) string {
+	if len(hash) <= 16 {
+		return hash
+	}
+	return hash[:10] + "..." + hash[len(hash)-6:]
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+

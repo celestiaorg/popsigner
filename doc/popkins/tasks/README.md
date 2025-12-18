@@ -69,7 +69,7 @@ Each task file follows a standard format:
 | [TASK-041: Deployments List](./TASK-041-deployments-list.md)           | ✅ Done | Agent-UI2 | List all chain deployments            |
 | [TASK-042: Create Deployment Form](./TASK-042-deployment-create.md)    | ✅ Done | Agent-UI3 | Multi-step chain configuration wizard |
 | [TASK-043: Deployment Detail](./TASK-043-deployment-detail.md)         | ✅ Done | Agent-UI4     | View deployment configuration         |
-| [TASK-044: Deployment Progress](./TASK-044-deployment-progress.md)     | 🔲 Open | -     | Real-time deployment status           |
+| [TASK-044: Deployment Progress](./TASK-044-deployment-progress.md)     | ✅ Done | Agent-UI5 | Real-time deployment status           |
 
 ---
 
