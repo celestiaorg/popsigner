@@ -35,6 +35,18 @@ func (h *Handler) Routes() chi.Router {
 		http.Redirect(w, r, "/deployments", http.StatusFound)
 	})
 
+	// Handle /popkins/* paths for subdomain access
+	// When accessed via subdomain, links may still point to /popkins/* paths
+	// Strip the /popkins prefix and redirect to the correct path
+	r.Get("/popkins/*", func(w http.ResponseWriter, r *http.Request) {
+		// Remove /popkins prefix and redirect
+		newPath := r.URL.Path[8:] // len("/popkins") = 8
+		if newPath == "" {
+			newPath = "/deployments"
+		}
+		http.Redirect(w, r, newPath, http.StatusFound)
+	})
+
 	// Deployment routes
 	r.Route("/deployments", func(r chi.Router) {
 		r.Get("/", h.DeploymentsList)           // GET /popkins/deployments
