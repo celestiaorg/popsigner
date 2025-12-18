@@ -8,20 +8,27 @@ type KeyOption struct {
 	CosmosAddr string // Cosmos address (if applicable)
 }
 
-// KeySelector renders a dropdown for selecting a signing key
+// KeySelector renders a dropdown for selecting a signing key with inline creation
 templ KeySelector(name, label, description string, keys []KeyOption, selectedID string) {
 	<div class="space-y-2">
-		<label class="block text-sm text-[#666600] uppercase">{ label }</label>
+		<div class="flex items-center justify-between">
+			<label class="block text-sm text-[#666600] uppercase">{ label }</label>
+			<button type="button"
+					onclick="document.getElementById('create-key-modal').showModal()"
+					class="text-xs text-[#FFB000] hover:text-[#FFCC00] uppercase flex items-center gap-1">
+				<span>+</span> New Key
+			</button>
+		</div>
 		<p class="text-xs text-[#333300]">{ description }</p>
 		
 		if len(keys) == 0 {
 			<div class="p-4 border border-dashed border-[#333300] text-center">
-				<p class="text-[#666600] text-sm">No keys available</p>
-				<a href="https://dashboard.popsigner.com/keys" 
-				   target="_blank"
-				   class="text-[#FFB000] text-sm hover:underline">
-					Create keys in POPSigner Dashboard →
-				</a>
+				<p class="text-[#666600] text-sm mb-2">No keys available</p>
+				<button type="button"
+						onclick="document.getElementById('create-key-modal').showModal()"
+						class="text-[#FFB000] text-sm hover:underline">
+					+ Create your first key
+				</button>
 			</div>
 		} else {
 			<select name={ name } 

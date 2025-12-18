@@ -153,7 +153,7 @@ func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Get form data from POST request (multi-step form)
+	// Get form data from POST request or query params (for redirect back from key creation)
 	formData := pages.DeploymentFormData{}
 	if r.Method == http.MethodPost {
 		if err := r.ParseForm(); err == nil {
@@ -168,6 +168,20 @@ func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 				BatcherKey:  r.FormValue("batcher_key"),
 				ProposerKey: r.FormValue("proposer_key"),
 			}
+		}
+	} else {
+		// Also check query params (for redirects back from inline key creation)
+		q := r.URL.Query()
+		formData = pages.DeploymentFormData{
+			Stack:       q.Get("stack"),
+			ChainName:   q.Get("chain_name"),
+			ChainID:     q.Get("chain_id"),
+			L1RPC:       q.Get("l1_rpc"),
+			L1ChainID:   q.Get("l1_chain_id"),
+			DA:          q.Get("da"),
+			DeployerKey: q.Get("deployer_key"),
+			BatcherKey:  q.Get("batcher_key"),
+			ProposerKey: q.Get("proposer_key"),
 		}
 	}
 
@@ -292,6 +306,67 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect to deployment status page
 	http.Redirect(w, r, "/deployments/"+deployment.ID.String()+"/status", http.StatusFound)
+}
+
+// CreateKeyInline handles inline key creation from the wizard (step 3)
+// Creates a key and redirects back to step 3 with preserved form state
+func (h *Handler) CreateKeyInline(w http.ResponseWriter, r *http.Request) {
+	_, org, err := h.getUserAndOrg(r)
+	if err != nil {
+		h.handleAuthError(w, r)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/deployments/new?step=3&error=Invalid+form+data", http.StatusFound)
+		return
+	}
+
+	keyName := r.FormValue("key_name")
+	if keyName == "" {
+		http.Redirect(w, r, "/deployments/new?step=3&error=Key+name+is+required", http.StatusFound)
+		return
+	}
+
+	// Get the default namespace for this org
+	namespaces, err := h.orgService.ListNamespaces(r.Context(), org.ID, org.ID)
+	if err != nil || len(namespaces) == 0 {
+		slog.Error("failed to list namespaces", "org_id", org.ID, "error", err)
+		http.Redirect(w, r, "/deployments/new?step=3&error=No+namespace+available", http.StatusFound)
+		return
+	}
+	defaultNS := namespaces[0]
+
+	// Create the key
+	_, err = h.keyService.Create(r.Context(), service.CreateKeyRequest{
+		OrgID:       org.ID,
+		NamespaceID: defaultNS.ID,
+		Name:        keyName,
+		Exportable:  false,
+		NetworkType: "all",
+	})
+	if err != nil {
+		slog.Error("failed to create key", "name", keyName, "error", err)
+		http.Redirect(w, r, "/deployments/new?step=3&error=Failed+to+create+key", http.StatusFound)
+		return
+	}
+
+	slog.Info("key created inline", "name", keyName, "org_id", org.ID)
+
+	// Build redirect URL preserving wizard state
+	redirectURL := fmt.Sprintf("/deployments/new?step=3&stack=%s&chain_name=%s&chain_id=%s&l1_rpc=%s&l1_chain_id=%s&da=%s&deployer_key=%s&batcher_key=%s&proposer_key=%s",
+		r.FormValue("stack"),
+		r.FormValue("chain_name"),
+		r.FormValue("chain_id"),
+		r.FormValue("l1_rpc"),
+		r.FormValue("l1_chain_id"),
+		r.FormValue("da"),
+		r.FormValue("deployer_key"),
+		r.FormValue("batcher_key"),
+		r.FormValue("proposer_key"),
+	)
+
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
 // DeploymentDetail renders a specific deployment detail page (TASK-043)

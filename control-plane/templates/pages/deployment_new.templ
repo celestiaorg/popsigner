@@ -329,6 +329,59 @@ templ DeploymentStep3Keys(data DeploymentNewData) {
 			</button>
 		</div>
 	</form>
+
+	<!-- Create Key Modal -->
+	<dialog id="create-key-modal" class="bg-transparent p-0 backdrop:bg-black/80">
+		<div class="bg-black border border-[#33FF00] p-6 min-w-[400px]">
+			<div class="flex items-center justify-between mb-6">
+				<h3 class="text-lg text-[#33FF00] font-bold uppercase">Create New Key</h3>
+				<button type="button" 
+						onclick="document.getElementById('create-key-modal').close()"
+						class="text-[#666600] hover:text-[#33FF00]">
+					✕
+				</button>
+			</div>
+			
+			<form action="/deployments/keys/create" method="POST">
+				<!-- Preserve wizard state -->
+				<input type="hidden" name="stack" value={ data.FormData.Stack }/>
+				<input type="hidden" name="chain_name" value={ data.FormData.ChainName }/>
+				<input type="hidden" name="chain_id" value={ data.FormData.ChainID }/>
+				<input type="hidden" name="l1_rpc" value={ data.FormData.L1RPC }/>
+				<input type="hidden" name="l1_chain_id" value={ data.FormData.L1ChainID }/>
+				<input type="hidden" name="da" value={ data.FormData.DA }/>
+				<input type="hidden" name="deployer_key" value={ data.FormData.DeployerKey }/>
+				<input type="hidden" name="batcher_key" value={ data.FormData.BatcherKey }/>
+				<input type="hidden" name="proposer_key" value={ data.FormData.ProposerKey }/>
+				
+				<div class="space-y-4">
+					<div>
+						<label class="block text-sm text-[#666600] uppercase mb-2">Key Name</label>
+						<input type="text" name="key_name" required
+							   placeholder="e.g., deployer, batcher, proposer"
+							   autofocus
+							   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+									  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none"/>
+						<p class="text-xs text-[#333300] mt-1">Give your key a descriptive name</p>
+					</div>
+				</div>
+
+				<div class="flex gap-4 mt-6">
+					<button type="button" 
+							onclick="document.getElementById('create-key-modal').close()"
+							class="flex-1 py-3 border border-[#333300] text-[#666600] uppercase 
+								   hover:border-[#666600] hover:text-[#999] transition-colors">
+						Cancel
+					</button>
+					<button type="submit" 
+							class="flex-1 py-3 bg-[#FFB000] text-black font-bold uppercase 
+								   hover:bg-[#FFCC00] transition-colors">
+						Create Key
+					</button>
+				</div>
+			</form>
+		</div>
+	</dialog>
 }
 
 // DeploymentStep4Review - Review and deploy
