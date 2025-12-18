@@ -465,11 +465,12 @@ func oauthCallbackHandler(oauthSvc service.OAuthService, provider string, cfg *c
 			slog.String("email", user.Email),
 		)
 
-		// Set the session cookie
+		// Set the session cookie (domain shared across all subdomains)
 		http.SetCookie(w, &http.Cookie{
 			Name:     sessionCookieName,
 			Value:    sessionID,
 			Path:     "/",
+			Domain:   ".popsigner.com", // Share session across all subdomains
 			MaxAge:   int(cfg.Auth.SessionExpiry.Seconds()),
 			HttpOnly: true,
 			Secure:   true,
@@ -522,6 +523,7 @@ func dashboardHandler(sessionRepo repository.SessionRepository, userRepo reposit
 				Name:   sessionCookieName,
 				Value:  "",
 				Path:   "/",
+				Domain: ".popsigner.com",
 				MaxAge: -1,
 			})
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -535,6 +537,7 @@ func dashboardHandler(sessionRepo repository.SessionRepository, userRepo reposit
 				Name:   sessionCookieName,
 				Value:  "",
 				Path:   "/",
+				Domain: ".popsigner.com",
 				MaxAge: -1,
 			})
 			http.Redirect(w, r, "/login?error="+url.QueryEscape("Session expired"), http.StatusFound)
@@ -610,6 +613,7 @@ func logoutHandler(sessionRepo repository.SessionRepository) http.HandlerFunc {
 			Name:   sessionCookieName,
 			Value:  "",
 			Path:   "/",
+			Domain: ".popsigner.com",
 			MaxAge: -1,
 		})
 
@@ -631,6 +635,7 @@ func getAuthenticatedUser(w http.ResponseWriter, r *http.Request, sessionRepo re
 			Name:   sessionCookieName,
 			Value:  "",
 			Path:   "/",
+			Domain: ".popsigner.com",
 			MaxAge: -1,
 		})
 		http.Redirect(w, r, "/login", http.StatusFound)
