@@ -43,7 +43,7 @@ templ DeploymentDetailPage(data DeploymentDetailData) {
 		<div class="p-6 space-y-6 max-w-5xl mx-auto">
 			<!-- Header with back link -->
 			<div class="flex items-center gap-4">
-				<a href="/popkins/deployments" 
+				<a href="/deployments" 
 				   class="text-[#666600] hover:text-[#33FF00] transition-colors uppercase text-sm flex items-center gap-2">
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -212,7 +212,7 @@ templ DeploymentStatusBadgeLarge(status string) {
 templ DeploymentDetailActions(d DeploymentInfo) {
 	switch d.Status {
 	case "completed":
-		<a href={ templ.SafeURL("/popkins/deployments/" + d.ID + "/bundle") }
+		<a href={ templ.SafeURL("/deployments/" + d.ID + "/bundle") }
 		   class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#33FF00] text-black font-bold uppercase 
 				  hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] transition-all duration-200">
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,13 +220,13 @@ templ DeploymentDetailActions(d DeploymentInfo) {
 			</svg>
 			Download Artifacts
 		</a>
-		<a href={ templ.SafeURL("/popkins/deployments/" + d.ID + "/complete") }
+		<a href={ templ.SafeURL("/deployments/" + d.ID + "/complete") }
 		   class="inline-flex items-center gap-2 px-5 py-2.5 border border-[#33FF00]/50 text-[#33FF00] font-bold uppercase 
 				  hover:bg-[#33FF00]/10 transition-all duration-200">
 			View Complete Page →
 		</a>
 	case "running":
-		<a href={ templ.SafeURL("/popkins/deployments/" + d.ID + "/status") }
+		<a href={ templ.SafeURL("/deployments/" + d.ID + "/status") }
 		   class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FFB000] text-black font-bold uppercase 
 				  hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all duration-200 animate-pulse">
 			<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -236,7 +236,7 @@ templ DeploymentDetailActions(d DeploymentInfo) {
 			View Progress
 		</a>
 	case "failed":
-		<form action={ templ.SafeURL("/popkins/deployments/" + d.ID + "/resume") } method="POST" class="inline">
+		<form action={ templ.SafeURL("/deployments/" + d.ID + "/resume") } method="POST" class="inline">
 			<button type="submit"
 					class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FF3300] text-white font-bold uppercase 
 						   hover:bg-[#FF4400] hover:shadow-[0_0_20px_#FF3300] transition-all duration-200">
@@ -247,7 +247,7 @@ templ DeploymentDetailActions(d DeploymentInfo) {
 			</button>
 		</form>
 	case "paused":
-		<form action={ templ.SafeURL("/popkins/deployments/" + d.ID + "/resume") } method="POST" class="inline">
+		<form action={ templ.SafeURL("/deployments/" + d.ID + "/resume") } method="POST" class="inline">
 			<button type="submit"
 					class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FFB000] text-black font-bold uppercase 
 						   hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all duration-200">
@@ -259,7 +259,7 @@ templ DeploymentDetailActions(d DeploymentInfo) {
 			</button>
 		</form>
 	default:
-		<a href={ templ.SafeURL("/popkins/deployments/" + d.ID + "/status") }
+		<a href={ templ.SafeURL("/deployments/" + d.ID + "/status") }
 		   class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#FFB000] text-black font-bold uppercase 
 				  hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all duration-200">
 			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

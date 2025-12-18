@@ -73,7 +73,7 @@ func PopkinsHeaderMinimal(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</h1></div><a href=\"/popkins/deployments\" class=\"text-sm text-[#666600] hover:text-[#33FF00] uppercase transition-colors\">← BACK TO MY CHAINS</a></header>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</h1></div><a href=\"/deployments\" class=\"text-sm text-[#666600] hover:text-[#33FF00] uppercase transition-colors\">← BACK TO MY CHAINS</a></header>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

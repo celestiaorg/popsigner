@@ -71,7 +71,7 @@ func DeploymentNewPage(data DeploymentNewData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"max-w-2xl mx-auto p-6\"><!-- Header --><div class=\"mb-8\"><a href=\"/popkins/deployments\" class=\"text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block\">← BACK TO MY CHAINS</a><h1 class=\"text-2xl font-bold text-[#33FF00] uppercase tracking-wider flex items-center gap-3\"><span class=\"text-[#FFB000]\">▸</span> DEPLOY_NEW_CHAIN</h1><p class=\"text-[#666600] mt-1 text-sm uppercase\">Configure and launch your rollup</p></div><!-- Progress Steps --><div class=\"flex items-center mb-8 text-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"max-w-2xl mx-auto p-6\"><!-- Header --><div class=\"mb-8\"><a href=\"/deployments\" class=\"text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block\">← BACK TO MY CHAINS</a><h1 class=\"text-2xl font-bold text-[#33FF00] uppercase tracking-wider flex items-center gap-3\"><span class=\"text-[#FFB000]\">▸</span> DEPLOY_NEW_CHAIN</h1><p class=\"text-[#666600] mt-1 text-sm uppercase\">Configure and launch your rollup</p></div><!-- Progress Steps --><div class=\"flex items-center mb-8 text-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -355,7 +355,7 @@ func DeploymentStep1Stack(data DeploymentNewData) templ.Component {
 			templ_7745c5c3_Var17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<form action=\"/popkins/deployments/new?step=2\" method=\"POST\" class=\"space-y-6\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Select Rollup Stack</h2><p class=\"text-[#666600] text-sm\">Choose the technology stack for your chain</p></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\"><!-- OP Stack Option --><label class=\"cursor-pointer group\"><input type=\"radio\" name=\"stack\" value=\"opstack\" class=\"hidden peer\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<form action=\"/deployments/new?step=2\" method=\"POST\" class=\"space-y-6\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Select Rollup Stack</h2><p class=\"text-[#666600] text-sm\">Choose the technology stack for your chain</p></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\"><!-- OP Stack Option --><label class=\"cursor-pointer group\"><input type=\"radio\" name=\"stack\" value=\"opstack\" class=\"hidden peer\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -405,7 +405,7 @@ func DeploymentStep2Config(data DeploymentNewData) templ.Component {
 			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<form action=\"/popkins/deployments/new?step=3\" method=\"POST\" class=\"space-y-6\"><!-- Hidden field from previous step --><input type=\"hidden\" name=\"stack\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<form action=\"/deployments/new?step=3\" method=\"POST\" class=\"space-y-6\"><!-- Hidden field from previous step --><input type=\"hidden\" name=\"stack\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -542,7 +542,7 @@ func DeploymentStep2Config(data DeploymentNewData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</div><div class=\"flex gap-4 pt-4\"><a href=\"/popkins/deployments/new?step=1\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase \n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t\t\t   hover:bg-[#44FF11] transition-colors\">CONTINUE →</button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</div><div class=\"flex gap-4 pt-4\"><a href=\"/deployments/new?step=1\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase \n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t\t\t   hover:bg-[#44FF11] transition-colors\">CONTINUE →</button></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -572,7 +572,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 			templ_7745c5c3_Var23 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<form action=\"/popkins/deployments/new?step=4\" method=\"POST\" class=\"space-y-6\"><!-- Hidden fields from previous steps --><input type=\"hidden\" name=\"stack\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<form action=\"/deployments/new?step=4\" method=\"POST\" class=\"space-y-6\"><!-- Hidden fields from previous steps --><input type=\"hidden\" name=\"stack\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -695,7 +695,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div><div class=\"flex gap-4 pt-4\"><a href=\"/popkins/deployments/new?step=2\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase \n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t\t\t   hover:bg-[#44FF11] transition-colors\">CONTINUE →</button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div><div class=\"flex gap-4 pt-4\"><a href=\"/deployments/new?step=2\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase \n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t\t\t   hover:bg-[#44FF11] transition-colors\">CONTINUE →</button></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -725,7 +725,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<form action=\"/popkins/deployments\" method=\"POST\" class=\"space-y-6\"><!-- All hidden fields --><input type=\"hidden\" name=\"stack\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<form action=\"/deployments\" method=\"POST\" class=\"space-y-6\"><!-- All hidden fields --><input type=\"hidden\" name=\"stack\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -927,7 +927,7 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, " deployment is interrupted</span></li></ul></div><div class=\"flex gap-4 pt-4\"><a href=\"/popkins/deployments/new?step=3\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase \n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-4 bg-[#FFB000] text-black font-bold uppercase text-lg\n\t\t\t\t\t\t   hover:bg-[#FFCC00] hover:shadow-[0_0_30px_#FFB000] transition-all\n\t\t\t\t\t\t   flex items-center justify-center gap-2\"><span>🚀</span> <span>DEPLOY CHAIN</span></button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, " deployment is interrupted</span></li></ul></div><div class=\"flex gap-4 pt-4\"><a href=\"/deployments/new?step=3\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase \n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-4 bg-[#FFB000] text-black font-bold uppercase text-lg\n\t\t\t\t\t\t   hover:bg-[#FFCC00] hover:shadow-[0_0_30px_#FFB000] transition-all\n\t\t\t\t\t\t   flex items-center justify-center gap-2\"><span>🚀</span> <span>DEPLOY CHAIN</span></button></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

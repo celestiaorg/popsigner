@@ -105,7 +105,7 @@ func (h *Handler) DeploymentsList(w http.ResponseWriter, r *http.Request) {
 			UserEmail:  user.Email,
 			AvatarURL:  getAvatarURL(user),
 			OrgName:    org.Name,
-			ActivePath: "/popkins/deployments",
+			ActivePath: "/deployments",
 		},
 		Deployments: summaries,
 		Total:       len(summaries),
@@ -203,7 +203,7 @@ func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 			UserEmail:  user.Email,
 			AvatarURL:  getAvatarURL(user),
 			OrgName:    org.Name,
-			ActivePath: "/popkins/deployments/new",
+			ActivePath: "/deployments/new",
 		},
 		Keys:     keyOptions,
 		Step:     step,
@@ -226,14 +226,14 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	_ = user // user context available for audit logging
 
 	if err := r.ParseForm(); err != nil {
-		http.Redirect(w, r, "/popkins/deployments/new?step=4&error=Invalid+form+data", http.StatusFound)
+		http.Redirect(w, r, "/deployments/new?step=4&error=Invalid+form+data", http.StatusFound)
 		return
 	}
 
 	// Parse chain ID
 	chainID, err := strconv.ParseInt(r.FormValue("chain_id"), 10, 64)
 	if err != nil || chainID <= 0 {
-		http.Redirect(w, r, "/popkins/deployments/new?step=2&error=Invalid+chain+ID", http.StatusFound)
+		http.Redirect(w, r, "/deployments/new?step=2&error=Invalid+chain+ID", http.StatusFound)
 		return
 	}
 
@@ -243,7 +243,7 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	l1RPC := r.FormValue("l1_rpc")
 
 	if chainName == "" || stack == "" || l1RPC == "" {
-		http.Redirect(w, r, "/popkins/deployments/new?step=2&error=Missing+required+fields", http.StatusFound)
+		http.Redirect(w, r, "/deployments/new?step=2&error=Missing+required+fields", http.StatusFound)
 		return
 	}
 
@@ -263,7 +263,7 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	configJSON, err := json.Marshal(config)
 	if err != nil {
 		slog.Error("failed to marshal config", "error", err)
-		http.Redirect(w, r, "/popkins/deployments/new?step=4&error=Failed+to+create+deployment", http.StatusFound)
+		http.Redirect(w, r, "/deployments/new?step=4&error=Failed+to+create+deployment", http.StatusFound)
 		return
 	}
 
@@ -278,7 +278,7 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.deployRepo.CreateDeployment(r.Context(), deployment); err != nil {
 		slog.Error("failed to create deployment", "error", err)
-		http.Redirect(w, r, "/popkins/deployments/new?step=4&error=Failed+to+create+deployment", http.StatusFound)
+		http.Redirect(w, r, "/deployments/new?step=4&error=Failed+to+create+deployment", http.StatusFound)
 		return
 	}
 
@@ -291,7 +291,7 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Redirect to deployment status page
-	http.Redirect(w, r, "/popkins/deployments/"+deployment.ID.String()+"/status", http.StatusFound)
+	http.Redirect(w, r, "/deployments/"+deployment.ID.String()+"/status", http.StatusFound)
 }
 
 // DeploymentDetail renders a specific deployment detail page (TASK-043)
@@ -362,7 +362,7 @@ func (h *Handler) DeploymentDetail(w http.ResponseWriter, r *http.Request) {
 			UserEmail:  user.Email,
 			AvatarURL:  getAvatarURL(user),
 			OrgName:    org.Name,
-			ActivePath: "/popkins/deployments",
+			ActivePath: "/deployments",
 		},
 		Deployment: pages.DeploymentInfo{
 			ID:           deployment.ID.String(),
@@ -461,13 +461,13 @@ func (h *Handler) DeploymentStatus(w http.ResponseWriter, r *http.Request) {
 	// Get deployment ID from URL
 	deploymentID := chi.URLParam(r, "id")
 	if deploymentID == "" {
-		http.Redirect(w, r, "/popkins/deployments", http.StatusFound)
+		http.Redirect(w, r, "/deployments", http.StatusFound)
 		return
 	}
 
 	deploymentUUID, err := uuid.Parse(deploymentID)
 	if err != nil {
-		http.Redirect(w, r, "/popkins/deployments", http.StatusFound)
+		http.Redirect(w, r, "/deployments", http.StatusFound)
 		return
 	}
 
@@ -475,13 +475,13 @@ func (h *Handler) DeploymentStatus(w http.ResponseWriter, r *http.Request) {
 	deployment, err := h.deployRepo.GetDeployment(r.Context(), deploymentUUID)
 	if err != nil {
 		slog.Error("failed to get deployment", "id", deploymentID, "error", err)
-		http.Redirect(w, r, "/popkins/deployments", http.StatusFound)
+		http.Redirect(w, r, "/deployments", http.StatusFound)
 		return
 	}
 
 	// If completed, redirect to complete page
 	if deployment.Status == repository.StatusCompleted {
-		http.Redirect(w, r, "/popkins/deployments/"+deploymentID+"/complete", http.StatusFound)
+		http.Redirect(w, r, "/deployments/"+deploymentID+"/complete", http.StatusFound)
 		return
 	}
 
@@ -573,7 +573,7 @@ func (h *Handler) buildProgressData(user *models.User, org *models.Organization,
 			UserEmail:  user.Email,
 			AvatarURL:  getAvatarURL(user),
 			OrgName:    org.Name,
-			ActivePath: "/popkins/deployments",
+			ActivePath: "/deployments",
 		},
 		DeploymentID:    deployment.ID.String(),
 		ChainName:       extractChainName(deployment),
@@ -712,7 +712,7 @@ func (h *Handler) DeploymentComplete(w http.ResponseWriter, r *http.Request) {
 		UserEmail:  user.Email,
 		AvatarURL:  getAvatarURL(user),
 		OrgName:    org.Name,
-		ActivePath: "/popkins/deployments",
+		ActivePath: "/deployments",
 	}
 
 	// Render layout with placeholder content
@@ -729,7 +729,7 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 // DeploymentResume handles resuming a paused deployment
 func (h *Handler) DeploymentResume(w http.ResponseWriter, r *http.Request) {
 	// Placeholder
-	http.Redirect(w, r, "/popkins/deployments", http.StatusFound)
+	http.Redirect(w, r, "/deployments", http.StatusFound)
 }
 
 // ============================================
@@ -819,7 +819,7 @@ func placeholderDeploymentsList() templ.Component {
 				<div class="text-6xl mb-6">🚀</div>
 				<h2 class="text-2xl font-bold text-[#33FF00] mb-4 uppercase">MY CHAINS</h2>
 				<p class="text-[#666600] mb-8">Your deployed chains will appear here.</p>
-				<a href="/popkins/deployments/new" 
+				<a href="/deployments/new" 
 				   class="inline-block px-6 py-3 bg-[#33FF00] text-black font-bold uppercase hover:bg-[#44FF11] transition-colors">
 					DEPLOY NEW CHAIN →
 				</a>
@@ -842,7 +842,7 @@ func placeholderDeploymentsNew() templ.Component {
 			
 			<div class="border border-dashed border-[#333300] p-8 text-center text-[#666600]">
 				<p class="text-sm uppercase mb-4">Deployment wizard will be implemented in TASK-042</p>
-				<a href="/popkins/deployments" 
+				<a href="/deployments" 
 				   class="text-[#FFB000] hover:underline uppercase">
 					← BACK TO MY CHAINS
 				</a>

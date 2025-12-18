@@ -35,10 +35,10 @@ func (h *Handler) Routes() chi.Router {
 		http.Redirect(w, r, "/deployments", http.StatusFound)
 	})
 
-	// Handle /popkins/* paths for subdomain access
-	// When accessed via subdomain, links may still point to /popkins/* paths
+	// Handle /* paths for subdomain access
+	// When accessed via subdomain, links may still point to /* paths
 	// Strip the /popkins prefix and redirect to the correct path
-	r.Get("/popkins/*", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
 		// Remove /popkins prefix and redirect
 		newPath := r.URL.Path[8:] // len("/popkins") = 8
 		if newPath == "" {
@@ -49,18 +49,18 @@ func (h *Handler) Routes() chi.Router {
 
 	// Deployment routes
 	r.Route("/deployments", func(r chi.Router) {
-		r.Get("/", h.DeploymentsList)           // GET /popkins/deployments
-		r.Get("/new", h.DeploymentsNew)         // GET /popkins/deployments/new
-		r.Post("/", h.DeploymentsCreate)        // POST /popkins/deployments
+		r.Get("/", h.DeploymentsList)           // GET /deployments
+		r.Get("/new", h.DeploymentsNew)         // GET /deployments/new
+		r.Post("/", h.DeploymentsCreate)        // POST /deployments
 
 		// Individual deployment routes
 		r.Route("/{id}", func(r chi.Router) {
-			r.Get("/", h.DeploymentDetail)                   // GET /popkins/deployments/{id}
-			r.Get("/status", h.DeploymentStatus)             // GET /popkins/deployments/{id}/status
-			r.Get("/progress-partial", h.DeploymentProgressPartial) // GET /popkins/deployments/{id}/progress-partial (HTMX)
-			r.Get("/complete", h.DeploymentComplete)         // GET /popkins/deployments/{id}/complete
-			r.Get("/bundle", h.DownloadBundle)               // GET /popkins/deployments/{id}/bundle
-			r.Post("/resume", h.DeploymentResume)            // POST /popkins/deployments/{id}/resume
+			r.Get("/", h.DeploymentDetail)                   // GET /deployments/{id}
+			r.Get("/status", h.DeploymentStatus)             // GET /deployments/{id}/status
+			r.Get("/progress-partial", h.DeploymentProgressPartial) // GET /deployments/{id}/progress-partial (HTMX)
+			r.Get("/complete", h.DeploymentComplete)         // GET /deployments/{id}/complete
+			r.Get("/bundle", h.DownloadBundle)               // GET /deployments/{id}/bundle
+			r.Post("/resume", h.DeploymentResume)            // POST /deployments/{id}/resume
 		})
 	})
 

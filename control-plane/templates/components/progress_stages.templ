@@ -175,7 +175,7 @@ templ ErrorAlert(deploymentID string, errorMsg string) {
 			<div class="flex-1">
 				<p class="text-[#FF3300] font-bold uppercase mb-2">Deployment Failed</p>
 				<p class="text-[#FF9999] text-sm mb-4">{ errorMsg }</p>
-				<form action={ templ.SafeURL("/popkins/deployments/" + deploymentID + "/resume") } method="POST">
+				<form action={ templ.SafeURL("/deployments/" + deploymentID + "/resume") } method="POST">
 					<button type="submit" 
 							class="px-5 py-2 bg-[#FFB000] text-black font-bold uppercase hover:bg-[#FFCC00] transition-colors">
 						RESUME DEPLOYMENT

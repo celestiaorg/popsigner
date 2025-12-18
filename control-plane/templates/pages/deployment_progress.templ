@@ -28,13 +28,13 @@ templ DeploymentProgressPage(data DeploymentProgressData) {
 	@layouts.Popkins("Deployment Progress", data.PopkinsData) {
 		<div class="max-w-3xl mx-auto p-6">
 			<!-- Back link -->
-			<a href="/popkins/deployments" class="text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block">
+			<a href="/deployments" class="text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block">
 				← BACK TO MY CHAINS
 			</a>
 			
 			<!-- HTMX Polling Container -->
 			<div id="progress-container"
-				 hx-get={ "/popkins/deployments/" + data.DeploymentID + "/progress-partial" }
+				 hx-get={ "/deployments/" + data.DeploymentID + "/progress-partial" }
 				 hx-trigger="every 5s"
 				 hx-swap="innerHTML"
 				 hx-target="#progress-container">
@@ -49,7 +49,7 @@ templ DeploymentProgressContent(data DeploymentProgressData) {
 	<!-- Auto-redirect script for completed deployments -->
 	if data.Status == "completed" {
 		<script>
-			window.location.href = "/popkins/deployments/" + { data.DeploymentID } + "/complete";
+			window.location.href = "/deployments/" + { data.DeploymentID } + "/complete";
 		</script>
 		<div class="text-center py-12">
 			<div class="text-5xl mb-4">✅</div>

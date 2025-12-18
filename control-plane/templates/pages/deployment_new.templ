@@ -35,7 +35,7 @@ templ DeploymentNewPage(data DeploymentNewData) {
 		<div class="max-w-2xl mx-auto p-6">
 			<!-- Header -->
 			<div class="mb-8">
-				<a href="/popkins/deployments" class="text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block">
+				<a href="/deployments" class="text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block">
 					← BACK TO MY CHAINS
 				</a>
 				<h1 class="text-2xl font-bold text-[#33FF00] uppercase tracking-wider flex items-center gap-3">
@@ -104,7 +104,7 @@ templ DeployWizardStep(step int, label string, currentStep int) {
 
 // DeploymentStep1Stack - Select rollup stack
 templ DeploymentStep1Stack(data DeploymentNewData) {
-	<form action="/popkins/deployments/new?step=2" method="POST" class="space-y-6">
+	<form action="/deployments/new?step=2" method="POST" class="space-y-6">
 		<div>
 			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Select Rollup Stack</h2>
 			<p class="text-[#666600] text-sm">Choose the technology stack for your chain</p>
@@ -168,7 +168,7 @@ templ DeploymentStep1Stack(data DeploymentNewData) {
 
 // DeploymentStep2Config - Chain configuration
 templ DeploymentStep2Config(data DeploymentNewData) {
-	<form action="/popkins/deployments/new?step=3" method="POST" class="space-y-6">
+	<form action="/deployments/new?step=3" method="POST" class="space-y-6">
 		<!-- Hidden field from previous step -->
 		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
 		
@@ -289,7 +289,7 @@ templ DeploymentStep2Config(data DeploymentNewData) {
 		</div>
 
 		<div class="flex gap-4 pt-4">
-			<a href="/popkins/deployments/new?step=1" 
+			<a href="/deployments/new?step=1" 
 			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase 
 					  hover:border-[#666600] hover:text-[#999] transition-colors">
 				← BACK
@@ -305,7 +305,7 @@ templ DeploymentStep2Config(data DeploymentNewData) {
 
 // DeploymentStep3Keys - Assign signing keys
 templ DeploymentStep3Keys(data DeploymentNewData) {
-	<form action="/popkins/deployments/new?step=4" method="POST" class="space-y-6">
+	<form action="/deployments/new?step=4" method="POST" class="space-y-6">
 		<!-- Hidden fields from previous steps -->
 		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
 		<input type="hidden" name="chain_name" value={ data.FormData.ChainName }/>
@@ -352,7 +352,7 @@ templ DeploymentStep3Keys(data DeploymentNewData) {
 		</div>
 
 		<div class="flex gap-4 pt-4">
-			<a href="/popkins/deployments/new?step=2" 
+			<a href="/deployments/new?step=2" 
 			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase 
 					  hover:border-[#666600] hover:text-[#999] transition-colors">
 				← BACK
@@ -368,7 +368,7 @@ templ DeploymentStep3Keys(data DeploymentNewData) {
 
 // DeploymentStep4Review - Review and deploy
 templ DeploymentStep4Review(data DeploymentNewData) {
-	<form action="/popkins/deployments" method="POST" class="space-y-6">
+	<form action="/deployments" method="POST" class="space-y-6">
 		<!-- All hidden fields -->
 		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
 		<input type="hidden" name="chain_name" value={ data.FormData.ChainName }/>
@@ -432,7 +432,7 @@ templ DeploymentStep4Review(data DeploymentNewData) {
 		</div>
 
 		<div class="flex gap-4 pt-4">
-			<a href="/popkins/deployments/new?step=3" 
+			<a href="/deployments/new?step=3" 
 			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase 
 					  hover:border-[#666600] hover:text-[#999] transition-colors">
 				← BACK

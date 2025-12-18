@@ -37,7 +37,7 @@ templ DeploymentsListPage(data DeploymentsListData) {
 						Deploy and manage your rollup chains
 					</p>
 				</div>
-				<a href="/popkins/deployments/new"
+				<a href="/deployments/new"
 				   class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#FFB000] text-black font-bold uppercase 
 						  hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all duration-200 whitespace-nowrap">
 					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,7 +80,7 @@ templ DeploymentsEmptyState() {
 		<p class="text-[#666600] mb-8 max-w-md mx-auto">
 			Deploy your first rollup chain in minutes. Choose between OP Stack or Nitro architectures.
 		</p>
-		<a href="/popkins/deployments/new"
+		<a href="/deployments/new"
 		   class="inline-flex items-center gap-3 px-8 py-4 bg-[#33FF00] text-black font-bold uppercase 
 				  hover:bg-[#44FF11] hover:shadow-[0_0_30px_#33FF00] transition-all duration-200 text-lg">
 			<span>DEPLOY YOUR FIRST CHAIN</span>
@@ -196,31 +196,31 @@ templ DeploymentActions(d DeploymentSummary) {
 	<div class="flex items-center justify-end gap-2">
 		switch d.Status {
 		case "completed":
-			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID + "/complete") }
+			<a href={ templ.SafeURL("/deployments/" + d.ID + "/complete") }
 			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#33FF00] border border-[#33FF00]/50 
 					  hover:bg-[#33FF00]/10 transition-colors">
 				VIEW →
 			</a>
 		case "running":
-			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID + "/status") }
+			<a href={ templ.SafeURL("/deployments/" + d.ID + "/status") }
 			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#FFB000] border border-[#FFB000]/50 
 					  hover:bg-[#FFB000]/10 transition-colors animate-pulse">
 				PROGRESS →
 			</a>
 		case "failed":
-			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID) }
+			<a href={ templ.SafeURL("/deployments/" + d.ID) }
 			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#FF3300] border border-[#FF3300]/50 
 					  hover:bg-[#FF3300]/10 transition-colors">
 				DETAILS →
 			</a>
 		case "paused":
-			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID) }
+			<a href={ templ.SafeURL("/deployments/" + d.ID) }
 			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#FFB000] border border-[#FFB000]/50 
 					  hover:bg-[#FFB000]/10 transition-colors">
 				RESUME →
 			</a>
 		default:
-			<a href={ templ.SafeURL("/popkins/deployments/" + d.ID) }
+			<a href={ templ.SafeURL("/deployments/" + d.ID) }
 			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#666600] border border-[#333300] 
 					  hover:text-[#33FF00] hover:border-[#33FF00]/50 transition-colors">
 				DETAILS →

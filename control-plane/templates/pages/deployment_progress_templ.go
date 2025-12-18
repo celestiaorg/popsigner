@@ -65,14 +65,14 @@ func DeploymentProgressPage(data DeploymentProgressData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"max-w-3xl mx-auto p-6\"><!-- Back link --><a href=\"/popkins/deployments\" class=\"text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block\">← BACK TO MY CHAINS</a><!-- HTMX Polling Container --><div id=\"progress-container\" hx-get=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"max-w-3xl mx-auto p-6\"><!-- Back link --><a href=\"/deployments\" class=\"text-[#666600] hover:text-[#33FF00] text-sm uppercase mb-4 inline-block\">← BACK TO MY CHAINS</a><!-- HTMX Polling Container --><div id=\"progress-container\" hx-get=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("/popkins/deployments/" + data.DeploymentID + "/progress-partial")
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("/deployments/" + data.DeploymentID + "/progress-partial")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_progress.templ`, Line: 37, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_progress.templ`, Line: 37, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -127,7 +127,7 @@ func DeploymentProgressContent(data DeploymentProgressData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if data.Status == "completed" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script>\n\t\t\twindow.location.href = \"/popkins/deployments/\" + { data.DeploymentID } + \"/complete\";\n\t\t</script> <div class=\"text-center py-12\"><div class=\"text-5xl mb-4\">✅</div><h2 class=\"text-2xl text-[#33FF00] font-bold uppercase mb-2\">Deployment Complete!</h2><p class=\"text-[#666600]\">Redirecting...</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script>\n\t\t\twindow.location.href = \"/deployments/\" + { data.DeploymentID } + \"/complete\";\n\t\t</script> <div class=\"text-center py-12\"><div class=\"text-5xl mb-4\">✅</div><h2 class=\"text-2xl text-[#33FF00] font-bold uppercase mb-2\">Deployment Complete!</h2><p class=\"text-[#666600]\">Redirecting...</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

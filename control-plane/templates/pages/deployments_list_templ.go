@@ -64,7 +64,7 @@ func DeploymentsListPage(data DeploymentsListData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"p-6 space-y-6 max-w-7xl mx-auto\"><!-- Header with title and action --><div class=\"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4\"><div><h1 class=\"text-2xl font-bold text-[#33FF00] uppercase tracking-wider flex items-center gap-3\"><span class=\"text-[#FFB000]\">▸</span> MY_CHAINS</h1><p class=\"text-[#666600] mt-1 text-sm uppercase\">Deploy and manage your rollup chains</p></div><a href=\"/popkins/deployments/new\" class=\"inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#FFB000] text-black font-bold uppercase \n\t\t\t\t\t\t  hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all duration-200 whitespace-nowrap\"><svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 6v6m0 0v6m0-6h6m-6 0H6\"></path></svg> NEW CHAIN</a></div><!-- Stats Bar -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"p-6 space-y-6 max-w-7xl mx-auto\"><!-- Header with title and action --><div class=\"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4\"><div><h1 class=\"text-2xl font-bold text-[#33FF00] uppercase tracking-wider flex items-center gap-3\"><span class=\"text-[#FFB000]\">▸</span> MY_CHAINS</h1><p class=\"text-[#666600] mt-1 text-sm uppercase\">Deploy and manage your rollup chains</p></div><a href=\"/deployments/new\" class=\"inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#FFB000] text-black font-bold uppercase \n\t\t\t\t\t\t  hover:bg-[#FFCC00] hover:shadow-[0_0_20px_#FFB000] transition-all duration-200 whitespace-nowrap\"><svg class=\"w-5 h-5\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 6v6m0 0v6m0-6h6m-6 0H6\"></path></svg> NEW CHAIN</a></div><!-- Stats Bar -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -164,7 +164,7 @@ func DeploymentsEmptyState() templ.Component {
 			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"text-center py-20 border border-dashed border-[#333300] bg-black\"><div class=\"text-7xl mb-6\">🚀</div><h2 class=\"text-2xl text-[#33FF00] mb-3 uppercase font-bold\">No Chains Deployed Yet</h2><p class=\"text-[#666600] mb-8 max-w-md mx-auto\">Deploy your first rollup chain in minutes. Choose between OP Stack or Nitro architectures.</p><a href=\"/popkins/deployments/new\" class=\"inline-flex items-center gap-3 px-8 py-4 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t  hover:bg-[#44FF11] hover:shadow-[0_0_30px_#33FF00] transition-all duration-200 text-lg\"><span>DEPLOY YOUR FIRST CHAIN</span> <span>→</span></a><div class=\"mt-12 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto\"><div class=\"p-4 border border-[#333300] bg-[#0a0a00] text-left\"><div class=\"text-[#FFB000] font-bold uppercase mb-2\">OP Stack</div><p class=\"text-[#666600] text-sm\">Optimism-based rollups with battle-tested security.</p></div><div class=\"p-4 border border-[#333300] bg-[#0a0a00] text-left\"><div class=\"text-[#FFB000] font-bold uppercase mb-2\">Nitro (Orbit)</div><p class=\"text-[#666600] text-sm\">Arbitrum Orbit chains with Nitro technology.</p></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"text-center py-20 border border-dashed border-[#333300] bg-black\"><div class=\"text-7xl mb-6\">🚀</div><h2 class=\"text-2xl text-[#33FF00] mb-3 uppercase font-bold\">No Chains Deployed Yet</h2><p class=\"text-[#666600] mb-8 max-w-md mx-auto\">Deploy your first rollup chain in minutes. Choose between OP Stack or Nitro architectures.</p><a href=\"/deployments/new\" class=\"inline-flex items-center gap-3 px-8 py-4 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t  hover:bg-[#44FF11] hover:shadow-[0_0_30px_#33FF00] transition-all duration-200 text-lg\"><span>DEPLOY YOUR FIRST CHAIN</span> <span>→</span></a><div class=\"mt-12 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto\"><div class=\"p-4 border border-[#333300] bg-[#0a0a00] text-left\"><div class=\"text-[#FFB000] font-bold uppercase mb-2\">OP Stack</div><p class=\"text-[#666600] text-sm\">Optimism-based rollups with battle-tested security.</p></div><div class=\"p-4 border border-[#333300] bg-[#0a0a00] text-left\"><div class=\"text-[#FFB000] font-bold uppercase mb-2\">Nitro (Orbit)</div><p class=\"text-[#666600] text-sm\">Arbitrum Orbit chains with Nitro technology.</p></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -413,9 +413,9 @@ func DeploymentActions(d DeploymentSummary) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 templ.SafeURL
-			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/popkins/deployments/" + d.ID + "/complete"))
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/deployments/" + d.ID + "/complete"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 199, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 199, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -431,9 +431,9 @@ func DeploymentActions(d DeploymentSummary) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 templ.SafeURL
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/popkins/deployments/" + d.ID + "/status"))
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/deployments/" + d.ID + "/status"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 205, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 205, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -449,9 +449,9 @@ func DeploymentActions(d DeploymentSummary) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 templ.SafeURL
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/popkins/deployments/" + d.ID))
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/deployments/" + d.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 211, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 211, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -467,9 +467,9 @@ func DeploymentActions(d DeploymentSummary) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 templ.SafeURL
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/popkins/deployments/" + d.ID))
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/deployments/" + d.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 217, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 217, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -485,9 +485,9 @@ func DeploymentActions(d DeploymentSummary) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 templ.SafeURL
-			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/popkins/deployments/" + d.ID))
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/deployments/" + d.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 223, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployments_list.templ`, Line: 223, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {

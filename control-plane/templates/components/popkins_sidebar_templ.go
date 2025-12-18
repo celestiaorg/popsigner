@@ -41,7 +41,7 @@ func PopkinsSidebar(data PopkinsSidebarData) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col h-full w-64 bg-black border-r border-[#333300] font-mono shrink-0\"><!-- Logo --><div class=\"flex items-center h-16 px-5 border-b border-[#333300]\"><a href=\"/popkins/deployments\" class=\"flex items-center gap-2.5 group\"><span class=\"text-[#33FF00] text-2xl group-hover:drop-shadow-[0_0_10px_#33FF00] transition-all\">🚀</span> <span class=\"text-xl font-bold text-[#33FF00] uppercase tracking-wider\n\t\t\t\t\t\t\t group-hover:drop-shadow-[0_0_10px_#33FF00] transition-all\">POPKINS</span></a></div><!-- Org Display --><div class=\"px-4 py-3 border-b border-[#333300]\"><div class=\"text-sm text-[#FFB000] uppercase truncate font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col h-full w-64 bg-black border-r border-[#333300] font-mono shrink-0\"><!-- Logo --><div class=\"flex items-center h-16 px-5 border-b border-[#333300]\"><a href=\"/deployments\" class=\"flex items-center gap-2.5 group\"><span class=\"text-[#33FF00] text-2xl group-hover:drop-shadow-[0_0_10px_#33FF00] transition-all\">🚀</span> <span class=\"text-xl font-bold text-[#33FF00] uppercase tracking-wider\n\t\t\t\t\t\t\t group-hover:drop-shadow-[0_0_10px_#33FF00] transition-all\">POPKINS</span></a></div><!-- Org Display --><div class=\"px-4 py-3 border-b border-[#333300]\"><div class=\"text-sm text-[#FFB000] uppercase truncate font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -58,11 +58,11 @@ func PopkinsSidebar(data PopkinsSidebarData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = popkinsNavLink("/popkins/deployments", "▸ MY CHAINS", data.ActivePath, false).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = popkinsNavLink("/deployments", "▸ MY CHAINS", data.ActivePath, false).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = popkinsNavLink("/popkins/deployments/new", "▸ DEPLOY NEW", data.ActivePath, false).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = popkinsNavLink("/deployments/new", "▸ DEPLOY NEW", data.ActivePath, false).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -231,8 +231,8 @@ func popkinsLinkClasses(href, activePath string) string {
 
 	// Check if this link is active
 	isActive := href == activePath ||
-		(strings.HasPrefix(activePath, href) && href != "/popkins/deployments" && len(href) > 20) ||
-		(href == "/popkins/deployments" && activePath == "/popkins/deployments")
+		(strings.HasPrefix(activePath, href) && href != "/deployments" && len(href) > 20) ||
+		(href == "/deployments" && activePath == "/deployments")
 
 	if isActive {
 		return base + " text-[#33FF00] bg-[#0D1A0D] border-l-2 border-[#33FF00] -ml-[2px] drop-shadow-[0_0_8px_#33FF00] font-bold"
