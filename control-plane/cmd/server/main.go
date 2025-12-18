@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -225,9 +226,10 @@ func main() {
 	r.Get("/settings/team", settingsTeamHandler(sessionRepo, userRepo, orgRepo))
 
 	// POPKins - Chain deployment platform (separate product)
-	// Mounted at /popkins/* for development
-	// In production, this runs at popkins.popsigner.com subdomain
-	r.Mount("/popkins", popkinsHandler.Routes())
+	// In production: popkins.popsigner.com
+	// For development/fallback: /popkins/* path on any host
+	popkinsRouter := popkinsHandler.Routes()
+	r.Mount("/popkins", popkinsRouter) // Fallback path-based access
 
 	// OAuth routes - using the service
 	r.Get("/auth/github", oauthRedirectHandler(oauthSvc, "github"))
@@ -269,10 +271,15 @@ func main() {
 		})
 	})
 
+	// Create host-based router for subdomain routing
+	// - popkins.popsigner.com → POPKins routes (served at /)
+	// - dashboard.popsigner.com (or any other) → Main dashboard
+	hostRouter := createHostRouter(r, popkinsRouter, logger)
+
 	// Create server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port),
-		Handler:      r,
+		Handler:      hostRouter,
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  time.Minute,
@@ -1900,6 +1907,61 @@ func isAPIRequest(r *http.Request) bool {
 	}
 
 	return false
+}
+
+// createHostRouter creates a hostname-based router that dispatches requests
+// to different handlers based on the subdomain.
+//
+// Routing rules:
+//   - popkins.popsigner.com → POPKins routes (chain deployment platform)
+//   - popkins.localhost:* → POPKins routes (local development)
+//   - Everything else → Main dashboard (dashboard.popsigner.com or default)
+//
+// Shared resources like /static/* and /health are served from the main router
+// regardless of hostname.
+func createHostRouter(dashboardRouter http.Handler, popkinsRouter http.Handler, logger *slog.Logger) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Extract hostname (remove port if present)
+		host := r.Host
+		if colonIdx := strings.LastIndex(host, ":"); colonIdx != -1 {
+			// Check if it's not an IPv6 address
+			if bracketIdx := strings.LastIndex(host, "]"); bracketIdx == -1 || colonIdx > bracketIdx {
+				host = host[:colonIdx]
+			}
+		}
+		host = strings.ToLower(host)
+
+		// Always serve shared resources from main router regardless of hostname:
+		// - Static files (CSS, JS, images)
+		// - Health/ready/metrics endpoints
+		// - Authentication routes (OAuth callbacks need to work on any subdomain)
+		path := r.URL.Path
+		if strings.HasPrefix(path, "/static/") ||
+			strings.HasPrefix(path, "/auth/") ||
+			path == "/login" ||
+			path == "/logout" ||
+			path == "/health" ||
+			path == "/ready" ||
+			path == "/metrics" {
+			dashboardRouter.ServeHTTP(w, r)
+			return
+		}
+
+		// Route based on hostname
+		switch {
+		case strings.HasPrefix(host, "popkins."):
+			// POPKins subdomain - serve POPKins routes at root
+			logger.Debug("Routing to POPKins",
+				slog.String("host", r.Host),
+				slog.String("path", r.URL.Path),
+			)
+			popkinsRouter.ServeHTTP(w, r)
+
+		default:
+			// Default to main dashboard (dashboard.popsigner.com, localhost, etc.)
+			dashboardRouter.ServeHTTP(w, r)
+		}
+	})
 }
 
 // settingsTeamHandler serves the team settings page.
