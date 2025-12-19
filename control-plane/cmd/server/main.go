@@ -28,6 +28,7 @@ import (
 	"github.com/Bidon15/popsigner/control-plane/internal/config"
 	"github.com/Bidon15/popsigner/control-plane/internal/database"
 	"github.com/Bidon15/popsigner/control-plane/internal/handler"
+	"github.com/Bidon15/popsigner/control-plane/internal/handler/jsonrpc"
 	"github.com/Bidon15/popsigner/control-plane/internal/handler/popkins"
 	"github.com/Bidon15/popsigner/control-plane/internal/middleware"
 	"github.com/Bidon15/popsigner/control-plane/internal/models"
@@ -128,6 +129,16 @@ func main() {
 	keyHandler := handler.NewKeyHandler(keySvc)
 	signHandler := handler.NewSignHandler(keySvc)
 
+	// Initialize JSON-RPC server for Ethereum signing (used by orchestrator)
+	jsonRPCServer := jsonrpc.NewServer(jsonrpc.ServerConfig{
+		KeyRepo:   keyRepo,
+		AuditRepo: auditRepo,
+		UsageRepo: usageRepo,
+		BaoClient: baoClient,
+		Logger:    logger,
+	})
+	logger.Info("JSON-RPC server initialized")
+
 	// Initialize bootstrap (deployment) repository
 	bootstrapRepo := bootstraprepo.NewPostgresRepository(db.Pool())
 
@@ -147,12 +158,15 @@ func main() {
 	apiKeyManager := bootstraporchestrator.NewDefaultAPIKeyManager(apiKeySvc)
 
 	// Determine POPSigner endpoint (for signing requests during deployment)
-	// Use the server's own address since it hosts the signing API
-	signerEndpoint := fmt.Sprintf("http://localhost:%d", cfg.Server.Port)
+	// The orchestrator uses the JSON-RPC endpoint at /v1/rpc for eth_signTransaction
+	// This is the same server but accessed via internal Kubernetes DNS
+	signerEndpoint := fmt.Sprintf("http://localhost:%d/v1/rpc", cfg.Server.Port)
 	if cfg.Server.Environment == "production" {
-		signerEndpoint = "https://api.popsigner.com"
+		// In production, use the internal service name
+		signerEndpoint = "http://production-api:8080/v1/rpc"
 	} else if cfg.Server.Environment == "dev" {
-		signerEndpoint = "https://dashboard.popsigner.com" // Dev cluster uses this
+		// In dev cluster, use the internal service name (not external DNS)
+		signerEndpoint = "http://dev-api:8080/v1/rpc"
 	}
 
 	// Initialize unified orchestrator that dispatches to stack-specific orchestrators
@@ -304,6 +318,9 @@ func main() {
 
 			// Batch signing endpoint
 			r.Mount("/sign", signHandler.Routes())
+
+			// JSON-RPC endpoint for Ethereum signing (eth_signTransaction, eth_sign, personal_sign)
+			r.Mount("/rpc", jsonRPCServer)
 
 			// Deployments API - chain deployment management
 			r.Mount("/deployments", deploymentHandler.Routes())

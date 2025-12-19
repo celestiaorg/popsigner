@@ -55,13 +55,14 @@ type OrchestratorConfig struct {
 }
 
 // Orchestrator coordinates OP Stack chain deployments.
-// It manages the deployment lifecycle through multiple stages,
-// integrates with SignerFn for transaction signing and StateWriter
+// It manages the deployment lifecycle using the op-deployer pipeline,
+// integrates with POPSigner for transaction signing and StateWriter
 // for state persistence, enabling resumable deployments.
 type Orchestrator struct {
 	repo          repository.Repository
 	signerFactory SignerFactory
 	l1Factory     L1ClientFactory
+	opDeployer    *OPDeployer
 	config        OrchestratorConfig
 	logger        *slog.Logger
 }
@@ -102,10 +103,17 @@ func NewOrchestrator(
 		config.RetryDelay = 5 * time.Second
 	}
 
+	// Initialize the op-deployer wrapper
+	opDeployer := NewOPDeployer(OPDeployerConfig{
+		Logger:   logger,
+		CacheDir: config.CacheDir,
+	})
+
 	return &Orchestrator{
 		repo:          repo,
 		signerFactory: signerFactory,
 		l1Factory:     l1Factory,
+		opDeployer:    opDeployer,
 		config:        config,
 		logger:        logger,
 	}
@@ -121,9 +129,9 @@ type DeploymentContext struct {
 	OnProgress   ProgressCallback
 }
 
-// Deploy executes an OP Stack deployment.
-// It loads the deployment configuration, determines the starting stage
-// (for resumability), and executes each stage in order.
+// Deploy executes an OP Stack deployment using the real op-deployer pipeline.
+// It loads the deployment configuration, runs the full op-deployer pipeline,
+// and saves all artifacts for bundle generation.
 func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onProgress ProgressCallback) error {
 	o.logger.Info("starting OP Stack deployment",
 		slog.String("deployment_id", deploymentID.String()),
@@ -152,43 +160,18 @@ func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onPro
 		})
 	}
 
-	// 4. Create signer
-	signer := o.signerFactory.CreateSigner(
-		cfg.POPSignerEndpoint,
-		cfg.POPSignerAPIKey,
-		cfg.L1ChainIDBig(),
-	)
-
-	// 5. Connect to L1
-	l1Client, err := o.l1Factory.Dial(ctx, cfg.L1RPC)
-	if err != nil {
-		return fmt.Errorf("connect to L1: %w", err)
-	}
-	defer l1Client.Close()
-
-	// 6. Build deployment context
-	dctx := &DeploymentContext{
-		DeploymentID: deploymentID,
-		Config:       cfg,
-		StateWriter:  stateWriter,
-		Signer:       signer,
-		L1Client:     l1Client,
-		OnProgress:   onProgress,
+	// 4. Update status to running
+	if err := stateWriter.UpdateStage(ctx, StageInit); err != nil {
+		return fmt.Errorf("update stage: %w", err)
 	}
 
-	// 7. Determine starting stage (for resumability)
-	startStage, err := o.determineStartStage(ctx, stateWriter)
-	if err != nil {
-		return fmt.Errorf("determine start stage: %w", err)
+	// 5. Report progress - starting deployment
+	if onProgress != nil {
+		onProgress(StageInit, 0.1, "Initializing OP Stack deployment...")
 	}
 
-	o.logger.Info("deployment will start from stage",
-		slog.String("deployment_id", deploymentID.String()),
-		slog.String("start_stage", startStage.String()),
-	)
-
-	// 8. Execute stages
-	if err := o.executeStages(ctx, dctx, startStage); err != nil {
+	// 6. Run the full op-deployer pipeline
+	if err := o.deployWithOPDeployer(ctx, deploymentID, cfg, stateWriter, onProgress); err != nil {
 		// Mark as failed with error
 		if markErr := stateWriter.MarkFailed(ctx, err.Error()); markErr != nil {
 			o.logger.Error("failed to mark deployment as failed",
@@ -198,7 +181,7 @@ func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onPro
 		return err
 	}
 
-	// 9. Mark complete - real contracts deployed
+	// 7. Mark complete - real contracts deployed
 	if err := stateWriter.MarkComplete(ctx); err != nil {
 		return fmt.Errorf("mark complete: %w", err)
 	}
@@ -208,425 +191,142 @@ func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onPro
 	)
 
 	if onProgress != nil {
-		onProgress(StageCompleted, 1.0, "Deployment completed - contracts deployed on L1!")
+		onProgress(StageCompleted, 1.0, "Deployment completed - OP Stack contracts deployed on L1!")
 	}
 
 	return nil
 }
 
-// determineStartStage returns the stage to start from based on previous progress.
-func (o *Orchestrator) determineStartStage(ctx context.Context, stateWriter *StateWriter) (Stage, error) {
-	canResume, err := stateWriter.CanResume(ctx)
+// deployWithOPDeployer runs the full op-deployer pipeline.
+// This replaces the individual stage handlers with real contract deployments.
+func (o *Orchestrator) deployWithOPDeployer(
+	ctx context.Context,
+	deploymentID uuid.UUID,
+	cfg *DeploymentConfig,
+	stateWriter *StateWriter,
+	onProgress ProgressCallback,
+) error {
+	// Create POPSigner adapter for op-deployer
+	adapter := NewPOPSignerAdapter(
+		cfg.POPSignerEndpoint,
+		cfg.POPSignerAPIKey,
+		new(big.Int).SetUint64(cfg.L1ChainID),
+	)
+
+	// Report progress - deploying contracts
+	if onProgress != nil {
+		onProgress(StageSuperchain, 0.2, "Deploying superchain contracts...")
+	}
+
+	// Run the full op-deployer pipeline
+	o.logger.Info("starting op-deployer pipeline",
+		slog.String("chain_name", cfg.ChainName),
+		slog.Uint64("chain_id", cfg.ChainID),
+	)
+
+	result, err := o.opDeployer.Deploy(ctx, cfg, adapter)
 	if err != nil {
-		return StageInit, err
+		return fmt.Errorf("op-deployer pipeline failed: %w", err)
 	}
 
-	if !canResume {
-		return StageInit, nil
+	// Report progress - saving artifacts
+	if onProgress != nil {
+		onProgress(StageGenesis, 0.8, "Saving deployment artifacts...")
 	}
 
-	currentStage, err := stateWriter.GetCurrentStage(ctx)
+	// Save the op-deployer state as artifact for bundle extraction
+	stateJSON, err := json.Marshal(result.State)
 	if err != nil {
-		return StageInit, err
+		return fmt.Errorf("marshal op-deployer state: %w", err)
 	}
 
-	// If deployment was previously at a stage, resume from that stage
-	// (it may have partially completed before failure)
-	return currentStage, nil
-}
-
-// executeStages runs all deployment stages from startStage.
-func (o *Orchestrator) executeStages(ctx context.Context, dctx *DeploymentContext, startStage Stage) error {
-	startIdx := StageIndex(startStage)
-	if startIdx < 0 {
-		return fmt.Errorf("invalid start stage: %s", startStage)
+	artifact := &repository.Artifact{
+		ID:           uuid.New(),
+		DeploymentID: deploymentID,
+		ArtifactType: "opdeployer_state",
+		Content:      stateJSON,
+		CreatedAt:    time.Now(),
+	}
+	if err := o.repo.SaveArtifact(ctx, artifact); err != nil {
+		return fmt.Errorf("save op-deployer state: %w", err)
 	}
 
-	totalStages := len(StageOrder)
+	// Extract and save genesis from op-deployer state
+	// The genesis and rollup configs are stored in the State object
+	// and can be extracted by the bundle generator from opdeployer_state
+	if len(result.ChainStates) > 0 {
+		chainState := result.ChainStates[0]
 
-	for i := startIdx; i < totalStages; i++ {
-		stage := StageOrder[i]
-
-		// Skip completed stage marker
-		if stage == StageCompleted {
-			continue
-		}
-
-		// Calculate and report progress
-		progress := float64(i) / float64(totalStages-1)
-		if dctx.OnProgress != nil {
-			dctx.OnProgress(stage, progress, fmt.Sprintf("Executing stage: %s", stage))
-		}
-
-		// Update stage in state writer
-		if err := dctx.StateWriter.UpdateStage(ctx, stage); err != nil {
-			return fmt.Errorf("update stage %s: %w", stage, err)
-		}
-
-		o.logger.Info("executing stage",
-			slog.String("deployment_id", dctx.DeploymentID.String()),
-			slog.String("stage", stage.String()),
-			slog.Float64("progress", progress),
-		)
-
-		// Execute the stage with retry logic
-		if err := o.executeStageWithRetry(ctx, dctx, stage); err != nil {
-			return fmt.Errorf("stage %s failed: %w", stage, err)
-		}
-
-		o.logger.Info("stage completed",
-			slog.String("deployment_id", dctx.DeploymentID.String()),
-			slog.String("stage", stage.String()),
-		)
-	}
-
-	return nil
-}
-
-// executeStageWithRetry executes a single stage with retry logic for transient failures.
-func (o *Orchestrator) executeStageWithRetry(ctx context.Context, dctx *DeploymentContext, stage Stage) error {
-	var lastErr error
-
-	for attempt := 0; attempt < o.config.RetryAttempts; attempt++ {
-		if attempt > 0 {
-			o.logger.Info("retrying stage",
-				slog.String("stage", stage.String()),
-				slog.Int("attempt", attempt+1),
-				slog.Int("max_attempts", o.config.RetryAttempts),
-			)
-
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-time.After(o.config.RetryDelay):
+		// Save chain state as genesis source - the actual genesis is derived from this
+		chainStateJSON, err := json.MarshalIndent(chainState, "", "  ")
+		if err != nil {
+			o.logger.Warn("failed to marshal chain state", slog.String("error", err.Error()))
+		} else {
+			genesisArtifact := &repository.Artifact{
+				ID:           uuid.New(),
+				DeploymentID: deploymentID,
+				ArtifactType: "genesis",
+				Content:      chainStateJSON,
+				CreatedAt:    time.Now(),
+			}
+			if err := o.repo.SaveArtifact(ctx, genesisArtifact); err != nil {
+				o.logger.Warn("failed to save genesis artifact", slog.String("error", err.Error()))
 			}
 		}
 
-		err := o.executeStage(ctx, dctx, stage)
-		if err == nil {
-			return nil
+		// Save chain addresses for rollup config
+		rollupArtifact := &repository.Artifact{
+			ID:           uuid.New(),
+			DeploymentID: deploymentID,
+			ArtifactType: "rollup_config",
+			Content:      chainStateJSON, // Same data, different artifact type for flexibility
+			CreatedAt:    time.Now(),
 		}
-
-		lastErr = err
-
-		// Check if error is retryable
-		if !isRetryableError(err) {
-			return err
+		if err := o.repo.SaveArtifact(ctx, rollupArtifact); err != nil {
+			o.logger.Warn("failed to save rollup config artifact", slog.String("error", err.Error()))
 		}
-
-		o.logger.Warn("stage failed with retryable error",
-			slog.String("stage", stage.String()),
-			slog.String("error", err.Error()),
-		)
 	}
 
-	return fmt.Errorf("stage failed after %d attempts: %w", o.config.RetryAttempts, lastErr)
-}
-
-// executeStage dispatches to the appropriate stage handler.
-func (o *Orchestrator) executeStage(ctx context.Context, dctx *DeploymentContext, stage Stage) error {
-	switch stage {
-	case StageInit:
-		return o.stageInit(ctx, dctx)
-	case StageSuperchain:
-		return o.stageSuperchain(ctx, dctx)
-	case StageImplementations:
-		return o.stageImplementations(ctx, dctx)
-	case StageOPChain:
-		return o.stageOPChain(ctx, dctx)
-	case StageAltDA:
-		return o.stageAltDA(ctx, dctx)
-	case StageGenesis:
-		return o.stageGenesis(ctx, dctx)
-	case StageStartBlock:
-		return o.stageStartBlock(ctx, dctx)
-	default:
-		return fmt.Errorf("unknown stage: %s", stage)
+	// Save contract addresses as deployment_state artifact
+	// Extract addresses from the state for the bundle
+	addressData := map[string]interface{}{
+		"deployment_complete": true,
+		"deployed_at":         time.Now().UTC().Format(time.RFC3339),
 	}
-}
 
-// stageInit validates L1 connection and configuration.
-func (o *Orchestrator) stageInit(ctx context.Context, dctx *DeploymentContext) error {
-	// Validate L1 chain ID
-	chainID, err := dctx.L1Client.ChainID(ctx)
+	if result.SuperchainContracts != nil {
+		addressData["superchain_deployment"] = result.SuperchainContracts
+	}
+
+	if result.ImplementationsContracts != nil {
+		addressData["implementations_deployment"] = result.ImplementationsContracts
+	}
+
+	if len(result.ChainStates) > 0 {
+		addressData["chain_state"] = result.ChainStates[0]
+	}
+
+	addressesJSON, err := json.MarshalIndent(addressData, "", "  ")
 	if err != nil {
-		return fmt.Errorf("get L1 chain ID: %w", err)
+		o.logger.Warn("failed to marshal addresses", slog.String("error", err.Error()))
+	} else {
+		addressesArtifact := &repository.Artifact{
+			ID:           uuid.New(),
+			DeploymentID: deploymentID,
+			ArtifactType: "deployment_state",
+			Content:      addressesJSON,
+			CreatedAt:    time.Now(),
+		}
+		if err := o.repo.SaveArtifact(ctx, addressesArtifact); err != nil {
+			o.logger.Warn("failed to save addresses artifact", slog.String("error", err.Error()))
+		}
 	}
 
-	expectedChainID := dctx.Config.L1ChainIDBig()
-	if chainID.Cmp(expectedChainID) != 0 {
-		return fmt.Errorf("L1 chain ID mismatch: expected %s, got %s", expectedChainID, chainID)
-	}
-
-	// Check deployer balance
-	deployerAddr := common.HexToAddress(dctx.Config.DeployerAddress)
-	balance, err := dctx.L1Client.BalanceAt(ctx, deployerAddr, nil)
-	if err != nil {
-		return fmt.Errorf("get deployer balance: %w", err)
-	}
-
-	requiredFunding := dctx.Config.RequiredFundingWei
-	if balance.Cmp(requiredFunding) < 0 {
-		// Format balance in ETH for human readability
-		haveETH := weiToETH(balance)
-		needETH := weiToETH(requiredFunding)
-		return fmt.Errorf("insufficient deployer balance for %s: have %s ETH, need %s ETH. Fund this address on L1 and retry", 
-			dctx.Config.DeployerAddress, haveETH, needETH)
-	}
-
-	o.logger.Info("init stage completed",
-		slog.String("l1_chain_id", chainID.String()),
-		slog.String("deployer_balance", balance.String()),
+	o.logger.Info("op-deployer pipeline completed successfully",
+		slog.Int("chains_deployed", len(result.ChainStates)),
 	)
 
-	// Save init state
-	initState := map[string]interface{}{
-		"l1_chain_id":      chainID.String(),
-		"deployer_address": dctx.Config.DeployerAddress,
-		"deployer_balance": balance.String(),
-		"initialized_at":   time.Now().UTC().Format(time.RFC3339),
-	}
-
-	return dctx.StateWriter.WriteState(ctx, initState)
-}
-
-// stageSuperchain deploys superchain contracts.
-// In a full implementation, this would call op-deployer's pipeline.DeploySuperchain.
-// For now, we deploy a marker contract to demonstrate the full signing flow.
-func (o *Orchestrator) stageSuperchain(ctx context.Context, dctx *DeploymentContext) error {
-	// Check if already completed (idempotency)
-	complete, err := dctx.StateWriter.IsStageComplete(ctx, StageSuperchain)
-	if err != nil {
-		return err
-	}
-	if complete {
-		o.logger.Info("skipping superchain stage (already complete)")
 		return nil
-	}
-
-	// Read existing state to check for partial completion
-	existingState, err := dctx.StateWriter.ReadState(ctx)
-	if err != nil {
-		return fmt.Errorf("read existing state: %w", err)
-	}
-
-	var state map[string]interface{}
-	if existingState != nil {
-		if err := json.Unmarshal(existingState, &state); err != nil {
-			state = make(map[string]interface{})
-		}
-	} else {
-		state = make(map[string]interface{})
-	}
-
-	// Deploy a marker contract for the superchain stage
-	// In production, this would be SuperchainConfig and ProtocolVersions
-	bytecode := stageMarkerBytecode("superchain")
-	deployment, err := o.deployContract(ctx, dctx, bytecode, "Deploy SuperchainConfig (marker)")
-	if err != nil {
-		return fmt.Errorf("deploy superchain marker: %w", err)
-	}
-
-	state["superchain_deployed"] = true
-	state["superchain_deployed_at"] = time.Now().UTC().Format(time.RFC3339)
-	state["superchain_config_address"] = deployment.ContractAddress.Hex()
-	state["superchain_tx_hash"] = deployment.TxHash.Hex()
-	state["superchain_gas_used"] = deployment.GasUsed
-
-	// Record the real transaction
-	if err := dctx.StateWriter.RecordTransaction(ctx, StageSuperchain, deployment.TxHash.Hex(), "Deploy SuperchainConfig"); err != nil {
-		return fmt.Errorf("record transaction: %w", err)
-	}
-
-	return dctx.StateWriter.WriteState(ctx, state)
-}
-
-// stageImplementations deploys implementation contracts.
-// In a full implementation, this would deploy L1CrossDomainMessenger, OptimismPortal, etc.
-func (o *Orchestrator) stageImplementations(ctx context.Context, dctx *DeploymentContext) error {
-	complete, err := dctx.StateWriter.IsStageComplete(ctx, StageImplementations)
-	if err != nil {
-		return err
-	}
-	if complete {
-		o.logger.Info("skipping implementations stage (already complete)")
-		return nil
-	}
-
-	existingState, _ := dctx.StateWriter.ReadState(ctx)
-	var state map[string]interface{}
-	if existingState != nil {
-		json.Unmarshal(existingState, &state)
-	}
-	if state == nil {
-		state = make(map[string]interface{})
-	}
-
-	// Deploy a marker contract for the implementations stage
-	bytecode := stageMarkerBytecode("implementations")
-	deployment, err := o.deployContract(ctx, dctx, bytecode, "Deploy Implementations (marker)")
-	if err != nil {
-		return fmt.Errorf("deploy implementations marker: %w", err)
-	}
-
-	state["implementations_deployed"] = true
-	state["implementations_deployed_at"] = time.Now().UTC().Format(time.RFC3339)
-	state["implementations_address"] = deployment.ContractAddress.Hex()
-	state["implementations_tx_hash"] = deployment.TxHash.Hex()
-	state["implementations_gas_used"] = deployment.GasUsed
-
-	if err := dctx.StateWriter.RecordTransaction(ctx, StageImplementations, deployment.TxHash.Hex(), "Deploy Implementations"); err != nil {
-		return fmt.Errorf("record transaction: %w", err)
-	}
-
-	return dctx.StateWriter.WriteState(ctx, state)
-}
-
-// stageOPChain deploys the OP chain contracts.
-// In a full implementation, this would deploy SystemConfig, AddressManager, etc.
-func (o *Orchestrator) stageOPChain(ctx context.Context, dctx *DeploymentContext) error {
-	complete, err := dctx.StateWriter.IsStageComplete(ctx, StageOPChain)
-	if err != nil {
-		return err
-	}
-	if complete {
-		o.logger.Info("skipping opchain stage (already complete)")
-		return nil
-	}
-
-	existingState, _ := dctx.StateWriter.ReadState(ctx)
-	var state map[string]interface{}
-	if existingState != nil {
-		json.Unmarshal(existingState, &state)
-	}
-	if state == nil {
-		state = make(map[string]interface{})
-	}
-
-	// Deploy a marker contract for the opchain stage
-	bytecode := stageMarkerBytecode("opchain")
-	deployment, err := o.deployContract(ctx, dctx, bytecode, "Deploy OPChain (marker)")
-	if err != nil {
-		return fmt.Errorf("deploy opchain marker: %w", err)
-	}
-
-	state["opchain_deployed"] = true
-	state["opchain_deployed_at"] = time.Now().UTC().Format(time.RFC3339)
-	state["chain_id"] = dctx.Config.ChainID
-	state["opchain_address"] = deployment.ContractAddress.Hex()
-	state["opchain_tx_hash"] = deployment.TxHash.Hex()
-	state["opchain_gas_used"] = deployment.GasUsed
-
-	if err := dctx.StateWriter.RecordTransaction(ctx, StageOPChain, deployment.TxHash.Hex(), "Deploy OPChain"); err != nil {
-		return fmt.Errorf("record transaction: %w", err)
-	}
-
-	return dctx.StateWriter.WriteState(ctx, state)
-}
-
-// stageAltDA configures Alt-DA for Celestia.
-// POPKins only supports Celestia as the DA layer, so this stage always runs.
-func (o *Orchestrator) stageAltDA(ctx context.Context, dctx *DeploymentContext) error {
-	complete, err := dctx.StateWriter.IsStageComplete(ctx, StageAltDA)
-	if err != nil {
-		return err
-	}
-	if complete {
-		o.logger.Info("skipping alt-da stage (already complete)")
-		return nil
-	}
-
-	existingState, _ := dctx.StateWriter.ReadState(ctx)
-	var state map[string]interface{}
-	if existingState != nil {
-		json.Unmarshal(existingState, &state)
-	}
-	if state == nil {
-		state = make(map[string]interface{})
-	}
-
-	// In production, this would call:
-	// pipeline.DeployAltDA(pEnv, intent, st, chainID)
-	// Note: Celestia uses GenericCommitment which requires 0 on-chain transactions
-	// The actual DA configuration is handled by the op-alt-da service at runtime
-	state["alt_da_deployed"] = true
-	state["alt_da_deployed_at"] = time.Now().UTC().Format(time.RFC3339)
-	state["da_type"] = "celestia"
-	state["da_commitment_type"] = CelestiaDACommitmentType
-	state["celestia_namespace"] = dctx.Config.CelestiaNamespace
-	state["celestia_rpc"] = dctx.Config.CelestiaRPC
-
-	return dctx.StateWriter.WriteState(ctx, state)
-}
-
-// stageGenesis generates the L2 genesis file.
-func (o *Orchestrator) stageGenesis(ctx context.Context, dctx *DeploymentContext) error {
-	complete, err := dctx.StateWriter.IsStageComplete(ctx, StageGenesis)
-	if err != nil {
-		return err
-	}
-	if complete {
-		o.logger.Info("skipping genesis stage (already complete)")
-		return nil
-	}
-
-	existingState, _ := dctx.StateWriter.ReadState(ctx)
-	var state map[string]interface{}
-	if existingState != nil {
-		json.Unmarshal(existingState, &state)
-	}
-	if state == nil {
-		state = make(map[string]interface{})
-	}
-
-	// In production, this would call:
-	// pipeline.GenerateL2Genesis(pEnv, intent, bundle, st, chainID)
-	// This is a local computation, no on-chain transactions
-	state["genesis_generated"] = true
-	state["genesis_generated_at"] = time.Now().UTC().Format(time.RFC3339)
-
-	// Save genesis as artifact
-	genesisData := json.RawMessage(`{"placeholder": "genesis data would be here"}`)
-	if err := dctx.StateWriter.SaveArtifact(ctx, "genesis", genesisData); err != nil {
-		return fmt.Errorf("save genesis artifact: %w", err)
-	}
-
-	return dctx.StateWriter.WriteState(ctx, state)
-}
-
-// stageStartBlock sets the L2 start block.
-func (o *Orchestrator) stageStartBlock(ctx context.Context, dctx *DeploymentContext) error {
-	complete, err := dctx.StateWriter.IsStageComplete(ctx, StageStartBlock)
-	if err != nil {
-		return err
-	}
-	if complete {
-		o.logger.Info("skipping start-block stage (already complete)")
-		return nil
-	}
-
-	existingState, _ := dctx.StateWriter.ReadState(ctx)
-	var state map[string]interface{}
-	if existingState != nil {
-		json.Unmarshal(existingState, &state)
-	}
-	if state == nil {
-		state = make(map[string]interface{})
-	}
-
-	// In production, this would call:
-	// pipeline.SetStartBlockLiveStrategy(ctx, intent, pEnv, st, chainID)
-	// This reads the current L1 block and sets it as the anchor
-	state["start_block_set"] = true
-	state["start_block_set_at"] = time.Now().UTC().Format(time.RFC3339)
-
-	// Save rollup config as artifact
-	rollupConfig := json.RawMessage(`{"placeholder": "rollup config would be here"}`)
-	if err := dctx.StateWriter.SaveArtifact(ctx, "rollup_config", rollupConfig); err != nil {
-		return fmt.Errorf("save rollup config artifact: %w", err)
-	}
-
-	return dctx.StateWriter.WriteState(ctx, state)
 }
 
 // Resume attempts to resume a paused or failed deployment.
@@ -718,170 +418,4 @@ func weiToETH(wei *big.Int) string {
 	return fmt.Sprintf("%s.%04d", eth, decimalPart.Int64())
 }
 
-// ContractDeployment represents the result of a contract deployment.
-type ContractDeployment struct {
-	TxHash          common.Hash
-	ContractAddress common.Address
-	GasUsed         uint64
-}
-
-// deployContract deploys a contract and waits for the transaction receipt.
-func (o *Orchestrator) deployContract(ctx context.Context, dctx *DeploymentContext, bytecode []byte, description string) (*ContractDeployment, error) {
-	deployerAddr := common.HexToAddress(dctx.Config.DeployerAddress)
-
-	// Get nonce
-	nonce, err := dctx.L1Client.PendingNonceAt(ctx, deployerAddr)
-	if err != nil {
-		return nil, fmt.Errorf("get nonce: %w", err)
-	}
-
-	// Get gas price (use EIP-1559 if available)
-	gasTipCap, err := dctx.L1Client.SuggestGasTipCap(ctx)
-	if err != nil {
-		// Fall back to legacy gas price
-		gasPrice, priceErr := dctx.L1Client.SuggestGasPrice(ctx)
-		if priceErr != nil {
-			return nil, fmt.Errorf("get gas price: %w", priceErr)
-		}
-		gasTipCap = gasPrice
-	}
-
-	// Get base fee from latest block header
-	header, err := dctx.L1Client.HeaderByNumber(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("get block header: %w", err)
-	}
-	baseFee := header.BaseFee
-	if baseFee == nil {
-		baseFee = big.NewInt(0)
-	}
-
-	// Calculate max fee (base fee * 2 + tip)
-	gasFeeCap := new(big.Int).Mul(baseFee, big.NewInt(2))
-	gasFeeCap.Add(gasFeeCap, gasTipCap)
-
-	// Estimate gas
-	estimatedGas, err := dctx.L1Client.EstimateGas(ctx, ethereum.CallMsg{
-		From:  deployerAddr,
-		To:    nil, // Contract creation
-		Data:  bytecode,
-		Value: big.NewInt(0),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("estimate gas: %w", err)
-	}
-
-	// Add 20% buffer to gas estimate
-	gas := estimatedGas + (estimatedGas / 5)
-
-	o.logger.Info("deploying contract",
-		slog.String("description", description),
-		slog.Uint64("nonce", nonce),
-		slog.Uint64("gas", gas),
-		slog.String("gasTipCap", gasTipCap.String()),
-		slog.String("gasFeeCap", gasFeeCap.String()),
-	)
-
-	// Create EIP-1559 transaction for contract deployment
-	tx := types.NewTx(&types.DynamicFeeTx{
-		ChainID:   dctx.Config.L1ChainIDBig(),
-		Nonce:     nonce,
-		GasTipCap: gasTipCap,
-		GasFeeCap: gasFeeCap,
-		Gas:       gas,
-		To:        nil, // Contract creation
-		Value:     big.NewInt(0),
-		Data:      bytecode,
-	})
-
-	// Sign the transaction via POPSigner
-	signedTx, err := dctx.Signer.SignTransaction(ctx, deployerAddr, tx)
-	if err != nil {
-		return nil, fmt.Errorf("sign transaction: %w", err)
-	}
-
-	// Send the transaction
-	if err := dctx.L1Client.SendTransaction(ctx, signedTx); err != nil {
-		return nil, fmt.Errorf("send transaction: %w", err)
-	}
-
-	txHash := signedTx.Hash()
-	o.logger.Info("transaction sent",
-		slog.String("txHash", txHash.Hex()),
-		slog.String("description", description),
-	)
-
-	// Wait for receipt (with timeout)
-	receipt, err := o.waitForReceipt(ctx, dctx.L1Client, txHash)
-	if err != nil {
-		return nil, fmt.Errorf("wait for receipt: %w", err)
-	}
-
-	if receipt.Status != types.ReceiptStatusSuccessful {
-		return nil, fmt.Errorf("transaction failed: status=%d", receipt.Status)
-	}
-
-	o.logger.Info("contract deployed",
-		slog.String("contractAddress", receipt.ContractAddress.Hex()),
-		slog.Uint64("gasUsed", receipt.GasUsed),
-		slog.String("txHash", txHash.Hex()),
-	)
-
-	return &ContractDeployment{
-		TxHash:          txHash,
-		ContractAddress: receipt.ContractAddress,
-		GasUsed:         receipt.GasUsed,
-	}, nil
-}
-
-// waitForReceipt polls for a transaction receipt with exponential backoff.
-func (o *Orchestrator) waitForReceipt(ctx context.Context, client L1Client, txHash common.Hash) (*types.Receipt, error) {
-	backoff := 2 * time.Second
-	maxBackoff := 30 * time.Second
-	timeout := 5 * time.Minute
-
-	deadline := time.Now().Add(timeout)
-
-	for time.Now().Before(deadline) {
-		receipt, err := client.TransactionReceipt(ctx, txHash)
-		if err == nil && receipt != nil {
-			return receipt, nil
-		}
-
-		// Wait before next attempt
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(backoff):
-		}
-
-		// Exponential backoff
-		backoff = backoff * 2
-		if backoff > maxBackoff {
-			backoff = maxBackoff
-		}
-	}
-
-	return nil, fmt.Errorf("timeout waiting for transaction receipt")
-}
-
-// StageMarker is a minimal contract that stores a stage identifier.
-// This is used for demo/testing purposes until full op-deployer integration.
-// Solidity equivalent:
-//   contract StageMarker { bytes32 public immutable stage; constructor(bytes32 s) { stage = s; } }
-func stageMarkerBytecode(stageName string) []byte {
-	// This is simplified bytecode that creates a minimal contract
-	// The actual contract just stores the stage name hash as immutable
-	
-	// For now, use a minimal contract creation bytecode
-	// This creates an empty contract with the stage name encoded in creation tx
-	// The contract code is: PUSH32 <stage> PUSH1 0 SSTORE PUSH1 1 PUSH1 0 RETURN
-	
-	// Minimal creation code that returns empty runtime code (just for demo)
-	// 0x600080600a8239f3 - copies 0 bytes, returns empty contract
-	// We'll prepend with PUSH data to include the stage name
-	
-	// Simple bytecode: returns a 1-byte contract "0xfe" (INVALID opcode = placeholder)
-	return common.FromHex("0x60fe60005360016000f3")
-}
 

@@ -196,7 +196,7 @@ templ DeploymentActions(d DeploymentSummary) {
 	<div class="flex items-center justify-end gap-2">
 		switch d.Status {
 		case "completed":
-			<a href={ templ.SafeURL("/deployments/" + d.ID + "/complete") }
+			<a href={ templ.SafeURL("/deployments/" + d.ID) }
 			   class="px-3 py-1.5 text-xs uppercase font-bold text-[#33FF00] border border-[#33FF00]/50 
 					  hover:bg-[#33FF00]/10 transition-colors">
 				VIEW →

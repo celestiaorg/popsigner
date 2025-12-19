@@ -84,8 +84,15 @@ func (h *EthSignTransactionHandler) Handle(ctx context.Context, params json.RawM
 	txHash := unsignedTx.SigningHash(chainID)
 
 	// Sign via OpenBao
+	// For EIP-1559 (type 2) transactions, v should be just 0 or 1 (yParity)
+	// Pass chainID=0 to get raw recovery ID, not EIP-155 encoded v
 	hashB64 := base64.StdEncoding.EncodeToString(txHash)
-	signResp, err := h.baoClient.SignEVM(key.BaoKeyPath, hashB64, chainID.Int64())
+	signChainID := chainID.Int64()
+	if unsignedTx.Type == ethereum.EIP1559TxType {
+		// EIP-1559 uses raw yParity (0 or 1), not EIP-155 encoded v
+		signChainID = 0
+	}
+	signResp, err := h.baoClient.SignEVM(key.BaoKeyPath, hashB64, signChainID)
 	if err != nil {
 		return nil, ErrSigningFailed(err.Error())
 	}
@@ -94,6 +101,12 @@ func (h *EthSignTransactionHandler) Handle(ctx context.Context, params json.RawM
 	v, r, s, parseErr := parseSignatureResponse(signResp)
 	if parseErr != nil {
 		return nil, ErrInternal(fmt.Sprintf("failed to parse signature: %v", parseErr))
+	}
+
+	// For legacy (chainID=0) signing, v is 27 or 28
+	// Convert to yParity (0 or 1) for EIP-1559
+	if unsignedTx.Type == ethereum.EIP1559TxType && v.Int64() >= 27 {
+		v = big.NewInt(v.Int64() - 27)
 	}
 
 	// Construct signed transaction
