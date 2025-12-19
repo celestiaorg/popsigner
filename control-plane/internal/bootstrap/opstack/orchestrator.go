@@ -206,6 +206,15 @@ func (o *Orchestrator) deployWithOPDeployer(
 	stateWriter *StateWriter,
 	onProgress ProgressCallback,
 ) error {
+	// 1. Preflight check - verify deployer has sufficient balance
+	if onProgress != nil {
+		onProgress(StageInit, 0.1, "Checking deployer balance...")
+	}
+
+	if err := o.checkDeployerBalance(ctx, cfg); err != nil {
+		return err
+	}
+
 	// Create POPSigner adapter for op-deployer
 	adapter := NewPOPSignerAdapter(
 		cfg.POPSignerEndpoint,
@@ -404,6 +413,56 @@ type DeploymentStatus struct {
 	CurrentStage     Stage
 	TransactionCount int
 	Error            *string
+}
+
+// checkDeployerBalance verifies the deployer has sufficient ETH for deployment.
+// This is called as a preflight check before running the op-deployer pipeline.
+func (o *Orchestrator) checkDeployerBalance(ctx context.Context, cfg *DeploymentConfig) error {
+	// Connect to L1 to check balance
+	l1Client, err := o.l1Factory.Dial(ctx, cfg.L1RPC)
+	if err != nil {
+		return fmt.Errorf("connect to L1: %w", err)
+	}
+	defer l1Client.Close()
+
+	// Verify chain ID matches
+	actualChainID, err := l1Client.ChainID(ctx)
+	if err != nil {
+		return fmt.Errorf("get L1 chain ID: %w", err)
+	}
+	expectedChainID := new(big.Int).SetUint64(cfg.L1ChainID)
+	if actualChainID.Cmp(expectedChainID) != 0 {
+		return fmt.Errorf("L1 chain ID mismatch: expected %d, got %d", cfg.L1ChainID, actualChainID)
+	}
+
+	// Check deployer balance
+	deployerAddr := common.HexToAddress(cfg.DeployerAddress)
+	balance, err := l1Client.BalanceAt(ctx, deployerAddr, nil)
+	if err != nil {
+		return fmt.Errorf("get deployer balance: %w", err)
+	}
+
+	// Apply defaults to get required funding
+	cfg.ApplyDefaults()
+	requiredFunding := cfg.RequiredFundingWei
+
+	o.logger.Info("preflight balance check",
+		slog.String("deployer", deployerAddr.Hex()),
+		slog.String("balance_eth", weiToETH(balance)),
+		slog.String("required_eth", weiToETH(requiredFunding)),
+	)
+
+	if balance.Cmp(requiredFunding) < 0 {
+		return fmt.Errorf("insufficient deployer balance for %s: have %s ETH, need %s ETH. Fund this address on L1 and click 'Resume Deployment'",
+			deployerAddr.Hex(), weiToETH(balance), weiToETH(requiredFunding))
+	}
+
+	o.logger.Info("deployer balance check passed",
+		slog.String("deployer", deployerAddr.Hex()),
+		slog.String("balance_eth", weiToETH(balance)),
+	)
+
+	return nil
 }
 
 // weiToETH converts wei to ETH as a human-readable string.
