@@ -1,9 +1,8 @@
 package opstack
 
 import (
-	"archive/tar"
+	"archive/zip"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -35,6 +34,8 @@ type OPStackArtifacts struct {
 	JWTSecret     string            `json:"jwt_secret"`         // Engine API JWT secret
 	DockerCompose string            `json:"docker_compose"`     // Generated docker-compose.yml
 	EnvExample    string            `json:"env_example"`        // .env.example template
+	AltDAConfig   string            `json:"altda_config"`       // op-alt-da config.toml (Celestia)
+	Readme        string            `json:"readme"`             // Bundle README.md
 }
 
 // ContractAddresses contains all deployed OP Stack contract addresses.
@@ -88,10 +89,10 @@ type RollupConfig struct {
 
 // RollupGenesisConfig represents the genesis portion of rollup.json.
 type RollupGenesisConfig struct {
-	L1        GenesisBlockRef `json:"l1"`
-	L2        GenesisBlockRef `json:"l2"`
-	L2Time    uint64          `json:"l2_time"`
-	SystemConfig SystemConfig  `json:"system_config"`
+	L1           GenesisBlockRef `json:"l1"`
+	L2           GenesisBlockRef `json:"l2"`
+	L2Time       uint64          `json:"l2_time"`
+	SystemConfig SystemConfig    `json:"system_config"`
 }
 
 // GenesisBlockRef represents a block reference in rollup genesis.
@@ -163,7 +164,17 @@ func (e *ArtifactExtractor) ExtractArtifacts(
 	// 7. Generate .env.example
 	artifacts.EnvExample = GenerateEnvExample(cfg, &addrs)
 
-	// 8. Save all artifacts to database
+	// 8. Generate op-alt-da config.toml (Celestia DA - always enabled for POPKins)
+	altDAConfig, err := GenerateAltDAConfig(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("generate altda config: %w", err)
+	}
+	artifacts.AltDAConfig = altDAConfig
+
+	// 9. Generate README (POPKins always uses Celestia DA)
+	artifacts.Readme = GenerateBundleReadme(cfg.ChainName, true)
+
+	// 10. Save all artifacts to database
 	if err := e.saveAllArtifacts(ctx, deploymentID, artifacts); err != nil {
 		return nil, fmt.Errorf("save artifacts: %w", err)
 	}
@@ -230,10 +241,10 @@ func (e *ArtifactExtractor) buildRollupConfig(
 			},
 			L2Time: l2Time,
 			SystemConfig: SystemConfig{
-				BatcherAddr:   cfg.BatcherAddress,
-				Overhead:      "0x0000000000000000000000000000000000000000000000000000000000000834",
-				Scalar:        "0x00000000000000000000000000000000000000000000000000000000000f4240",
-				GasLimit:      cfg.GasLimit,
+				BatcherAddr: cfg.BatcherAddress,
+				Overhead:    "0x0000000000000000000000000000000000000000000000000000000000000834",
+				Scalar:      "0x00000000000000000000000000000000000000000000000000000000000f4240",
+				GasLimit:    cfg.GasLimit,
 			},
 		},
 		BlockTime:           cfg.BlockTime,
@@ -256,10 +267,9 @@ func (e *ArtifactExtractor) buildRollupConfig(
 	rollup.FjordTime = &zero
 	rollup.GraniteTime = &zero
 
-	// Alt-DA configuration
-	if cfg.UseAltDA {
+	// Alt-DA configuration - always enabled for Celestia DA
+	// POPKins exclusively uses Celestia as the DA layer
 		rollup.AltDAEnabled = true
-	}
 
 	return rollup, nil
 }
@@ -356,6 +366,20 @@ func (e *ArtifactExtractor) saveAllArtifacts(ctx context.Context, deploymentID u
 		}
 	}
 
+	// Save op-alt-da config.toml (Celestia)
+	if arts.AltDAConfig != "" {
+		if err := e.saveArtifact(ctx, deploymentID, "config.toml", []byte(arts.AltDAConfig)); err != nil {
+			return err
+		}
+	}
+
+	// Save README.md
+	if arts.Readme != "" {
+		if err := e.saveArtifact(ctx, deploymentID, "README.md", []byte(arts.Readme)); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -371,7 +395,7 @@ func (e *ArtifactExtractor) saveArtifact(ctx context.Context, deploymentID uuid.
 	return e.repo.SaveArtifact(ctx, artifact)
 }
 
-// CreateBundle packages all artifacts into a tar.gz bundle.
+// CreateBundle packages all artifacts into a ZIP bundle.
 func (e *ArtifactExtractor) CreateBundle(ctx context.Context, deploymentID uuid.UUID, chainName string) ([]byte, error) {
 	artifacts, err := e.repo.GetAllArtifacts(ctx, deploymentID)
 	if err != nil {
@@ -383,56 +407,45 @@ func (e *ArtifactExtractor) CreateBundle(ctx context.Context, deploymentID uuid.
 	}
 
 	var buf bytes.Buffer
-	gw := gzip.NewWriter(&buf)
-	tw := tar.NewWriter(gw)
+	zw := zip.NewWriter(&buf)
 
 	// Create bundle directory structure
-	bundlePrefix := fmt.Sprintf("%s-opstack-artifacts/", chainName)
+	bundlePrefix := fmt.Sprintf("%s-opstack-bundle/", sanitizeChainName(chainName))
 
-	// Add README.md
-	readme := generateBundleReadme(chainName)
-	if err := addToTar(tw, bundlePrefix+"README.md", []byte(readme)); err != nil {
-		return nil, err
-	}
-
-	// Organize artifacts into directories
+	// Organize artifacts into the bundle
 	for _, a := range artifacts {
 		var path string
 		switch a.ArtifactType {
 		case "genesis.json":
-			path = bundlePrefix + "genesis/genesis.json"
-		case "rollup.json", "deploy-config.json", "addresses.json":
-			path = bundlePrefix + "config/" + a.ArtifactType
-		case "docker-compose.yml", ".env.example":
-			path = bundlePrefix + a.ArtifactType
+			path = bundlePrefix + "genesis.json"
+		case "rollup.json":
+			path = bundlePrefix + "rollup.json"
+		case "addresses.json":
+			path = bundlePrefix + "addresses.json"
+		case "deploy-config.json":
+			path = bundlePrefix + "deploy-config.json"
+		case "docker-compose.yml":
+			path = bundlePrefix + "docker-compose.yml"
+		case ".env.example":
+			path = bundlePrefix + ".env.example"
 		case "jwt.txt":
-			path = bundlePrefix + "secrets/jwt.txt"
+			path = bundlePrefix + "jwt.txt"
+		case "config.toml":
+			path = bundlePrefix + "config.toml"
+		case "README.md":
+			path = bundlePrefix + "README.md"
 		default:
 			// Skip internal artifacts like deployment_state
 			continue
 		}
 
-		if err := addToTar(tw, path, a.Content); err != nil {
-			return nil, fmt.Errorf("add %s to tar: %w", a.ArtifactType, err)
+		if err := addToZip(zw, path, a.Content); err != nil {
+			return nil, fmt.Errorf("add %s to zip: %w", a.ArtifactType, err)
 		}
 	}
 
-	// Add helper scripts
-	startScript := generateStartScript()
-	if err := addToTar(tw, bundlePrefix+"scripts/start.sh", []byte(startScript)); err != nil {
-		return nil, err
-	}
-
-	healthcheckScript := generateHealthcheckScript()
-	if err := addToTar(tw, bundlePrefix+"scripts/healthcheck.sh", []byte(healthcheckScript)); err != nil {
-		return nil, err
-	}
-
-	if err := tw.Close(); err != nil {
-		return nil, fmt.Errorf("close tar writer: %w", err)
-	}
-	if err := gw.Close(); err != nil {
-		return nil, fmt.Errorf("close gzip writer: %w", err)
+	if err := zw.Close(); err != nil {
+		return nil, fmt.Errorf("close zip writer: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -502,148 +515,252 @@ func getUint64FromState(state map[string]interface{}, key string, defaultVal uin
 	return defaultVal
 }
 
-// addToTar adds a file to the tar archive.
-func addToTar(tw *tar.Writer, name string, content []byte) error {
-	hdr := &tar.Header{
-		Name:    name,
-		Size:    int64(len(content)),
-		Mode:    0644,
-		ModTime: time.Now(),
-	}
-	if err := tw.WriteHeader(hdr); err != nil {
+// addToZip adds a file to the ZIP archive.
+func addToZip(zw *zip.Writer, name string, content []byte) error {
+	w, err := zw.Create(name)
+	if err != nil {
 		return err
 	}
-	_, err := tw.Write(content)
+	_, err = w.Write(content)
 	return err
 }
 
-// generateBundleReadme generates the README.md for the artifact bundle.
-func generateBundleReadme(chainName string) string {
-	return fmt.Sprintf(`# %s OP Stack Artifacts
-
-This bundle contains everything needed to run your OP Stack rollup.
-
-## Quick Start
-
-1. Copy .env.example to .env and configure:
-   cp .env.example .env
-   vim .env
-
-2. Start your rollup:
-   ./scripts/start.sh
-
-3. Verify health:
-   ./scripts/healthcheck.sh
-
-## Contents
-
-- genesis/genesis.json     - L2 genesis state
-- config/rollup.json       - Rollup configuration
-- config/addresses.json    - Deployed contract addresses
-- config/deploy-config.json - Original deployment configuration
-- secrets/jwt.txt          - Engine API JWT secret
-- docker-compose.yml       - Ready-to-run Docker configuration
-- .env.example             - Environment variable template
-
-## Required Environment Variables
-
-- L1_RPC_URL: Your L1 RPC endpoint (Alchemy, Infura, etc.)
-- POPSIGNER_RPC_URL: POPSigner signing service URL
-- POPSIGNER_API_KEY: Your POPSigner API key
-
-## Documentation
-
-- OP Stack Docs: https://docs.optimism.io
-- POPSigner Docs: https://docs.popsigner.io
-
-Generated by POPKins Chain Bootstrapping Service
-`, chainName)
-}
-
-// generateStartScript generates the start.sh helper script.
-func generateStartScript() string {
-	return `#!/bin/bash
-set -e
-
-echo "Starting OP Stack services..."
-
-# Check for .env file
-if [ ! -f .env ]; then
-    echo "Error: .env file not found. Copy .env.example to .env and configure it."
-    exit 1
-fi
-
-# Start services
-docker compose up -d
-
-echo "Services started! Run ./scripts/healthcheck.sh to verify."
-`
-}
-
-// generateHealthcheckScript generates the healthcheck.sh script.
-func generateHealthcheckScript() string {
-	return `#!/bin/bash
-
-echo "Checking OP Stack service health..."
-
-# Check op-geth
-echo -n "op-geth: "
-if curl -s -X POST -H "Content-Type: application/json" \
-    --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-    http://localhost:8545 | grep -q result; then
-    echo "✓ OK"
-else
-    echo "✗ FAILED"
-fi
-
-# Check op-node
-echo -n "op-node: "
-if curl -s -X POST -H "Content-Type: application/json" \
-    --data '{"jsonrpc":"2.0","method":"optimism_syncStatus","params":[],"id":1}' \
-    http://localhost:9545 | grep -q result; then
-    echo "✓ OK"
-else
-    echo "✗ FAILED"
-fi
-
-# Check container status
-echo ""
-echo "Container status:"
-docker compose ps
-`
-}
-
-// GenerateEnvExample generates the .env.example file content.
+// GenerateEnvExample generates the .env.example file content with Celestia configuration.
+// POPKins only supports Celestia as the DA layer, so Celestia config is always included.
 func GenerateEnvExample(cfg *DeploymentConfig, addrs *ContractAddresses) string {
-	return fmt.Sprintf(`# L1 Configuration
+	envContent := fmt.Sprintf(`# =============================================================
+# %s OP Stack Configuration
+# =============================================================
+# Generated by POPKins - https://popkins.popsigner.com
+
+# L1 Configuration
+# ---------------------------------------------------------
+# Your L1 RPC endpoint (Alchemy, Infura, or self-hosted)
 L1_RPC_URL=%s
 
-# POPSigner Configuration (API Key Auth)
-POPSIGNER_RPC_URL=%s
+# POPSigner Configuration
+# ---------------------------------------------------------
+# POPSigner signing service for secure key management
+POPSIGNER_ENDPOINT=%s
 POPSIGNER_API_KEY=your_api_key_here
 
-# Role Addresses (from deployment)
+# Role Addresses (from your POPSigner keys)
+# ---------------------------------------------------------
+SEQUENCER_ADDRESS=%s
 BATCHER_ADDRESS=%s
 PROPOSER_ADDRESS=%s
+
+# Contract Addresses (from deployment)
+# ---------------------------------------------------------
 L2_OUTPUT_ORACLE_ADDRESS=%s
 
 # Chain Configuration
-L2_CHAIN_ID=%d
-L2_CHAIN_NAME=%s
-
-# Celestia DA (if enabled)
-# CELESTIA_RPC_URL=%s
-# CELESTIA_AUTH_TOKEN=your_token_here
-# CELESTIA_NAMESPACE=your_namespace_hex
+# ---------------------------------------------------------
+CHAIN_ID=%d
 `,
+		cfg.ChainName,
 		cfg.L1RPC,
 		cfg.POPSignerEndpoint,
+		cfg.SequencerAddress,
 		cfg.BatcherAddress,
 		cfg.ProposerAddress,
 		addrs.L2OutputOracle,
 		cfg.ChainID,
-		cfg.ChainName,
-		cfg.CelestiaRPC,
 	)
+
+	// POPKins always uses Celestia DA - add Celestia configuration
+	envContent += `
+# =============================================================
+# Celestia DA Configuration (REQUIRED for op-alt-da v0.10.0)
+# =============================================================
+# See README.md for detailed setup instructions
+
+# Celestia Namespace (hex-encoded, 10 bytes)
+# Generate with: openssl rand -hex 10
+CELESTIA_NAMESPACE=00000000000000000000000000000000000000acfe
+
+# Core gRPC endpoint for blob submission
+# Testnet (mocha-4): consensus-full-mocha-4.celestia-mocha.com:9090
+# Mainnet: Use your own consensus node or a public endpoint
+CELESTIA_CORE_GRPC=consensus-full-mocha-4.celestia-mocha.com:9090
+
+# Celestia keyring configuration
+# The key name in your local Celestia keyring (created with celestia-appd keys add)
+CELESTIA_KEY_NAME=my_celes_key
+
+# Celestia network identifier
+# Options: mocha-4 (testnet), celestia (mainnet)
+CELESTIA_NETWORK=mocha-4
+`
+
+	return envContent
+}
+
+// GenerateBundleReadme generates the README.md for the artifact bundle.
+func GenerateBundleReadme(chainName string, useAltDA bool) string {
+	readme := fmt.Sprintf(`# %s OP Stack Bundle
+
+This bundle contains everything needed to run your OP Stack rollup with Celestia DA.
+
+## Quick Start
+
+1. **Configure environment variables:**
+   `+"`"+`bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   `+"`"+`
+
+2. **Initialize op-geth with genesis:**
+   `+"`"+`bash
+   docker compose run --rm op-geth geth init --datadir=/data /config/genesis.json
+   `+"`"+`
+
+3. **Start all services:**
+   `+"`"+`bash
+   docker compose up -d
+   `+"`"+`
+
+4. **Check service health:**
+   `+"`"+`bash
+   # Check op-geth
+   curl -s -X POST -H "Content-Type: application/json" \
+     --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+     http://localhost:8545
+
+   # Check op-node
+   curl -s -X POST -H "Content-Type: application/json" \
+     --data '{"jsonrpc":"2.0","method":"optimism_syncStatus","params":[],"id":1}' \
+     http://localhost:9545
+   `+"`"+`
+
+## Bundle Contents
+
+| File | Description |
+|------|-------------|
+| `+"`genesis.json`"+` | L2 genesis state |
+| `+"`rollup.json`"+` | Rollup configuration |
+| `+"`addresses.json`"+` | Deployed L1 contract addresses |
+| `+"`docker-compose.yml`"+` | Docker Compose configuration |
+| `+"`jwt.txt`"+` | Engine API JWT secret |
+| `+"`.env.example`"+` | Environment variable template |
+`, chainName)
+
+	if useAltDA {
+		readme += `| ` + "`config.toml`" + ` | op-alt-da configuration for Celestia |
+
+## Celestia DA Setup
+
+Your chain uses **Celestia** as the Data Availability layer via op-alt-da v0.10.0.
+
+### Prerequisites
+
+- celestia-appd v6.4.0+ (for keyring management)
+- celestia-node v0.28.4+ (optional, for running your own node)
+
+### Step 1: Install Celestia CLI
+
+` + "```bash" + `
+# Install celestia-appd for key management
+git clone https://github.com/celestiaorg/celestia-app.git
+cd celestia-app
+git checkout v6.4.0
+make install
+
+# Verify installation
+celestia-appd version
+` + "```" + `
+
+### Step 2: Create Celestia Keyring
+
+` + "```bash" + `
+# Create a new key for blob submission
+celestia-appd keys add my_celes_key --keyring-backend test
+
+# IMPORTANT: Save the mnemonic phrase securely!
+# The address shown is your Celestia address for funding
+` + "```" + `
+
+### Step 3: Fund Your Celestia Account
+
+**Testnet (Mocha-4):**
+- Use the faucet: https://faucet.celestia-mocha.com/
+- Request TIA tokens for your address
+
+**Mainnet:**
+- Transfer TIA tokens to your Celestia address
+- Ensure sufficient balance for blob fees
+
+### Step 4: Export Keyring to Volume
+
+` + "```bash" + `
+# Create the celestia-keys volume directory
+mkdir -p ./celestia-keys
+
+# Copy your keyring files (adjust path for your OS)
+# Linux/Mac:
+cp -r ~/.celestia-app/keyring-test/* ./celestia-keys/
+
+# The docker-compose.yml mounts this directory to /keys in op-alt-da
+` + "```" + `
+
+### Step 5: Configure Environment
+
+Edit your ` + "`.env`" + ` file:
+
+` + "```bash" + `
+# Generate a unique namespace for your chain
+CELESTIA_NAMESPACE=$(openssl rand -hex 10)
+
+# Set Core gRPC endpoint
+# Testnet: consensus-full-mocha-4.celestia-mocha.com:9090
+CELESTIA_CORE_GRPC=consensus-full-mocha-4.celestia-mocha.com:9090
+
+# Your key name from step 2
+CELESTIA_KEY_NAME=my_celes_key
+
+# Network: mocha-4 (testnet) or celestia (mainnet)
+CELESTIA_NETWORK=mocha-4
+` + "```" + `
+
+### Troubleshooting
+
+**"key not found" error:**
+- Ensure the keyring directory is correctly mounted
+- Verify the key name matches exactly
+- Check file permissions (readable by container)
+
+**"insufficient funds" error:**
+- Fund your Celestia address with TIA tokens
+- For testnet, use the faucet
+- For mainnet, ensure adequate TIA balance
+
+**Connection errors:**
+- Verify Core gRPC endpoint is reachable
+- Check network configuration (mocha-4 vs celestia)
+- Ensure TLS is enabled (core_grpc_tls_enabled = true)
+`
+	}
+
+	readme += `
+## POPSigner Integration
+
+This bundle uses POPSigner for secure transaction signing. Your keys never leave the secure enclave.
+
+1. Log into POPSigner Dashboard: https://dashboard.popsigner.com
+2. Navigate to your organization's keys
+3. Copy the API key to your ` + "`.env`" + ` file
+4. Verify your sequencer, batcher, and proposer addresses match the keys
+
+## Support
+
+- OP Stack Documentation: https://docs.optimism.io
+- POPSigner Documentation: https://docs.popsigner.io
+- Celestia Documentation: https://docs.celestia.org
+
+---
+Generated by POPKins Chain Bootstrapping Service
+`
+
+	return readme
 }
 

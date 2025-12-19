@@ -29,14 +29,10 @@ type DeploymentConfig struct {
 	SequencerWindowSize uint64 `json:"sequencer_window_size"` // blocks (default: 3600)
 	GasLimit            uint64 `json:"gas_limit"`             // (default: 30000000)
 
-	// Data Availability
-	DAType        string `json:"da_type"`         // "calldata", "celestia", or "alt-da"
-	CelestiaRPC   string `json:"celestia_rpc,omitempty"`
-	CelestiaToken string `json:"celestia_token,omitempty"`
-
-	// Alt-DA (Generic Commitment)
-	UseAltDA         bool   `json:"use_alt_da,omitempty"`
-	DACommitmentType string `json:"da_commitment_type,omitempty"` // "GenericCommitment" or "KeccakCommitment"
+	// Data Availability - Celestia ONLY
+	// POPKins exclusively supports Celestia as the DA layer
+	CelestiaRPC       string `json:"celestia_rpc"`
+	CelestiaNamespace string `json:"celestia_namespace,omitempty"` // Celestia namespace (hex, auto-generated if empty)
 
 	// Fee recipients
 	BaseFeeVaultRecipient      string `json:"base_fee_vault_recipient,omitempty"`
@@ -77,19 +73,9 @@ func (c *DeploymentConfig) Validate() error {
 		return fmt.Errorf("deployer_address is required")
 	}
 
-	// Validate DA type
-	switch c.DAType {
-	case "", "calldata", "celestia", "alt-da":
-		// Valid
-	default:
-		return fmt.Errorf("invalid da_type: %s (must be calldata, celestia, or alt-da)", c.DAType)
-	}
-
-	// If using Celestia, require RPC and token
-	if c.DAType == "celestia" {
-		if c.CelestiaRPC == "" {
-			return fmt.Errorf("celestia_rpc is required when da_type is celestia")
-		}
+	// Celestia DA is required - we only support Celestia
+	if c.CelestiaRPC == "" {
+		return fmt.Errorf("celestia_rpc is required (POPKins only supports Celestia DA)")
 	}
 
 	return nil
@@ -109,11 +95,10 @@ func (c *DeploymentConfig) ApplyDefaults() {
 	if c.GasLimit == 0 {
 		c.GasLimit = 30000000 // 30M gas
 	}
-	if c.DAType == "" {
-		c.DAType = "calldata" // Default to calldata
-	}
-	if c.DACommitmentType == "" && c.UseAltDA {
-		c.DACommitmentType = "GenericCommitment"
+
+	// Generate Celestia namespace if not provided
+	if c.CelestiaNamespace == "" {
+		c.CelestiaNamespace = generateCelestiaNamespace(c.ChainID)
 	}
 
 	// Default fee recipients to deployer
@@ -187,5 +172,24 @@ func (c *DeploymentConfig) IsTestnet() bool {
 	default:
 		return true
 	}
+}
+
+// generateCelestiaNamespace creates a deterministic namespace from the chain ID.
+// Celestia namespaces are 29 bytes, but for user-defined namespaces we use 10 bytes.
+func generateCelestiaNamespace(chainID uint64) string {
+	// Create a namespace based on the chain ID
+	// Format: "pop" prefix + chain ID encoded as hex, padded to 10 bytes
+	chainIDBytes := new(big.Int).SetUint64(chainID).Bytes()
+
+	// 10-byte namespace: 3 bytes "pop" prefix + up to 7 bytes chain ID
+	namespace := make([]byte, 10)
+	copy(namespace[0:3], []byte("pop"))
+	if len(chainIDBytes) <= 7 {
+		copy(namespace[10-len(chainIDBytes):], chainIDBytes)
+	} else {
+		copy(namespace[3:], chainIDBytes[:7])
+	}
+
+	return fmt.Sprintf("0x%x", namespace)
 }
 

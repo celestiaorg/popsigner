@@ -8,9 +8,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/ethereum-optimism/optimism/op-chain-ops/addresses"
+	"github.com/ethereum-optimism/optimism/op-chain-ops/genesis"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/artifacts"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/state"
 )
+
+// CelestiaDACommitmentType is the commitment type for Celestia DA.
+// Celestia uses GenericCommitment as it handles data availability externally.
+const CelestiaDACommitmentType = "GenericCommitment"
 
 // BuildIntent creates an op-deployer Intent from our DeploymentConfig.
 // The Intent is the primary input to the op-deployer pipeline stages.
@@ -26,7 +31,7 @@ func BuildIntent(cfg *DeploymentConfig) (*state.Intent, error) {
 	// Convert chain ID to common.Hash (op-deployer uses Hash for chain IDs)
 	chainIDHash := common.BigToHash(new(big.Int).SetUint64(cfg.ChainID))
 
-	// Build chain intent
+	// Build chain intent with Celestia DA configuration
 	chainIntent := &state.ChainIntent{
 		ID:                         chainIDHash,
 		BaseFeeVaultRecipient:      parseAddressOrDefault(cfg.BaseFeeVaultRecipient, deployerAddr),
@@ -38,6 +43,17 @@ func BuildIntent(cfg *DeploymentConfig) (*state.Intent, error) {
 		Eip1559DenominatorCanyon:   250,   // Standard values
 		Eip1559Elasticity:          6,     // Standard values
 		Roles:                      buildChainRoles(cfg, deployerAddr),
+		// Celestia DA configuration - POPKins only supports Celestia
+		DangerousAltDAConfig: genesis.AltDADeployConfig{
+			UseAltDA:         true,
+			DACommitmentType: CelestiaDACommitmentType,
+			// GenericCommitment (Celestia) doesn't require challenge/resolve windows
+			// as data availability is guaranteed by Celestia's consensus
+			DAChallengeWindow:          0,
+			DAResolveWindow:            0,
+			DABondSize:                 0,
+			DAResolverRefundPercentage: 0,
+		},
 	}
 
 	// Build superchain roles - all default to deployer
