@@ -5,6 +5,8 @@
 package popkins
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -20,6 +22,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/opstack"
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/repository"
 	"github.com/Bidon15/popsigner/control-plane/internal/models"
 	mainrepo "github.com/Bidon15/popsigner/control-plane/internal/repository"
@@ -872,13 +875,125 @@ func (h *Handler) DeploymentComplete(w http.ResponseWriter, r *http.Request) {
 	layouts.PopkinsWithContent("Deployment Complete", data, placeholderDeploymentComplete()).Render(r.Context(), w)
 }
 
-// DownloadBundle handles artifact bundle downloads
+// DownloadBundle handles artifact bundle downloads as a ZIP file.
+// The bundle includes: genesis.json, rollup.json, addresses.json, docker-compose.yml,
+// .env.example, jwt.txt, config.toml (for Celestia DA), and README.md.
 func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
-	// Placeholder - redirects to API endpoint
-	http.Error(w, "Bundle download not yet implemented", http.StatusNotImplemented)
+	deploymentID := chi.URLParam(r, "id")
+	if deploymentID == "" {
+		http.Error(w, "Missing deployment ID", http.StatusBadRequest)
+		return
+	}
+
+	deployID, err := uuid.Parse(deploymentID)
+	if err != nil {
+		http.Error(w, "Invalid deployment ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get deployment to verify it exists
+	deployment, err := h.deployRepo.GetDeployment(r.Context(), deployID)
+	if err != nil {
+		slog.Error("failed to get deployment", "id", deploymentID, "error", err)
+		http.Error(w, "Deployment not found", http.StatusNotFound)
+		return
+	}
+
+	// Only allow download for completed deployments
+	if deployment.Status != "completed" {
+		http.Error(w, "Artifacts only available for completed deployments", http.StatusBadRequest)
+		return
+	}
+
+	// Get all artifacts for this deployment
+	artifacts, err := h.deployRepo.GetAllArtifacts(r.Context(), deployID)
+	if err != nil {
+		slog.Error("failed to get artifacts", "id", deploymentID, "error", err)
+		http.Error(w, "Failed to retrieve artifacts", http.StatusInternalServerError)
+		return
+	}
+
+	if len(artifacts) == 0 {
+		http.Error(w, "No artifacts found for this deployment", http.StatusNotFound)
+		return
+	}
+
+	// Extract chain name from config
+	chainName := extractChainName(deployment)
+	safeName := opstack.SanitizeChainNameForFilename(chainName)
+
+	// Create ZIP bundle
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+
+	// Bundle directory prefix
+	bundlePrefix := fmt.Sprintf("%s-opstack-bundle/", safeName)
+
+	// Map artifact types to file paths in the ZIP
+	for _, artifact := range artifacts {
+		var path string
+		switch artifact.ArtifactType {
+		case "genesis.json", "genesis":
+			path = bundlePrefix + "genesis.json"
+		case "rollup.json", "rollup_config":
+			path = bundlePrefix + "rollup.json"
+		case "addresses.json":
+			path = bundlePrefix + "addresses.json"
+		case "deploy-config.json":
+			path = bundlePrefix + "deploy-config.json"
+		case "docker-compose.yml":
+			path = bundlePrefix + "docker-compose.yml"
+		case ".env.example":
+			path = bundlePrefix + ".env.example"
+		case "jwt.txt":
+			path = bundlePrefix + "jwt.txt"
+		case "config.toml":
+			// op-alt-da config for Celestia DA
+			path = bundlePrefix + "config.toml"
+		case "README.md":
+			path = bundlePrefix + "README.md"
+		default:
+			// Skip internal artifacts like deployment_state
+			continue
+		}
+
+		// Add file to ZIP
+		fw, err := zw.Create(path)
+		if err != nil {
+			slog.Error("failed to create zip entry", "path", path, "error", err)
+			continue
+		}
+		if _, err := fw.Write(artifact.Content); err != nil {
+			slog.Error("failed to write zip entry", "path", path, "error", err)
+			continue
+		}
+	}
+
+	if err := zw.Close(); err != nil {
+		slog.Error("failed to close zip writer", "error", err)
+		http.Error(w, "Failed to generate bundle", http.StatusInternalServerError)
+		return
+	}
+
+	// Set headers for ZIP download
+	filename := fmt.Sprintf("%s-opstack-bundle.zip", safeName)
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		slog.Error("failed to write zip response", "error", err)
+		return
+	}
+
+	slog.Info("bundle downloaded",
+		"deployment_id", deploymentID,
+		"chain_name", chainName,
+		"size_bytes", buf.Len(),
+	)
 }
 
-// DeploymentResume handles resuming a failed/paused deployment
+// DeploymentResume handles starting or resuming a pending/failed/paused deployment
 func (h *Handler) DeploymentResume(w http.ResponseWriter, r *http.Request) {
 	deploymentID := chi.URLParam(r, "id")
 	if deploymentID == "" {
@@ -901,18 +1016,21 @@ func (h *Handler) DeploymentResume(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Only resume failed or paused deployments
-	if deployment.Status != "failed" && deployment.Status != "paused" {
-		slog.Warn("cannot resume deployment", "id", deploymentID, "status", deployment.Status)
+	// Only start/resume pending, failed, or paused deployments
+	if deployment.Status != "pending" && deployment.Status != "failed" && deployment.Status != "paused" {
+		slog.Warn("cannot start/resume deployment", "id", deploymentID, "status", deployment.Status)
 		http.Redirect(w, r, "/deployments/"+deploymentID, http.StatusFound)
 		return
 	}
 
-	// Reset deployment status to pending so orchestrator picks it up
-	if err := h.deployRepo.UpdateDeploymentStatus(r.Context(), deployID, "pending", nil); err != nil {
-		slog.Error("failed to reset deployment status", "id", deploymentID, "error", err)
-		http.Redirect(w, r, "/deployments/"+deploymentID, http.StatusFound)
-		return
+	// For pending deployments, we don't need to update status - orchestrator will handle it
+	// For failed/paused, reset to pending so orchestrator picks it up
+	if deployment.Status != "pending" {
+		if err := h.deployRepo.UpdateDeploymentStatus(r.Context(), deployID, "pending", nil); err != nil {
+			slog.Error("failed to reset deployment status", "id", deploymentID, "error", err)
+			http.Redirect(w, r, "/deployments/"+deploymentID, http.StatusFound)
+			return
+		}
 	}
 
 	// Start deployment asynchronously
@@ -922,7 +1040,7 @@ func (h *Handler) DeploymentResume(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	slog.Info("deployment resumed", "id", deploymentID)
+	slog.Info("deployment started", "id", deploymentID)
 	
 	// Redirect to status page to see progress
 	http.Redirect(w, r, "/deployments/"+deploymentID+"/status", http.StatusFound)

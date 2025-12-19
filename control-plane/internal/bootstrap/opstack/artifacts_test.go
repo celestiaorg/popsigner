@@ -1,12 +1,10 @@
 package opstack
 
 import (
-	"archive/tar"
+	"archive/zip"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"encoding/json"
-	"io"
 	"strings"
 	"testing"
 	"time"
@@ -208,7 +206,10 @@ func TestArtifactExtractor_ExtractArtifacts(t *testing.T) {
 	// Verify env example
 	assert.NotEmpty(t, artifacts.EnvExample)
 	assert.Contains(t, artifacts.EnvExample, "L1_RPC_URL")
-	assert.Contains(t, artifacts.EnvExample, "POPSIGNER_RPC_URL")
+	assert.Contains(t, artifacts.EnvExample, "POPSIGNER_ENDPOINT")
+	// Verify Celestia configuration is included (POPKins only supports Celestia)
+	assert.Contains(t, artifacts.EnvExample, "CELESTIA_CORE_GRPC")
+	assert.Contains(t, artifacts.EnvExample, "CELESTIA_KEY_NAME")
 
 	mockRepo.AssertExpectations(t)
 }
@@ -292,33 +293,21 @@ func TestArtifactExtractor_CreateBundle(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, bundle)
 
-	// Verify bundle is valid gzip
-	gr, err := gzip.NewReader(bytes.NewReader(bundle))
+	// Verify bundle is valid ZIP
+	zr, err := zip.NewReader(bytes.NewReader(bundle), int64(len(bundle)))
 	require.NoError(t, err)
-	defer gr.Close()
 
-	// Verify tar contents
-	tr := tar.NewReader(gr)
 	foundFiles := make(map[string]bool)
-
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		require.NoError(t, err)
-		foundFiles[hdr.Name] = true
+	for _, f := range zr.File {
+		foundFiles[f.Name] = true
 	}
 
 	// Verify expected files are present
-	assert.True(t, foundFiles["my-chain-opstack-artifacts/README.md"])
-	assert.True(t, foundFiles["my-chain-opstack-artifacts/genesis/genesis.json"])
-	assert.True(t, foundFiles["my-chain-opstack-artifacts/config/rollup.json"])
-	assert.True(t, foundFiles["my-chain-opstack-artifacts/config/addresses.json"])
-	assert.True(t, foundFiles["my-chain-opstack-artifacts/docker-compose.yml"])
-	assert.True(t, foundFiles["my-chain-opstack-artifacts/secrets/jwt.txt"])
-	assert.True(t, foundFiles["my-chain-opstack-artifacts/scripts/start.sh"])
-	assert.True(t, foundFiles["my-chain-opstack-artifacts/scripts/healthcheck.sh"])
+	assert.True(t, foundFiles["my-chain-opstack-bundle/genesis.json"])
+	assert.True(t, foundFiles["my-chain-opstack-bundle/rollup.json"])
+	assert.True(t, foundFiles["my-chain-opstack-bundle/addresses.json"])
+	assert.True(t, foundFiles["my-chain-opstack-bundle/docker-compose.yml"])
+	assert.True(t, foundFiles["my-chain-opstack-bundle/jwt.txt"])
 
 	mockRepo.AssertExpectations(t)
 }
@@ -448,6 +437,7 @@ func TestGenerateDockerCompose(t *testing.T) {
 		DeployerAddress:   "0x1234567890123456789012345678901234567890",
 		BatcherAddress:    "0x2222222222222222222222222222222222222222",
 		ProposerAddress:   "0x3333333333333333333333333333333333333333",
+		CelestiaRPC:       "https://celestia.example.com", // Required for Celestia DA
 	}
 	cfg.ApplyDefaults()
 
@@ -467,9 +457,15 @@ func TestGenerateDockerCompose(t *testing.T) {
 	assert.Contains(t, compose, "op-batcher:")
 	assert.Contains(t, compose, "op-proposer:")
 
-	// Verify POPSigner integration
-	assert.Contains(t, compose, "OP_BATCHER_SIGNER_ENDPOINT")
-	assert.Contains(t, compose, "OP_PROPOSER_SIGNER_ENDPOINT")
+	// Verify POPSigner integration via command-line flags
+	assert.Contains(t, compose, "--signer.endpoint=${POPSIGNER_ENDPOINT}")
+	assert.Contains(t, compose, "--signer.address=${BATCHER_ADDRESS}")
+	assert.Contains(t, compose, "--signer.address=${PROPOSER_ADDRESS}")
+
+	// Verify Celestia Alt-DA configuration (always enabled for POPKins)
+	assert.Contains(t, compose, "op-alt-da:")
+	assert.Contains(t, compose, "--altda.enabled=true")
+	assert.Contains(t, compose, "--altda.da-service=http://op-alt-da:3100")
 
 	// Verify network name
 	assert.Contains(t, compose, "opstack-test-chain")
@@ -484,8 +480,6 @@ func TestGenerateDockerCompose_WithAltDA(t *testing.T) {
 		POPSignerEndpoint: "https://rpc.popsigner.io",
 		POPSignerAPIKey:   "test_key",
 		DeployerAddress:   "0x1234567890123456789012345678901234567890",
-		UseAltDA:          true,
-		DAType:            "celestia",
 		CelestiaRPC:       "https://celestia.example.com",
 	}
 	cfg.ApplyDefaults()
@@ -494,11 +488,11 @@ func TestGenerateDockerCompose_WithAltDA(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, compose)
 
-	// Verify Alt-DA service is included
+	// Verify Celestia Alt-DA service is included (POPKins always uses Celestia)
 	assert.Contains(t, compose, "op-alt-da:")
-	assert.Contains(t, compose, "CELESTIA_NODE_AUTH_TOKEN")
-	assert.Contains(t, compose, "OP_NODE_ALTDA_ENABLED=true")
-	assert.Contains(t, compose, "OP_BATCHER_ALTDA_ENABLED=true")
+	assert.Contains(t, compose, "config.toml")
+	assert.Contains(t, compose, "--altda.enabled=true")
+	assert.Contains(t, compose, "--altda.da-service=http://op-alt-da:3100")
 }
 
 func TestSanitizeChainName(t *testing.T) {
@@ -530,6 +524,7 @@ func TestGenerateEnvExample(t *testing.T) {
 		POPSignerEndpoint: "https://rpc.popsigner.io",
 		BatcherAddress:    "0x2222222222222222222222222222222222222222",
 		ProposerAddress:   "0x3333333333333333333333333333333333333333",
+		SequencerAddress:  "0x1111111111111111111111111111111111111111",
 		CelestiaRPC:       "https://celestia.example.com",
 	}
 
@@ -539,12 +534,18 @@ func TestGenerateEnvExample(t *testing.T) {
 
 	env := GenerateEnvExample(cfg, addrs)
 
+	// Verify L1 and POPSigner configuration
 	assert.Contains(t, env, "L1_RPC_URL=https://eth-sepolia.example.com")
-	assert.Contains(t, env, "POPSIGNER_RPC_URL=https://rpc.popsigner.io")
+	assert.Contains(t, env, "POPSIGNER_ENDPOINT=https://rpc.popsigner.io")
 	assert.Contains(t, env, "BATCHER_ADDRESS=0x2222222222222222222222222222222222222222")
 	assert.Contains(t, env, "PROPOSER_ADDRESS=0x3333333333333333333333333333333333333333")
-	assert.Contains(t, env, "L2_CHAIN_ID=12345")
-	assert.Contains(t, env, "L2_CHAIN_NAME=test-chain")
+	assert.Contains(t, env, "CHAIN_ID=12345")
+
+	// Verify Celestia configuration (POPKins always uses Celestia)
+	assert.Contains(t, env, "CELESTIA_CORE_GRPC")
+	assert.Contains(t, env, "CELESTIA_KEY_NAME")
+	assert.Contains(t, env, "CELESTIA_NETWORK")
+	assert.Contains(t, env, "CELESTIA_NAMESPACE")
 }
 
 func TestContractAddresses_JSONMarshaling(t *testing.T) {

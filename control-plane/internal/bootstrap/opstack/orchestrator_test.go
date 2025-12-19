@@ -114,6 +114,7 @@ func (f *MockSignerFactory) CreateSigner(endpoint, apiKey string, chainID *big.I
 }
 
 // createTestDeploymentConfig creates a valid test configuration.
+// POPKins only supports Celestia as the DA layer.
 func createTestDeploymentConfig() *DeploymentConfig {
 	cfg := &DeploymentConfig{
 		ChainID:           42069,
@@ -123,6 +124,7 @@ func createTestDeploymentConfig() *DeploymentConfig {
 		POPSignerEndpoint: "http://localhost:8080",
 		POPSignerAPIKey:   "test-api-key",
 		DeployerAddress:   "0x1234567890123456789012345678901234567890",
+		CelestiaRPC:       "http://localhost:26658", // Required for Celestia DA
 	}
 	cfg.ApplyDefaults()
 	return cfg
@@ -463,7 +465,7 @@ func TestOrchestrator_GetDeploymentStatus(t *testing.T) {
 }
 
 func TestOrchestrator_StageSkipping(t *testing.T) {
-	t.Run("skips alt-da stage when not enabled", func(t *testing.T) {
+	t.Run("executes alt-da stage (POPKins always uses Celestia)", func(t *testing.T) {
 		mockRepo := new(MockRepository)
 		mockL1Client := new(MockL1Client)
 		mockL1Factory := &MockL1ClientFactory{client: mockL1Client}
@@ -471,34 +473,7 @@ func TestOrchestrator_StageSkipping(t *testing.T) {
 
 		deploymentID := uuid.New()
 		cfg := createTestDeploymentConfig()
-		cfg.UseAltDA = false
-
-		stateWriter := NewStateWriter(mockRepo, deploymentID)
-		dctx := &DeploymentContext{
-			DeploymentID: deploymentID,
-			Config:       cfg,
-			StateWriter:  stateWriter,
-			L1Client:     mockL1Client,
-		}
-
-		orch := NewOrchestrator(mockRepo, mockSignerFactory, mockL1Factory, OrchestratorConfig{})
-
-		err := orch.stageAltDA(context.Background(), dctx)
-
-		require.NoError(t, err)
-		// No artifacts saved because stage was skipped
-	})
-
-	t.Run("executes alt-da stage when enabled", func(t *testing.T) {
-		mockRepo := new(MockRepository)
-		mockL1Client := new(MockL1Client)
-		mockL1Factory := &MockL1ClientFactory{client: mockL1Client}
-		mockSignerFactory := &MockSignerFactory{}
-
-		deploymentID := uuid.New()
-		cfg := createTestDeploymentConfig()
-		cfg.UseAltDA = true
-		cfg.DACommitmentType = "GenericCommitment"
+		// POPKins always uses Celestia DA - no need to set UseAltDA
 
 		// For IsStageComplete check
 		mockRepo.On("GetDeployment", mock.Anything, deploymentID).Return(&repository.Deployment{
@@ -574,7 +549,7 @@ func TestDeploymentConfig_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "l1_rpc")
 	})
 
-	t.Run("validates da_type", func(t *testing.T) {
+	t.Run("requires celestia_rpc (POPKins only supports Celestia)", func(t *testing.T) {
 		cfg := &DeploymentConfig{
 			ChainID:           1,
 			ChainName:         "test",
@@ -583,11 +558,11 @@ func TestDeploymentConfig_Validate(t *testing.T) {
 			POPSignerEndpoint: "http://localhost:8080",
 			POPSignerAPIKey:   "key",
 			DeployerAddress:   "0x123",
-			DAType:            "invalid",
+			// CelestiaRPC is missing - should fail validation
 		}
 		err := cfg.Validate()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid da_type")
+		assert.Contains(t, err.Error(), "celestia_rpc is required")
 	})
 
 	t.Run("accepts valid config", func(t *testing.T) {
@@ -608,7 +583,8 @@ func TestDeploymentConfig_ApplyDefaults(t *testing.T) {
 		assert.Equal(t, uint64(600), cfg.MaxSequencerDrift)
 		assert.Equal(t, uint64(3600), cfg.SequencerWindowSize)
 		assert.Equal(t, uint64(30000000), cfg.GasLimit)
-		assert.Equal(t, "calldata", cfg.DAType)
+		// CelestiaNamespace should be auto-generated
+		assert.NotEmpty(t, cfg.CelestiaNamespace)
 		assert.Equal(t, cfg.DeployerAddress, cfg.BatcherAddress)
 		assert.Equal(t, cfg.DeployerAddress, cfg.ProposerAddress)
 		assert.NotNil(t, cfg.RequiredFundingWei)
