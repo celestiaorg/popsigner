@@ -29,9 +29,10 @@ type DeploymentConfig struct {
 	SequencerWindowSize uint64 `json:"sequencer_window_size"` // blocks (default: 3600)
 	GasLimit            uint64 `json:"gas_limit"`             // (default: 30000000)
 
-	// Data Availability - Celestia ONLY
-	// POPKins exclusively supports Celestia as the DA layer
-	CelestiaRPC       string `json:"celestia_rpc"`
+	// Data Availability - Celestia ONLY (configured at runtime, not deployment)
+	// These fields are optional during deployment - users configure them in .env
+	// when they download the docker-compose bundle
+	CelestiaRPC       string `json:"celestia_rpc,omitempty"`       // Optional: Celestia RPC endpoint
 	CelestiaNamespace string `json:"celestia_namespace,omitempty"` // Celestia namespace (hex, auto-generated if empty)
 
 	// Fee recipients
@@ -73,10 +74,9 @@ func (c *DeploymentConfig) Validate() error {
 		return fmt.Errorf("deployer_address is required")
 	}
 
-	// Celestia DA is required - we only support Celestia
-	if c.CelestiaRPC == "" {
-		return fmt.Errorf("celestia_rpc is required (POPKins only supports Celestia DA)")
-	}
+	// Note: Celestia RPC is NOT required for contract deployment
+	// It's only needed at runtime when using the docker-compose bundle
+	// Users configure Celestia in .env when they download the bundle
 
 	return nil
 }
