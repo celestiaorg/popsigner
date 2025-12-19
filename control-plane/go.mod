@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	github.com/a-h/templ v0.3.960
-	github.com/ethereum-optimism/optimism v1.16.3
+	github.com/ethereum-optimism/optimism v1.16.4-0.20251219194315-2a7bcaf03055
 	github.com/ethereum/go-ethereum v1.16.7
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/cors v1.2.1
@@ -22,8 +22,8 @@ require (
 	golang.org/x/oauth2 v0.34.0
 )
 
-// Use op-geth fork for superchain package compatibility
-replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101604.0-synctest.0
+// Use op-geth fork for superchain package compatibility (required by optimism op-deployer)
+replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101603.6-rc.1
 
 require (
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
@@ -48,7 +48,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/emicklei/dot v1.6.2 // indirect
 	github.com/ethereum-optimism/go-ethereum-hdwallet v0.1.4-0.20251001155152-4eb15ccedf7e // indirect
-	github.com/ethereum-optimism/superchain-registry/validation v0.0.0-20251009180028-9b4658b9b7af // indirect
+	github.com/ethereum-optimism/superchain-registry/validation v0.0.0-20251121143344-5ac16e0fbb00 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.5 // indirect
 	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
