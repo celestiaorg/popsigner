@@ -64,13 +64,18 @@ func BuildIntent(cfg *DeploymentConfig) (*state.Intent, error) {
 		Challenger:                parseAddressOrDefault(cfg.ChallengerAddress, deployerAddr),
 	}
 
+	// Use HTTPS locators to download pre-built artifacts from Google Cloud Storage
+	// instead of embedded artifacts (which only work when building from optimism monorepo)
+	artifactURL := artifacts.CreateHttpLocator(DefaultArtifactHash)
+	httpLocator := artifacts.MustNewLocatorFromURL(artifactURL)
+
 	intent := &state.Intent{
 		ConfigType:         state.IntentTypeCustom,
 		L1ChainID:          cfg.L1ChainID,
 		FundDevAccounts:    false, // Production deployments don't fund dev accounts
 		SuperchainRoles:    superchainRoles,
-		L1ContractsLocator: artifacts.DefaultL1ContractsLocator,
-		L2ContractsLocator: artifacts.DefaultL2ContractsLocator,
+		L1ContractsLocator: httpLocator,
+		L2ContractsLocator: httpLocator, // Same artifacts for L1 and L2
 		Chains:             []*state.ChainIntent{chainIntent},
 	}
 

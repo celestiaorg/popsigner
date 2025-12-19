@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/ethereum-optimism/optimism/op-chain-ops/addresses"
+	"github.com/ethereum-optimism/optimism/op-chain-ops/foundry"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/artifacts"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/broadcaster"
 	openv "github.com/ethereum-optimism/optimism/op-deployer/pkg/env"
@@ -113,24 +114,27 @@ func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAd
 
 	l1Client := ethclient.NewClient(rpcClient)
 
-	// 4. Download artifacts from HTTPS (pre-built artifacts on Google Cloud Storage)
+	// 4. Download artifacts from HTTPS using the intent's locators
+	// Intent already has HTTPS locators configured (not embedded)
 	d.logger.Info("downloading contract artifacts from HTTPS",
-		slog.String("artifact_hash", DefaultArtifactHash),
+		slog.String("l1_locator", intent.L1ContractsLocator.URL.String()),
+		slog.String("l2_locator", intent.L2ContractsLocator.URL.String()),
 	)
 
-	// Use HTTPS locator instead of embedded artifacts
-	artifactURL := artifacts.CreateHttpLocator(DefaultArtifactHash)
-	locator := artifacts.MustNewLocatorFromURL(artifactURL)
-
-	l1Artifacts, err := artifacts.Download(ctx, locator, nil, d.cacheDir)
+	l1Artifacts, err := artifacts.Download(ctx, intent.L1ContractsLocator, nil, d.cacheDir)
 	if err != nil {
 		return nil, fmt.Errorf("download L1 artifacts: %w", err)
 	}
 
-	// L2 artifacts use the same locator (same contract package)
-	l2Artifacts, err := artifacts.Download(ctx, locator, nil, d.cacheDir)
-	if err != nil {
-		return nil, fmt.Errorf("download L2 artifacts: %w", err)
+	// L2 artifacts - check if same as L1 (common case)
+	var l2Artifacts foundry.StatDirFs
+	if intent.L1ContractsLocator.URL.String() == intent.L2ContractsLocator.URL.String() {
+		l2Artifacts = l1Artifacts
+	} else {
+		l2Artifacts, err = artifacts.Download(ctx, intent.L2ContractsLocator, nil, d.cacheDir)
+		if err != nil {
+			return nil, fmt.Errorf("download L2 artifacts: %w", err)
+		}
 	}
 
 	bundle := pipeline.ArtifactsBundle{
