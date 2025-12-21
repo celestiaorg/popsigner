@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -326,6 +327,33 @@ func (r *PostgresRepository) GetAllArtifacts(ctx context.Context, deploymentID u
 		artifacts = append(artifacts, a)
 	}
 	return artifacts, rows.Err()
+}
+
+// MarkStaleDeploymentsFailed marks deployments that have been "running" for longer
+// than the timeout as "failed". This handles cases where the deployment pod crashed
+// without properly updating the status.
+func (r *PostgresRepository) MarkStaleDeploymentsFailed(ctx context.Context, timeout time.Duration) (int, error) {
+	// Find and update all running deployments that haven't been updated within the timeout
+	query := `
+		UPDATE deployments
+		SET status = $1, 
+		    error_message = $2,
+		    updated_at = NOW()
+		WHERE status = $3
+		  AND updated_at < NOW() - $4::interval`
+
+	errorMsg := "Deployment timed out - worker may have crashed. Click 'Resume Deployment' to retry."
+	result, err := r.pool.Exec(ctx, query,
+		StatusFailed,
+		errorMsg,
+		StatusRunning,
+		timeout.String(),
+	)
+	if err != nil {
+		return 0, fmt.Errorf("MarkStaleDeploymentsFailed: %w", err)
+	}
+
+	return int(result.RowsAffected()), nil
 }
 
 // Compile-time check to ensure PostgresRepository implements Repository.

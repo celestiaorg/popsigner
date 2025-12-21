@@ -176,6 +176,10 @@ func TestOrchestrator_Deploy(t *testing.T) {
 			Status: repository.StatusPending,
 		}, nil)
 
+		// L1 client mocks for balance check
+		mockL1Client.On("ChainID", mock.Anything).Return(big.NewInt(11155111), nil) // Sepolia
+		mockL1Client.On("BalanceAt", mock.Anything, mock.Anything, mock.Anything).Return(big.NewInt(1e18), nil) // 1 ETH
+
 		// StateWriter operations
 		mockRepo.On("UpdateDeploymentStatus", mock.Anything, deploymentID, mock.Anything, mock.Anything).Return(nil)
 		// Expect failure to be recorded since op-deployer artifacts aren't available in tests
@@ -264,6 +268,10 @@ func TestOrchestrator_Resume(t *testing.T) {
 			Status:       repository.StatusPaused,
 			CurrentStage: &currentStage,
 		}, nil)
+
+		// L1 client mocks for balance check
+		mockL1Client.On("ChainID", mock.Anything).Return(big.NewInt(11155111), nil) // Sepolia
+		mockL1Client.On("BalanceAt", mock.Anything, mock.Anything, mock.Anything).Return(big.NewInt(1e18), nil) // 1 ETH
 
 		mockRepo.On("UpdateDeploymentStatus", mock.Anything, deploymentID, mock.Anything, mock.Anything).Return(nil)
 		// Expect failure to be recorded since op-deployer artifacts aren't available
@@ -385,7 +393,10 @@ func TestDeploymentConfig_Validate(t *testing.T) {
 		assert.Contains(t, err.Error(), "l1_rpc")
 	})
 
-	t.Run("requires celestia_rpc (POPKins only supports Celestia)", func(t *testing.T) {
+	t.Run("celestia_rpc is optional for deployment (configured at runtime)", func(t *testing.T) {
+		// CelestiaRPC is NOT required for contract deployment.
+		// It's only needed at runtime when using the docker-compose bundle.
+		// Users configure Celestia in .env when they download the bundle.
 		cfg := &DeploymentConfig{
 			ChainID:           1,
 			ChainName:         "test",
@@ -394,11 +405,10 @@ func TestDeploymentConfig_Validate(t *testing.T) {
 			POPSignerEndpoint: "http://localhost:8080",
 			POPSignerAPIKey:   "key",
 			DeployerAddress:   "0x123",
-			// CelestiaRPC is missing - should fail validation
+			// CelestiaRPC is optional - should NOT fail validation
 		}
 		err := cfg.Validate()
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "celestia_rpc is required")
+		require.NoError(t, err)
 	})
 
 	t.Run("accepts valid config", func(t *testing.T) {

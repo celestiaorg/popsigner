@@ -70,6 +70,11 @@ func (m *MockRepository) ListAllDeployments(ctx context.Context) ([]*Deployment,
 	return args.Get(0).([]*Deployment), args.Error(1)
 }
 
+func (m *MockRepository) MarkStaleDeploymentsFailed(ctx context.Context, timeout time.Duration) (int, error) {
+	args := m.Called(ctx, timeout)
+	return args.Int(0), args.Error(1)
+}
+
 func (m *MockRepository) UpdateDeploymentConfig(ctx context.Context, id uuid.UUID, config json.RawMessage) error {
 	args := m.Called(ctx, id, config)
 	return args.Error(0)

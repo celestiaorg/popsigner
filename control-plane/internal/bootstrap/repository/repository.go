@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -18,6 +19,11 @@ type Repository interface {
 	SetDeploymentError(ctx context.Context, id uuid.UUID, errMsg string) error
 	ListDeploymentsByStatus(ctx context.Context, status Status) ([]*Deployment, error)
 	ListAllDeployments(ctx context.Context) ([]*Deployment, error)
+
+	// MarkStaleDeploymentsFailed marks deployments that have been "running" for longer
+	// than the timeout as "failed". This handles cases where the deployment pod crashed
+	// without updating the status. Returns the number of deployments marked as failed.
+	MarkStaleDeploymentsFailed(ctx context.Context, timeout time.Duration) (int, error)
 
 	// Transaction operations
 	RecordTransaction(ctx context.Context, tx *Transaction) error

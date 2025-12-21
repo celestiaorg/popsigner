@@ -66,6 +66,11 @@ func (m *mockArtifactRepository) ListAllDeployments(ctx context.Context) ([]*rep
 	return args.Get(0).([]*repository.Deployment), args.Error(1)
 }
 
+func (m *mockArtifactRepository) MarkStaleDeploymentsFailed(ctx context.Context, timeout time.Duration) (int, error) {
+	args := m.Called(ctx, timeout)
+	return args.Int(0), args.Error(1)
+}
+
 func (m *mockArtifactRepository) UpdateDeploymentConfig(ctx context.Context, id uuid.UUID, config json.RawMessage) error {
 	args := m.Called(ctx, id, config)
 	return args.Error(0)

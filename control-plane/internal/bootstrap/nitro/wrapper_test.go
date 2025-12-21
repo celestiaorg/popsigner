@@ -3,11 +3,11 @@ package nitro
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -67,6 +67,16 @@ func (m *MockRepository) ListAllDeployments(ctx context.Context) ([]*repository.
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]*repository.Deployment), args.Error(1)
+}
+
+func (m *MockRepository) MarkStaleDeploymentsFailed(ctx context.Context, timeout time.Duration) (int, error) {
+	args := m.Called(ctx, timeout)
+	return args.Int(0), args.Error(1)
+}
+
+func (m *MockRepository) UpdateDeploymentConfig(ctx context.Context, id uuid.UUID, config json.RawMessage) error {
+	args := m.Called(ctx, id, config)
+	return args.Error(0)
 }
 
 func (m *MockRepository) RecordTransaction(ctx context.Context, tx *repository.Transaction) error {

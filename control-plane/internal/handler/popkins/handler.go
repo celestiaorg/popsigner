@@ -86,6 +86,17 @@ func (h *Handler) DeploymentsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Mark stale running deployments as failed (pod may have crashed)
+	// A deployment is considered stale if it's been "running" for more than 30 minutes
+	// without any status update
+	staleTimeout := 30 * time.Minute
+	staleCount, err := h.deployRepo.MarkStaleDeploymentsFailed(r.Context(), staleTimeout)
+	if err != nil {
+		slog.Warn("failed to mark stale deployments as failed", "error", err)
+	} else if staleCount > 0 {
+		slog.Info("marked stale deployments as failed", "count", staleCount)
+	}
+
 	// Fetch all deployments from repository
 	deployments, err := h.deployRepo.ListAllDeployments(r.Context())
 	if err != nil {

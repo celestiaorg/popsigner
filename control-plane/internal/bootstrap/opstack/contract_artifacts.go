@@ -17,10 +17,10 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-// ContractArtifactURL is the URL to op-node v1.16.3-v16 artifacts hosted on Scaleway S3.
+// ContractArtifactURL is the URL to op-node v1.16.3-v20 artifacts hosted on Scaleway S3.
 // These match the struct definitions in optimism v1.16.3 (29 fields in DeployImplementationsOutput).
-// v16: ALL contracts optimized under 24KB limit including FaultDisputeGame variants.
-const ContractArtifactURL = "https://op-contracts.s3.nl-ams.scw.cloud/artifacts-op-node-v1.16.3-v16.tzst"
+// v20: Further optimizations for contracts that exceeded 24KB limit.
+const ContractArtifactURL = "https://op-contracts.s3.nl-ams.scw.cloud/artifacts-op-node-v1.16.3-v20.tzst"
 
 // ContractArtifactDownloader handles downloading and extracting OP Stack contract artifacts.
 // It bypasses op-deployer's built-in artifact handling which has issues with
