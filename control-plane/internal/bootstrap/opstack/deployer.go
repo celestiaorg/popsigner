@@ -11,12 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/ethereum-optimism/optimism/op-chain-ops/addresses"
+	"github.com/ethereum-optimism/optimism/op-chain-ops/script"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/artifacts"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/broadcaster"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/opcm"
@@ -72,26 +74,42 @@ type DeployResult struct {
 	ChainStates []*state.ChainState
 }
 
+// DeployerProgressCallback reports deployment progress from the deployer.
+// Uses string stage names which are mapped to Stage constants by the orchestrator.
+type DeployerProgressCallback func(stage string, progress float64, message string)
+
 // Deploy executes a full OP Stack deployment using the op-deployer pipeline.
 // It runs all pipeline stages: Init, DeploySuperchain, DeployImplementations,
 // DeployOPChain, and GenerateL2Genesis.
-func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAdapter *POPSignerAdapter) (*DeployResult, error) {
-	d.logger.Info("starting OP Stack deployment via op-deployer",
+//
+// IMPORTANT: Each deployment is ISOLATED with its own OPCM, blueprints, and infrastructure.
+// The CREATE2 salt is derived from chainName + chainID + artifactVersion.
+func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAdapter *POPSignerAdapter, onProgress DeployerProgressCallback) (*DeployResult, error) {
+	// Calculate salt upfront for logging
+	salt := GetDeploymentSalt(cfg.ChainName, cfg.ChainID)
+
+	d.logger.Info("starting ISOLATED OP Stack deployment via op-deployer",
 		slog.String("chain_name", cfg.ChainName),
 		slog.Uint64("chain_id", cfg.ChainID),
 		slog.Uint64("l1_chain_id", cfg.L1ChainID),
+		slog.String("artifact_version", ArtifactVersion),
+		slog.String("create2_salt", salt.Hex()),
+		slog.String("deployer", cfg.DeployerAddress),
 	)
 
-	// 1. Build the Intent from our config
+	// 1. Build the Intent from our config (includes unique salt for isolation)
 	intent, err := BuildIntent(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("build intent: %w", err)
 	}
 
-	// 2. Initialize state
-	st := &state.State{
-		Version: 1,
-	}
+	// 2. Initialize state with unique salt for ISOLATED deployment
+	st := BuildState(cfg.ChainName, cfg.ChainID)
+
+	d.logger.Info("intent and state built with isolation salt",
+		slog.String("create2_salt", st.Create2Salt.Hex()),
+		slog.Bool("opcmAddress_is_nil", intent.OPCMAddress == nil),
+	)
 
 	// 3. Connect to L1
 	rpcClient, err := rpc.DialContext(ctx, cfg.L1RPC)
@@ -189,6 +207,13 @@ func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAd
 		return nil, fmt.Errorf("load deployment scripts: %w", err)
 	}
 
+	// Debug: Verify scripts are loaded correctly
+	d.logger.Info("scripts loaded successfully",
+		slog.Bool("hasDeployImplementations", scripts.DeployImplementations != nil),
+		slog.Bool("hasDeployOPChain", scripts.DeployOPChain != nil),
+		slog.Bool("hasDeploySuperchain", scripts.DeploySuperchain != nil),
+	)
+
 	// 8. Create pipeline environment
 	env := &pipeline.Env{
 		StateWriter:  d.stateWriter(st),
@@ -200,7 +225,35 @@ func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAd
 		Scripts:      scripts,
 	}
 
+	// Helper to refresh fork after broadcast to pick up newly confirmed contracts
+	refreshFork := func(stage string) error {
+		latest, err := l1Client.HeaderByNumber(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("failed to get latest block for %s: %w", stage, err)
+		}
+		if _, err := l1Host.CreateSelectFork(
+			script.ForkWithURLOrAlias("main"),
+			script.ForkWithBlockNumberU256(latest.Number),
+		); err != nil {
+			return fmt.Errorf("failed to refresh fork for %s: %w", stage, err)
+		}
+		d.logger.Info("fork refreshed after broadcast",
+			slog.String("stage", stage),
+			slog.Uint64("block", latest.Number.Uint64()),
+		)
+		return nil
+	}
+
+	// Helper to report progress
+	reportProgress := func(stage string, progress float64, message string) {
+		d.logger.Info(message, slog.String("stage", stage), slog.Float64("progress", progress))
+		if onProgress != nil {
+			onProgress(stage, progress, message)
+		}
+	}
+
 	// 9. Run pipeline stages
+	reportProgress("init", 0.1, "Initializing deployment strategy...")
 	d.logger.Info("running pipeline: InitLiveStrategy")
 	if err := pipeline.InitLiveStrategy(ctx, env, intent, st); err != nil {
 		return nil, fmt.Errorf("init live strategy: %w", err)
@@ -210,7 +263,12 @@ func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAd
 	if _, err := bcaster.Broadcast(ctx); err != nil {
 		return nil, fmt.Errorf("broadcast init transactions: %w", err)
 	}
+	// Refresh fork to pick up init transactions
+	if err := refreshFork("init"); err != nil {
+		return nil, err
+	}
 
+	reportProgress("deploy-superchain", 0.2, "Deploying Superchain contracts (ProtocolVersions, SuperchainConfig)...")
 	d.logger.Info("running pipeline: DeploySuperchain")
 	if err := pipeline.DeploySuperchain(env, intent, st); err != nil {
 		return nil, fmt.Errorf("deploy superchain: %w", err)
@@ -218,7 +276,12 @@ func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAd
 	if _, err := bcaster.Broadcast(ctx); err != nil {
 		return nil, fmt.Errorf("broadcast superchain transactions: %w", err)
 	}
+	// Refresh fork to pick up superchain contracts
+	if err := refreshFork("deploy-superchain"); err != nil {
+		return nil, err
+	}
 
+	reportProgress("deploy-implementations", 0.35, "Deploying Implementation contracts (OPCM, blueprints, dispute games)...")
 	d.logger.Info("running pipeline: DeployImplementations")
 	if err := pipeline.DeployImplementations(env, intent, st); err != nil {
 		return nil, fmt.Errorf("deploy implementations: %w", err)
@@ -226,10 +289,90 @@ func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAd
 	if _, err := bcaster.Broadcast(ctx); err != nil {
 		return nil, fmt.Errorf("broadcast implementations transactions: %w", err)
 	}
+	// Refresh fork to pick up implementation contracts (CRITICAL for blueprints!)
+	if err := refreshFork("deploy-implementations"); err != nil {
+		return nil, err
+	}
+
+	// Debug: Log implementations deployment result
+	if st.ImplementationsDeployment != nil {
+		impl := st.ImplementationsDeployment
+		d.logger.Info("implementations deployed successfully",
+			slog.String("opcmImpl", impl.OpcmImpl.Hex()),
+			slog.String("opcmContractsContainerImpl", impl.OpcmContractsContainerImpl.Hex()), // LEGACY - stores blueprints, MUST be non-zero!
+			slog.String("opcmDeployerImpl", impl.OpcmDeployerImpl.Hex()),
+			slog.String("opcmV2Impl", impl.OpcmV2Impl.Hex()),               // V2 - zero if V2 disabled
+			slog.String("opcmContainerImpl", impl.OpcmContainerImpl.Hex()), // V2 - zero if V2 disabled
+			slog.String("delayedWETHImpl", impl.DelayedWethImpl.Hex()),
+			slog.String("optimismPortalImpl", impl.OptimismPortalImpl.Hex()),
+			slog.String("systemConfigImpl", impl.SystemConfigImpl.Hex()),
+			slog.String("mipsImpl", impl.MipsImpl.Hex()),
+			slog.String("preimageOracleImpl", impl.PreimageOracleImpl.Hex()),
+		)
+
+		// Critical check: OpcmContractsContainerImpl (LEGACY) MUST be non-zero
+		if impl.OpcmContractsContainerImpl == (common.Address{}) {
+			d.logger.Error("CRITICAL: OpcmContractsContainerImpl is ZERO - blueprints not deployed correctly!")
+		} else {
+			d.logger.Info("OpcmContractsContainerImpl is NON-ZERO - blueprints should be available",
+				slog.String("address", impl.OpcmContractsContainerImpl.Hex()),
+			)
+		}
+
+		// Log dispute game implementation addresses
+		d.logger.Info("dispute game implementations from state",
+			slog.String("faultDisputeGameV2Impl", impl.FaultDisputeGameV2Impl.Hex()),
+			slog.String("permissionedDisputeGameV2Impl", impl.PermissionedDisputeGameV2Impl.Hex()),
+			slog.String("disputeGameFactoryImpl", impl.DisputeGameFactoryImpl.Hex()),
+		)
+
+		// Verify OPCM-related contract code exists in simulation state
+		d.logger.Info("verifying OPCM-related contracts in simulation state")
+		d.verifyBlueprintCode(l1Host, "OpcmImpl", impl.OpcmImpl)
+		d.verifyBlueprintCode(l1Host, "OpcmDeployerImpl", impl.OpcmDeployerImpl)
+		d.verifyBlueprintCode(l1Host, "OpcmContainerImpl", impl.OpcmContainerImpl)
+		d.verifyBlueprintCode(l1Host, "FaultDisputeGameV2Impl", impl.FaultDisputeGameV2Impl)
+		d.verifyBlueprintCode(l1Host, "PermissionedDisputeGameV2Impl", impl.PermissionedDisputeGameV2Impl)
+
+		// Check if these addresses have code on L1 (not just simulation)
+		d.logger.Info("checking if OPCM contracts exist on L1 (outside simulation)")
+		d.checkL1Code(ctx, l1Client, "OpcmDeployerImpl", impl.OpcmDeployerImpl)
+		d.checkL1Code(ctx, l1Client, "OpcmContainerImpl", impl.OpcmContainerImpl)
+	} else {
+		d.logger.Warn("implementations deployment returned nil state")
+	}
 
 	// Deploy each chain
-	for _, chainIntent := range intent.Chains {
+	for i, chainIntent := range intent.Chains {
+		chainProgress := 0.5 + float64(i)*0.3/float64(len(intent.Chains))
+		reportProgress("deploy-opchain", chainProgress, fmt.Sprintf("Deploying OP Chain contracts (proxies, bridges, system config)..."))
 		d.logger.Info("running pipeline: DeployOPChain", slog.String("chain_id", chainIntent.ID.Hex()))
+
+		// Debug: Re-verify contracts before DeployOPChain (this is where NotABlueprint occurs)
+		if st.ImplementationsDeployment != nil {
+			impl := st.ImplementationsDeployment
+			d.logger.Info("=== PRE-DeployOPChain VERIFICATION ===",
+				slog.String("chainID", chainIntent.ID.Hex()),
+			)
+
+			// CRITICAL: The LEGACY container stores blueprint addresses
+			d.logger.Info("verifying OpcmContractsContainerImpl (LEGACY - stores blueprint addresses)")
+			d.verifyBlueprintCode(l1Host, "OpcmContractsContainerImpl", impl.OpcmContractsContainerImpl)
+			d.checkL1Code(ctx, l1Client, "OpcmContractsContainerImpl-L1", impl.OpcmContractsContainerImpl)
+
+			// Query blueprints from container on L1
+			d.queryBlueprintsFromContainer(ctx, l1Client, impl.OpcmContractsContainerImpl)
+
+			// The deployer that calls into the container
+			d.logger.Info("verifying OPContractsManagerDeployer (where error occurs)")
+			d.verifyBlueprintCode(l1Host, "OpcmDeployerImpl", impl.OpcmDeployerImpl)
+			d.checkL1Code(ctx, l1Client, "OpcmDeployerImpl-L1", impl.OpcmDeployerImpl)
+
+			// V2 contracts (expected to be zero if V2 disabled)
+			d.logger.Info("verifying V2 contracts (expected zero if V2 disabled)")
+			d.verifyBlueprintCode(l1Host, "OpcmContainerImpl-V2", impl.OpcmContainerImpl)
+		}
+
 		if err := pipeline.DeployOPChain(env, intent, st, chainIntent.ID); err != nil {
 			return nil, fmt.Errorf("deploy OP chain %s: %w", chainIntent.ID.Hex(), err)
 		}
@@ -237,11 +380,15 @@ func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAd
 			return nil, fmt.Errorf("broadcast OP chain transactions: %w", err)
 		}
 
+		genesisProgress := 0.7 + float64(i)*0.1/float64(len(intent.Chains))
+		reportProgress("generate-genesis", genesisProgress, "Generating L2 genesis and rollup configuration...")
 		d.logger.Info("running pipeline: GenerateL2Genesis", slog.String("chain_id", chainIntent.ID.Hex()))
 		if err := pipeline.GenerateL2Genesis(env, intent, bundle, st, chainIntent.ID); err != nil {
 			return nil, fmt.Errorf("generate L2 genesis %s: %w", chainIntent.ID.Hex(), err)
 		}
 	}
+
+	reportProgress("completed", 0.85, "Contract deployment completed, preparing artifacts...")
 
 	// 10. Store the applied intent
 	st.AppliedIntent = intent
@@ -374,6 +521,179 @@ func (d *OPDeployer) logBytecodeSizes(artifactDir string) {
 			slog.Int("init_bytes", initSize),
 			slog.Int("deployed_bytes", deployedSize),
 			slog.String("status", status),
+		)
+	}
+}
+
+// checkL1Code checks if a contract exists on L1 (actual chain, not simulation)
+func (d *OPDeployer) checkL1Code(ctx context.Context, client *ethclient.Client, name string, addr common.Address) {
+	if addr == (common.Address{}) {
+		d.logger.Warn("L1 check: address is zero", slog.String("name", name))
+		return
+	}
+
+	code, err := client.CodeAt(ctx, addr, nil)
+	if err != nil {
+		d.logger.Error("L1 check: failed to get code",
+			slog.String("name", name),
+			slog.String("address", addr.Hex()),
+			slog.String("error", err.Error()),
+		)
+		return
+	}
+
+	// Check for ERC-5202 blueprint preamble
+	hasValidPreamble := len(code) >= 2 && code[0] == 0xFE && code[1] == 0x71
+	preambleHex := ""
+	if len(code) >= 4 {
+		preambleHex = fmt.Sprintf("0x%02x%02x%02x%02x", code[0], code[1], code[2], code[3])
+	} else if len(code) > 0 {
+		preambleHex = fmt.Sprintf("0x%x", code)
+	}
+
+	d.logger.Info("L1 code check",
+		slog.String("name", name),
+		slog.String("address", addr.Hex()),
+		slog.Int("codeLen", len(code)),
+		slog.Bool("existsOnL1", len(code) > 0),
+		slog.Bool("isBlueprintPreamble", hasValidPreamble),
+		slog.String("firstBytes", preambleHex),
+	)
+}
+
+// queryBlueprintsFromContainer calls blueprints() on OpcmContractsContainerImpl to get stored addresses.
+// This is crucial for debugging NotABlueprint() - we need to verify the container has correct blueprint refs.
+func (d *OPDeployer) queryBlueprintsFromContainer(ctx context.Context, client *ethclient.Client, containerAddr common.Address) {
+	if containerAddr == (common.Address{}) {
+		d.logger.Error("cannot query blueprints: container address is zero")
+		return
+	}
+
+	// Function selector for blueprints() - keccak256("blueprints()")[:4]
+	// bytes4(keccak256("blueprints()")) = 0x15d38eab
+	blueprintsSelector := common.FromHex("0x15d38eab")
+
+	callMsg := ethereum.CallMsg{
+		To:   &containerAddr,
+		Data: blueprintsSelector,
+	}
+	result, err := client.CallContract(ctx, callMsg, nil)
+	if err != nil {
+		d.logger.Error("failed to call blueprints() on container",
+			slog.String("address", containerAddr.Hex()),
+			slog.String("error", err.Error()),
+		)
+		return
+	}
+
+	d.logger.Info("blueprints() call result from container",
+		slog.String("containerAddr", containerAddr.Hex()),
+		slog.Int("resultLen", len(result)),
+		slog.String("rawResult", fmt.Sprintf("0x%x", result)),
+	)
+
+	// The result should contain addresses for each blueprint
+	// Parse addresses (each address is 32 bytes, right-padded)
+	if len(result) >= 32 {
+		// First blueprint address (addressManager)
+		addr1 := common.BytesToAddress(result[0:32])
+		d.logger.Info("blueprint from container", slog.String("name", "addressManager"), slog.String("addr", addr1.Hex()))
+		d.checkL1BlueprintCode(ctx, client, "addressManager", addr1)
+	}
+	if len(result) >= 64 {
+		// Second blueprint address (proxy)
+		addr2 := common.BytesToAddress(result[32:64])
+		d.logger.Info("blueprint from container", slog.String("name", "proxy"), slog.String("addr", addr2.Hex()))
+		d.checkL1BlueprintCode(ctx, client, "proxy", addr2)
+	}
+	// Log the rest if present
+	for i := 2; i*32 <= len(result) && i < 10; i++ {
+		addr := common.BytesToAddress(result[i*32 : (i+1)*32])
+		d.logger.Info("blueprint from container", slog.Int("idx", i), slog.String("addr", addr.Hex()))
+		d.checkL1BlueprintCode(ctx, client, fmt.Sprintf("blueprint[%d]", i), addr)
+	}
+}
+
+// checkL1BlueprintCode verifies a blueprint has 0xFE71 preamble on L1
+func (d *OPDeployer) checkL1BlueprintCode(ctx context.Context, client *ethclient.Client, name string, addr common.Address) {
+	if addr == (common.Address{}) {
+		d.logger.Warn("blueprint address is zero", slog.String("name", name))
+		return
+	}
+
+	code, err := client.CodeAt(ctx, addr, nil)
+	if err != nil {
+		d.logger.Error("failed to get blueprint code from L1",
+			slog.String("name", name),
+			slog.String("address", addr.Hex()),
+			slog.String("error", err.Error()),
+		)
+		return
+	}
+
+	hasValidPreamble := len(code) >= 2 && code[0] == 0xFE && code[1] == 0x71
+	preambleHex := ""
+	if len(code) >= 4 {
+		preambleHex = fmt.Sprintf("0x%02x%02x%02x%02x", code[0], code[1], code[2], code[3])
+	}
+
+	if hasValidPreamble {
+		d.logger.Info("✓ VALID BLUEPRINT on L1",
+			slog.String("name", name),
+			slog.String("address", addr.Hex()),
+			slog.Int("codeLen", len(code)),
+			slog.String("preamble", preambleHex),
+		)
+	} else {
+		d.logger.Error("✗ INVALID BLUEPRINT on L1 - missing 0xFE71 preamble!",
+			slog.String("name", name),
+			slog.String("address", addr.Hex()),
+			slog.Int("codeLen", len(code)),
+			slog.String("firstBytes", preambleHex),
+		)
+	}
+}
+
+// verifyContractCode checks if a contract has valid code and logs details for debugging.
+// For blueprints, it also checks for the 0xFE71 preamble.
+// This is used to debug NotABlueprint() errors by verifying deployments succeeded.
+func (d *OPDeployer) verifyBlueprintCode(host *script.Host, name string, addr common.Address) {
+	if addr == (common.Address{}) {
+		d.logger.Warn("contract address is zero",
+			slog.String("name", name),
+		)
+		return
+	}
+
+	code := host.GetCode(addr)
+	codeLen := len(code)
+
+	// Check for ERC-5202 blueprint preamble: 0xFE71<length>
+	hasValidPreamble := false
+	if codeLen >= 2 {
+		hasValidPreamble = code[0] == 0xFE && code[1] == 0x71
+	}
+
+	// Log first few bytes for debugging
+	preambleHex := ""
+	if codeLen >= 4 {
+		preambleHex = fmt.Sprintf("0x%02x%02x%02x%02x", code[0], code[1], code[2], code[3])
+	} else if codeLen > 0 {
+		preambleHex = fmt.Sprintf("0x%x", code[:codeLen])
+	}
+
+	d.logger.Info("contract code verification",
+		slog.String("name", name),
+		slog.String("address", addr.Hex()),
+		slog.Int("codeLen", codeLen),
+		slog.Bool("isBlueprintPreamble", hasValidPreamble),
+		slog.String("firstBytes", preambleHex),
+	)
+
+	if codeLen == 0 {
+		d.logger.Error("contract has NO CODE - deployment may have failed",
+			slog.String("name", name),
+			slog.String("address", addr.Hex()),
 		)
 	}
 }
