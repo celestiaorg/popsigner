@@ -10,8 +10,13 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
+
+	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/inspect"
+	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/state"
+	"github.com/ethereum-optimism/optimism/op-node/rollup"
 
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/repository"
 )
@@ -215,6 +220,13 @@ func (o *Orchestrator) deployWithOPDeployer(
 		return err
 	}
 
+	// Get L1 client for later use (StartBlock population)
+	l1Client, err := o.l1Factory.Dial(ctx, cfg.L1RPC)
+	if err != nil {
+		return fmt.Errorf("connect to L1: %w", err)
+	}
+	defer l1Client.Close()
+
 	// Create POPSigner adapter for op-deployer
 	adapter := NewPOPSignerAdapter(
 		cfg.POPSignerEndpoint,
@@ -233,7 +245,42 @@ func (o *Orchestrator) deployWithOPDeployer(
 		slog.Uint64("chain_id", cfg.ChainID),
 	)
 
-	result, err := o.opDeployer.Deploy(ctx, cfg, adapter)
+	// Create progress callback wrapper for deployer - updates both DB stage and onProgress callback
+	deployerProgress := func(stage string, progress float64, message string) {
+		// Map deployer stages to orchestrator stages
+		var orchStage Stage
+		switch stage {
+		case "init":
+			orchStage = StageInit
+		case "deploy-superchain":
+			orchStage = StageSuperchain
+		case "deploy-implementations":
+			orchStage = StageImplementations
+		case "deploy-opchain":
+			orchStage = StageOPChain
+		case "generate-genesis":
+			orchStage = StageGenesis
+		case "completed":
+			orchStage = StageCompleted
+		default:
+			orchStage = Stage(stage)
+		}
+
+		// CRITICAL: Update stage in database so UI can see progress
+		if err := stateWriter.UpdateStage(ctx, orchStage); err != nil {
+			o.logger.Warn("failed to update stage in database",
+				slog.String("stage", string(orchStage)),
+			slog.String("error", err.Error()),
+		)
+	}
+
+		// Also call onProgress if provided
+		if onProgress != nil {
+			onProgress(orchStage, progress, message)
+		}
+	}
+
+	result, err := o.opDeployer.Deploy(ctx, cfg, adapter, deployerProgress)
 	if err != nil {
 		return fmt.Errorf("op-deployer pipeline failed: %w", err)
 	}
@@ -260,41 +307,97 @@ func (o *Orchestrator) deployWithOPDeployer(
 		return fmt.Errorf("save op-deployer state: %w", err)
 	}
 
-	// Extract and save genesis from op-deployer state
-	// The genesis and rollup configs are stored in the State object
-	// and can be extracted by the bundle generator from opdeployer_state
-	if len(result.ChainStates) > 0 {
-		chainState := result.ChainStates[0]
+	// Extract proper genesis.json and rollup.json from op-deployer state
+	// Using inspect.GenesisAndRollup to generate the correct formats
+	// CRITICAL: genesis.json is REQUIRED - deployment MUST fail without it
+	if len(result.ChainStates) == 0 || result.State == nil {
+		return fmt.Errorf("no chain states returned from deployment - cannot generate genesis.json")
+	}
 
-		// Save chain state as genesis source - the actual genesis is derived from this
-		chainStateJSON, err := json.MarshalIndent(chainState, "", "  ")
-		if err != nil {
-			o.logger.Warn("failed to marshal chain state", slog.String("error", err.Error()))
-		} else {
-			genesisArtifact := &repository.Artifact{
-				ID:           uuid.New(),
-				DeploymentID: deploymentID,
-				ArtifactType: "genesis",
-				Content:      chainStateJSON,
-				CreatedAt:    time.Now(),
-			}
-			if err := o.repo.SaveArtifact(ctx, genesisArtifact); err != nil {
-				o.logger.Warn("failed to save genesis artifact", slog.String("error", err.Error()))
-			}
-		}
+	chainState := result.ChainStates[0]
 
-		// Save chain addresses for rollup config
-		rollupArtifact := &repository.Artifact{
-			ID:           uuid.New(),
-			DeploymentID: deploymentID,
-			ArtifactType: "rollup_config",
-			Content:      chainStateJSON, // Same data, different artifact type for flexibility
-			CreatedAt:    time.Now(),
+	// Ensure StartBlock is populated (required for GenesisAndRollup)
+	if chainState.StartBlock == nil {
+		o.logger.Info("populating StartBlock from L1 (was nil)")
+		header, err := l1Client.HeaderByNumber(ctx, nil)
+	if err != nil {
+			return fmt.Errorf("failed to get L1 header for StartBlock: %w", err)
 		}
-		if err := o.repo.SaveArtifact(ctx, rollupArtifact); err != nil {
-			o.logger.Warn("failed to save rollup config artifact", slog.String("error", err.Error()))
+		chainState.StartBlock = state.BlockRefJsonFromHeader(header)
+		// Also update the state's chain
+		for i, c := range result.State.Chains {
+			if c.ID == chainState.ID {
+				result.State.Chains[i].StartBlock = chainState.StartBlock
+				break
+			}
 		}
 	}
+
+	// Generate proper genesis.json and rollup.json using op-deployer's inspect package
+	// Wrap in recover() because GenesisAndRollup can panic if L1 block refs are nil
+	var l2Genesis *core.Genesis
+	var rollupCfg *rollup.Config
+	var genErr error
+
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				genErr = fmt.Errorf("GenesisAndRollup panicked: %v", r)
+			}
+		}()
+		l2Genesis, rollupCfg, genErr = inspect.GenesisAndRollup(result.State, chainState.ID)
+	}()
+
+	// CRITICAL: genesis.json is REQUIRED for the chain to work
+	if genErr != nil {
+		return fmt.Errorf("failed to generate genesis.json (REQUIRED): %w", genErr)
+	}
+	if l2Genesis == nil {
+		return fmt.Errorf("genesis generation returned nil - cannot create OP Stack chain without genesis.json")
+	}
+	if rollupCfg == nil {
+		return fmt.Errorf("rollup config generation returned nil - cannot create OP Stack chain without rollup.json")
+	}
+
+	// Save genesis.json (REQUIRED)
+	genesisJSON, err := json.MarshalIndent(l2Genesis, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal genesis.json: %w", err)
+	}
+	genesisArtifact := &repository.Artifact{
+		ID:           uuid.New(),
+		DeploymentID: deploymentID,
+		ArtifactType: "genesis.json",
+		Content:      genesisJSON,
+		CreatedAt:    time.Now(),
+	}
+	if err := o.repo.SaveArtifact(ctx, genesisArtifact); err != nil {
+		return fmt.Errorf("failed to save genesis.json artifact: %w", err)
+	}
+	o.logger.Info("saved genesis.json",
+		slog.Int("size_bytes", len(genesisJSON)),
+		slog.String("chain_id", chainState.ID.Hex()),
+	)
+
+	// Save rollup.json (REQUIRED)
+	rollupJSON, err := json.MarshalIndent(rollupCfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal rollup.json: %w", err)
+	}
+	rollupArtifact := &repository.Artifact{
+		ID:           uuid.New(),
+		DeploymentID: deploymentID,
+		ArtifactType: "rollup.json",
+		Content:      rollupJSON,
+		CreatedAt:    time.Now(),
+	}
+	if err := o.repo.SaveArtifact(ctx, rollupArtifact); err != nil {
+		return fmt.Errorf("failed to save rollup.json artifact: %w", err)
+	}
+	o.logger.Info("saved rollup.json",
+		slog.Int("size_bytes", len(rollupJSON)),
+		slog.String("chain_id", chainState.ID.Hex()),
+	)
 
 	// Save contract addresses as deployment_state artifact
 	// Extract addresses from the state for the bundle
