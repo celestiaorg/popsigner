@@ -13,6 +13,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/sessions v1.2.2
 	github.com/jackc/pgx/v5 v5.7.1
+	github.com/klauspost/compress v1.18.0
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/redis/go-redis/v9 v9.7.0
@@ -24,6 +25,11 @@ require (
 
 // Use op-geth fork for superchain package compatibility (required by optimism v1.16.3)
 replace github.com/ethereum/go-ethereum => github.com/ethereum-optimism/op-geth v1.101604.0-synctest.0
+
+// Use patched optimism fork (final release without debug noise)
+// Fixes: Blueprint.sol address(0) parsing, fork refresh after broadcasts
+// Commit: 684640edc21b
+replace github.com/ethereum-optimism/optimism => github.com/Bidon15/optimism v1.16.4-0.20251222225855-684640edc21b
 
 require (
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
@@ -71,7 +77,6 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect

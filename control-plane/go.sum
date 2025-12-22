@@ -2,6 +2,8 @@ cloud.google.com/go/compute/metadata v0.6.0 h1:A6hENjEsCDtC1k8byVsgwvVcioamEHvZ4
 cloud.google.com/go/compute/metadata v0.6.0/go.mod h1:FjyFAW1MW0C203CEOMDTu3Dk1FlqW3Rga40jzHL4hfg=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 h1:L/gRVlceqvL25UVaW/CKtUDjefjrs0SPonmDGUVOYP0=
 github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
+github.com/Bidon15/optimism v1.16.4-0.20251222225855-684640edc21b h1:/i5ZFd4NYR9nEvEKgV5lV0H7o7pvfiU8QBqGupbqGA4=
+github.com/Bidon15/optimism v1.16.4-0.20251222225855-684640edc21b/go.mod h1:nWHLAvFtFq+pPxHTIj5RJA2J7ZohRoZjGE6vNgrvrCs=
 github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg=
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/DataDog/zstd v1.5.6-0.20230824185856-869dae002e5e h1:ZIWapoIRN1VqT8GR8jAwb1Ie9GyehWjVcGh32Y2MznE=
@@ -117,8 +119,6 @@ github.com/ethereum-optimism/go-ethereum-hdwallet v0.1.4-0.20251001155152-4eb15c
 github.com/ethereum-optimism/go-ethereum-hdwallet v0.1.4-0.20251001155152-4eb15ccedf7e/go.mod h1:DYj7+vYJ4cIB7zera9mv4LcAynCL5u4YVfoeUu6Wa+w=
 github.com/ethereum-optimism/op-geth v1.101604.0-synctest.0 h1:cWnKry8Cgworpw3X+TDEr57DCYefjN9Tmy2eJ9elMzE=
 github.com/ethereum-optimism/op-geth v1.101604.0-synctest.0/go.mod h1:fCNAwDynfAP6EKsmLqwSDUDgi+GtJIir74Ui3fXXMps=
-github.com/ethereum-optimism/optimism v1.16.3 h1:H404syJanM+2MWbx5U5qwd10FogkmpummggIZsZoK3c=
-github.com/ethereum-optimism/optimism v1.16.3/go.mod h1:nWHLAvFtFq+pPxHTIj5RJA2J7ZohRoZjGE6vNgrvrCs=
 github.com/ethereum-optimism/superchain-registry/validation v0.0.0-20251121143344-5ac16e0fbb00 h1:TR5Y7B+5m63V0Dno7MHcFqv/XZByQzx/4THV1T1A7+U=
 github.com/ethereum-optimism/superchain-registry/validation v0.0.0-20251121143344-5ac16e0fbb00/go.mod h1:NZ816PzLU1TLv1RdAvYAb6KWOj4Zm5aInT0YpDVml2Y=
 github.com/ethereum/c-kzg-4844/v2 v2.1.5 h1:aVtoLK5xwJ6c5RiqO8g8ptJ5KU+2Hdquf6G3aXiHh5s=
