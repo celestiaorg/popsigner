@@ -17,10 +17,18 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-// ContractArtifactURL is the URL to op-node v1.16.3-v20 artifacts hosted on Scaleway S3.
+// ArtifactVersion is the current version of the contract artifacts.
+// Update this when uploading new artifacts to S3.
+// v27: Blueprint.sol fix - deployFrom() now skips parsing address(0) for single-blueprint contracts.
+const ArtifactVersion = "v27"
+
+// ArtifactBaseURL is the base URL for artifact storage.
+const ArtifactBaseURL = "https://op-contracts.s3.nl-ams.scw.cloud"
+
+// ContractArtifactURL is the URL to op-node v1.16.3-v26 artifacts hosted on Scaleway S3.
 // These match the struct definitions in optimism v1.16.3 (29 fields in DeployImplementationsOutput).
-// v20: Further optimizations for contracts that exceeded 24KB limit.
-const ContractArtifactURL = "https://op-contracts.s3.nl-ams.scw.cloud/artifacts-op-node-v1.16.3-v20.tzst"
+// v26: Salt propagation fix - passes Create2Salt to DeployImplementations for ALL contracts.
+const ContractArtifactURL = ArtifactBaseURL + "/artifacts-op-node-v1.16.3-" + ArtifactVersion + ".tzst"
 
 // ContractArtifactDownloader handles downloading and extracting OP Stack contract artifacts.
 // It bypasses op-deployer's built-in artifact handling which has issues with
@@ -69,44 +77,64 @@ func (d *ContractArtifactDownloader) Download(ctx context.Context, url string) (
 	// Clean up after extraction
 	defer os.Remove(tzstPath)
 
-	// Extract
+	// Extract to a temporary directory first to check structure
 	if err := os.MkdirAll(extractDir, 0755); err != nil {
 		return "", fmt.Errorf("create extract dir: %w", err)
 	}
 
-	if err := d.extractTzst(tzstPath, extractDir); err != nil {
+	// Some archives have forge-artifacts/ at root, others have files directly at root
+	// We need to handle both cases by extracting into forge-artifacts/ subdirectory
+	forgeArtifactsDir := filepath.Join(extractDir, "forge-artifacts")
+	if err := os.MkdirAll(forgeArtifactsDir, 0755); err != nil {
+		return "", fmt.Errorf("create forge-artifacts dir: %w", err)
+	}
+
+	// Extract directly into forge-artifacts/ directory
+	// This handles the case where the archive has files at root level (like v23)
+	if err := d.extractTzst(tzstPath, forgeArtifactsDir); err != nil {
 		// Clean up on failure
 		os.RemoveAll(extractDir)
 		return "", fmt.Errorf("extract artifacts: %w", err)
 	}
 
-	// Verify forge-artifacts exists
-	forgeArtifactsDir := filepath.Join(extractDir, "forge-artifacts")
-	if _, err := os.Stat(forgeArtifactsDir); err != nil {
-		os.RemoveAll(extractDir)
-		return "", fmt.Errorf("forge-artifacts directory not found after extraction")
+	// Check if we accidentally created a nested forge-artifacts/forge-artifacts structure
+	// (happens when the archive already had forge-artifacts/ at root)
+	nestedForgeDir := filepath.Join(forgeArtifactsDir, "forge-artifacts")
+	if info, err := os.Stat(nestedForgeDir); err == nil && info.IsDir() {
+		// Move contents from nested dir to parent
+		fmt.Printf("[DEBUG] Detected nested forge-artifacts, restructuring...\n")
+		entries, _ := os.ReadDir(nestedForgeDir)
+		for _, e := range entries {
+			src := filepath.Join(nestedForgeDir, e.Name())
+			dst := filepath.Join(forgeArtifactsDir, e.Name())
+			os.Rename(src, dst)
+		}
+		os.RemoveAll(nestedForgeDir)
+	}
+
+	// Verify extraction succeeded by checking for a known contract
+	testPath := filepath.Join(forgeArtifactsDir, "OPContractsManager.sol")
+	if _, err := os.Stat(testPath); err != nil {
+		// List what we have for debugging
+		entries, _ := os.ReadDir(forgeArtifactsDir)
+		fmt.Printf("[DEBUG] forge-artifacts contents (first 10):\n")
+		for i, e := range entries {
+			if i >= 10 {
+				break
+			}
+			fmt.Printf("[DEBUG]   - %s\n", e.Name())
+		}
 	}
 
 	// Debug: Check the actual bytecode in the extracted file
 	validatorPath := filepath.Join(forgeArtifactsDir, "OPContractsManagerStandardValidator.sol", "OPContractsManagerStandardValidator.json")
 	if data, err := os.ReadFile(validatorPath); err == nil {
 		fmt.Printf("[DEBUG] Extracted OPContractsManagerStandardValidator.json size: %d bytes\n", len(data))
-		// Check first 200 chars to verify it's a valid JSON
 		if len(data) > 200 {
 			fmt.Printf("[DEBUG] First 200 chars: %s\n", string(data[:200]))
 		}
 	} else {
 		fmt.Printf("[DEBUG] Could not read validator file: %v\n", err)
-		// List what's actually in forge-artifacts
-		if entries, err := os.ReadDir(forgeArtifactsDir); err == nil {
-			fmt.Printf("[DEBUG] Contents of forge-artifacts (first 20):\n")
-			for i, e := range entries {
-				if i >= 20 {
-					break
-				}
-				fmt.Printf("[DEBUG]   - %s\n", e.Name())
-			}
-		}
 	}
 
 	return extractDir, nil
