@@ -53,6 +53,11 @@ func (m *mockArtifactRepository) SetDeploymentError(ctx context.Context, id uuid
 	return args.Error(0)
 }
 
+func (m *mockArtifactRepository) ClearDeploymentError(ctx context.Context, id uuid.UUID) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
 func (m *mockArtifactRepository) ListDeploymentsByStatus(ctx context.Context, status repository.Status) ([]*repository.Deployment, error) {
 	args := m.Called(ctx, status)
 	return args.Get(0).([]*repository.Deployment), args.Error(1)
