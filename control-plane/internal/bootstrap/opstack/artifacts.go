@@ -563,13 +563,61 @@ func (e *ArtifactExtractor) CreateBundle(ctx context.Context, deploymentID uuid.
 // unwrapJSONString unwraps a JSON-encoded string back to plain text.
 // Used for non-JSON artifacts (docker-compose.yml, jwt.txt, etc.) that were
 // stored as JSON strings to satisfy the JSONB column requirement.
+//
+// IMPORTANT: PostgreSQL JSONB normalizes \n escape sequences to actual newline
+// bytes (0x0a), but keeps other escapes (\", \\) intact. This creates malformed
+// JSON that json.Unmarshal can't parse. We handle this by manually unescaping
+// when json.Unmarshal fails.
 func unwrapJSONString(data []byte) []byte {
-	// Try to unmarshal as a JSON string
+	// Try to unmarshal as a JSON string (works if PostgreSQL didn't normalize)
 	var s string
 	if err := json.Unmarshal(data, &s); err == nil {
 		return []byte(s)
 	}
-	// If it's not a JSON string, return as-is (might be raw content)
+
+	// PostgreSQL JSONB normalized \n to real newlines, breaking JSON parsing.
+	// Manually unwrap: check for outer quotes and unescape remaining sequences.
+	if len(data) >= 2 && data[0] == '"' && data[len(data)-1] == '"' {
+		// Strip outer quotes
+		inner := data[1 : len(data)-1]
+
+		// Unescape remaining JSON escape sequences that PostgreSQL didn't normalize:
+		// - \" -> "
+		// - \\ -> \
+		// - \t -> tab (in case)
+		// - \r -> carriage return (in case)
+		result := make([]byte, 0, len(inner))
+		for i := 0; i < len(inner); i++ {
+			if inner[i] == '\\' && i+1 < len(inner) {
+				switch inner[i+1] {
+				case '"':
+					result = append(result, '"')
+					i++ // skip the next char
+				case '\\':
+					result = append(result, '\\')
+					i++
+				case 't':
+					result = append(result, '\t')
+					i++
+				case 'r':
+					result = append(result, '\r')
+					i++
+				case 'n':
+					// Shouldn't happen (PostgreSQL already normalized), but handle it
+					result = append(result, '\n')
+					i++
+				default:
+					// Unknown escape, keep as-is
+					result = append(result, inner[i])
+				}
+			} else {
+				result = append(result, inner[i])
+			}
+		}
+		return result
+	}
+
+	// Not a JSON string, return as-is
 	return data
 }
 
