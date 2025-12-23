@@ -17,6 +17,7 @@ type Repository interface {
 	UpdateDeploymentStatus(ctx context.Context, id uuid.UUID, status Status, stage *string) error
 	UpdateDeploymentConfig(ctx context.Context, id uuid.UUID, config json.RawMessage) error
 	SetDeploymentError(ctx context.Context, id uuid.UUID, errMsg string) error
+	ClearDeploymentError(ctx context.Context, id uuid.UUID) error
 	ListDeploymentsByStatus(ctx context.Context, status Status) ([]*Deployment, error)
 	ListAllDeployments(ctx context.Context) ([]*Deployment, error)
 

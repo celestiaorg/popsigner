@@ -259,6 +259,15 @@ func (w *StateWriter) MarkPaused(ctx context.Context) error {
 	return nil
 }
 
+// ClearError clears the error message from a deployment.
+// This should be called when resuming a failed deployment.
+func (w *StateWriter) ClearError(ctx context.Context) error {
+	if err := w.repo.ClearDeploymentError(ctx, w.deploymentID); err != nil {
+		return fmt.Errorf("clear error: %w", err)
+	}
+	return nil
+}
+
 // CanResume checks if the deployment can be resumed from a previous state.
 func (w *StateWriter) CanResume(ctx context.Context) (bool, error) {
 	deployment, err := w.repo.GetDeployment(ctx, w.deploymentID)

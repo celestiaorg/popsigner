@@ -138,6 +138,24 @@ func (r *PostgresRepository) SetDeploymentError(ctx context.Context, id uuid.UUI
 	return nil
 }
 
+// ClearDeploymentError clears the error message from a deployment.
+// This is called when resuming a failed deployment.
+func (r *PostgresRepository) ClearDeploymentError(ctx context.Context, id uuid.UUID) error {
+	query := `
+		UPDATE deployments
+		SET error_message = NULL, updated_at = NOW()
+		WHERE id = $1`
+
+	result, err := r.pool.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("ClearDeploymentError: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // ListDeploymentsByStatus retrieves all deployments with the given status.
 func (r *PostgresRepository) ListDeploymentsByStatus(ctx context.Context, status Status) ([]*Deployment, error) {
 	query := `

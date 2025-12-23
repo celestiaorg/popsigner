@@ -1089,6 +1089,12 @@ func (h *Handler) DeploymentResume(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Clear any previous error message when resuming
+	if err := h.deployRepo.ClearDeploymentError(r.Context(), deployID); err != nil {
+		slog.Warn("failed to clear deployment error", "id", deploymentID, "error", err)
+		// Continue anyway - not fatal
+	}
+
 	// Start deployment asynchronously
 	go func() {
 		if err := h.orchestrator.StartDeployment(context.Background(), deployID); err != nil {

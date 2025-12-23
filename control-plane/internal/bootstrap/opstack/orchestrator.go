@@ -270,9 +270,9 @@ func (o *Orchestrator) deployWithOPDeployer(
 		if err := stateWriter.UpdateStage(ctx, orchStage); err != nil {
 			o.logger.Warn("failed to update stage in database",
 				slog.String("stage", string(orchStage)),
-			slog.String("error", err.Error()),
-		)
-	}
+				slog.String("error", err.Error()),
+			)
+		}
 
 		// Also call onProgress if provided
 		if onProgress != nil {
@@ -320,7 +320,7 @@ func (o *Orchestrator) deployWithOPDeployer(
 	if chainState.StartBlock == nil {
 		o.logger.Info("populating StartBlock from L1 (was nil)")
 		header, err := l1Client.HeaderByNumber(ctx, nil)
-	if err != nil {
+		if err != nil {
 			return fmt.Errorf("failed to get L1 header for StartBlock: %w", err)
 		}
 		chainState.StartBlock = state.BlockRefJsonFromHeader(header)
@@ -472,6 +472,14 @@ func (o *Orchestrator) Resume(ctx context.Context, deploymentID uuid.UUID, onPro
 		return fmt.Errorf("deployment cannot be resumed (status is not paused, running, or failed)")
 	}
 
+	// Clear any previous error message before resuming
+	if err := stateWriter.ClearError(ctx); err != nil {
+		o.logger.Warn("failed to clear previous error message",
+			slog.String("error", err.Error()),
+		)
+		// Continue anyway - this is not fatal
+	}
+
 	// Delegate to Deploy - it will determine the start stage
 	return o.Deploy(ctx, deploymentID, onProgress)
 }
@@ -575,24 +583,22 @@ func weiToETH(wei *big.Int) string {
 	}
 	// 1 ETH = 10^18 wei
 	ethInWei := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
-	
+
 	// Calculate whole ETH and remainder
 	eth := new(big.Int).Div(wei, ethInWei)
 	remainder := new(big.Int).Mod(wei, ethInWei)
-	
+
 	if remainder.Sign() == 0 {
 		return eth.String()
 	}
-	
+
 	// Format with decimals (up to 4 decimal places)
 	decimalPart := new(big.Int).Mul(remainder, big.NewInt(10000))
 	decimalPart.Div(decimalPart, ethInWei)
-	
+
 	if decimalPart.Sign() == 0 {
 		return eth.String()
 	}
-	
+
 	return fmt.Sprintf("%s.%04d", eth, decimalPart.Int64())
 }
-
-
