@@ -170,7 +170,7 @@ func main() {
 
 	// Initialize key resolver and API key manager for orchestrator
 	keyResolver := bootstraporchestrator.NewKeyServiceResolver(keySvc)
-	apiKeyManager := bootstraporchestrator.NewDefaultAPIKeyManager(apiKeySvc)
+	apiKeyManager := bootstraporchestrator.NewDefaultAPIKeyManager(apiKeySvc, baoClient, logger)
 
 	// Determine POPSigner endpoint (for signing requests during deployment)
 	// The orchestrator uses the JSON-RPC endpoint at /v1/rpc for eth_signTransaction

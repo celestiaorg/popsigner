@@ -592,6 +592,134 @@ func (c *Client) HealthCheck(ctx context.Context) error {
 	return fmt.Errorf("OpenBao unhealthy (status %d): %s", resp.StatusCode, string(body))
 }
 
+// ===============================================
+// KV v2 Secret Store Methods
+// ===============================================
+
+// kvSecretResponse represents the response from KV v2 read operations.
+type kvSecretResponse struct {
+	RequestID string `json:"request_id"`
+	Data      struct {
+		Data     map[string]interface{} `json:"data"`
+		Metadata struct {
+			CreatedTime  string `json:"created_time"`
+			Version      int    `json:"version"`
+			Destroyed    bool   `json:"destroyed"`
+			DeletionTime string `json:"deletion_time"`
+		} `json:"metadata"`
+	} `json:"data"`
+	Errors []string `json:"errors"`
+}
+
+// ReadKVSecret reads a secret from the KV v2 secret engine.
+// Path should be the logical path without the "data/" prefix (e.g., "orgs/123/api-key").
+func (c *Client) ReadKVSecret(path string) (map[string]interface{}, error) {
+	// KV v2 uses the "data/" prefix for read/write operations
+	url := fmt.Sprintf("%s/v1/secret/data/%s", c.address, path)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("X-Vault-Token", c.token)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil // Secret not found
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("OpenBao error (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	var kvResp kvSecretResponse
+	if err := json.Unmarshal(respBody, &kvResp); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if len(kvResp.Errors) > 0 {
+		return nil, fmt.Errorf("OpenBao error: %v", kvResp.Errors)
+	}
+
+	return kvResp.Data.Data, nil
+}
+
+// WriteKVSecret writes a secret to the KV v2 secret engine.
+// Path should be the logical path without the "data/" prefix (e.g., "orgs/123/api-key").
+func (c *Client) WriteKVSecret(path string, data map[string]interface{}) error {
+	// KV v2 uses the "data/" prefix and wraps data in a "data" object
+	url := fmt.Sprintf("%s/v1/secret/data/%s", c.address, path)
+
+	body := map[string]interface{}{
+		"data": data,
+	}
+
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonBody))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("X-Vault-Token", c.token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("OpenBao error (status %d): %s", resp.StatusCode, string(respBody))
+	}
+
+	return nil
+}
+
+// DeleteKVSecret deletes a secret from the KV v2 secret engine.
+// Path should be the logical path without the "data/" prefix.
+func (c *Client) DeleteKVSecret(path string) error {
+	// KV v2 uses the "data/" prefix for soft delete
+	url := fmt.Sprintf("%s/v1/secret/data/%s", c.address, path)
+
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("X-Vault-Token", c.token)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("OpenBao error (status %d): %s", resp.StatusCode, string(respBody))
+	}
+
+	return nil
+}
+
 // Compile-time check
 var _ service.BaoKeyringInterface = (*Client)(nil)
 
