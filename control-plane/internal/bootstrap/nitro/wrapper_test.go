@@ -532,6 +532,68 @@ func TestSaveArtifacts(t *testing.T) {
 	})
 }
 
+func TestDeployWithPersistenceAndProgress(t *testing.T) {
+	t.Run("calls progress callback", func(t *testing.T) {
+		mockRepo := new(MockRepository)
+		logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
+
+		d := NewDeployer("/nonexistent/path",
+			WithRepository(mockRepo),
+			WithLogger(logger),
+		)
+
+		ctx := context.Background()
+		deploymentID := uuid.New()
+
+		// Set up mock expectations for status updates
+		mockRepo.On("UpdateDeploymentStatus", ctx, deploymentID, repository.StatusRunning, mock.AnythingOfType("*string")).Return(nil)
+		mockRepo.On("UpdateDeploymentStatus", ctx, deploymentID, repository.StatusFailed, mock.Anything).Return(nil)
+		mockRepo.On("SetDeploymentError", ctx, deploymentID, mock.AnythingOfType("string")).Return(nil)
+
+		// Track progress callbacks
+		progressCalls := []string{}
+		onProgress := func(stage string, progress float64, message string) {
+			progressCalls = append(progressCalls, stage)
+		}
+
+		// Deploy will fail (no TS worker), but we should still get initial progress
+		_, err := d.DeployWithPersistenceAndProgress(ctx, deploymentID, testConfig(), onProgress)
+		assert.Error(t, err) // Expected to fail since worker doesn't exist
+
+		// Should have called progress at least once for the initial stage
+		assert.True(t, len(progressCalls) > 0, "should have received at least one progress callback")
+		assert.Contains(t, progressCalls, "deploying")
+	})
+
+	t.Run("requires repository", func(t *testing.T) {
+		d := NewDeployer("/path/to/worker")
+		// No repository set
+
+		ctx := context.Background()
+		deploymentID := uuid.New()
+
+		_, err := d.DeployWithPersistenceAndProgress(ctx, deploymentID, testConfig(), nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "repository not configured")
+	})
+}
+
+func TestExecuteWorkerBuildCheck(t *testing.T) {
+	t.Run("fails if TypeScript not built", func(t *testing.T) {
+		// Create a temp directory without the dist/cli.js
+		tmpDir := t.TempDir()
+
+		d := NewDeployer(tmpDir)
+
+		ctx := context.Background()
+		_, err := d.executeWorker(ctx, testConfig())
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "TypeScript worker not built")
+		assert.Contains(t, err.Error(), "npm run build")
+	})
+}
+
 // Verify MockRepository implements the interface
 var _ repository.Repository = (*MockRepository)(nil)
 

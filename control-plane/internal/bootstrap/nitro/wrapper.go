@@ -172,10 +172,34 @@ func (d *Deployer) Deploy(ctx context.Context, config *DeployConfig) (*DeployRes
 	return result, nil
 }
 
+// ProgressCallback reports deployment progress.
+// stage: current deployment stage (e.g., "deploying", "generating_artifacts")
+// progress: 0.0-1.0 progress within the stage
+// message: human-readable status message
+type ProgressCallback func(stage string, progress float64, message string)
+
 // DeployWithPersistence deploys and persists state to the repository.
 func (d *Deployer) DeployWithPersistence(ctx context.Context, deploymentID uuid.UUID, config *DeployConfig) (*DeployResult, error) {
+	return d.DeployWithPersistenceAndProgress(ctx, deploymentID, config, nil)
+}
+
+// DeployWithPersistenceAndProgress deploys with persistence and optional progress reporting.
+func (d *Deployer) DeployWithPersistenceAndProgress(
+	ctx context.Context,
+	deploymentID uuid.UUID,
+	config *DeployConfig,
+	onProgress ProgressCallback,
+) (*DeployResult, error) {
 	if d.repo == nil {
 		return nil, fmt.Errorf("repository not configured")
+	}
+
+	// Helper to report progress
+	reportProgress := func(stage string, progress float64, message string) {
+		if onProgress != nil {
+			onProgress(stage, progress, message)
+		}
+		d.logger.Info(message, slog.String("stage", stage), slog.Float64("progress", progress))
 	}
 
 	// Update status to running
@@ -183,6 +207,8 @@ func (d *Deployer) DeployWithPersistence(ctx context.Context, deploymentID uuid.
 	if err := d.repo.UpdateDeploymentStatus(ctx, deploymentID, repository.StatusRunning, &stage); err != nil {
 		d.logger.Warn("failed to update deployment status", slog.String("error", err.Error()))
 	}
+
+	reportProgress("deploying", 0.1, "Starting Nitro chain deployment")
 
 	// Execute deployment
 	result, err := d.Deploy(ctx, config)
@@ -196,6 +222,8 @@ func (d *Deployer) DeployWithPersistence(ctx context.Context, deploymentID uuid.
 		}
 		return nil, err
 	}
+
+	reportProgress("deploying", 0.7, "Deployment transaction confirmed")
 
 	// Record transaction
 	if result.TransactionHash != "" {
@@ -213,12 +241,32 @@ func (d *Deployer) DeployWithPersistence(ctx context.Context, deploymentID uuid.
 		}
 	}
 
-	// Save artifacts
+	// Update stage to generating artifacts
+	artifactStage := "generating_artifacts"
+	if err := d.repo.UpdateDeploymentStatus(ctx, deploymentID, repository.StatusRunning, &artifactStage); err != nil {
+		d.logger.Warn("failed to update deployment status", slog.String("error", err.Error()))
+	}
+
+	reportProgress("generating_artifacts", 0.8, "Generating Nitro node configuration artifacts")
+
+	// Generate proper Nitro config artifacts (chain-info.json, node-config.json, core-contracts.json)
 	if result.CoreContracts != nil {
-		if err := d.saveArtifacts(ctx, deploymentID, result); err != nil {
-			d.logger.Warn("failed to save artifacts", slog.String("error", err.Error()))
+		generator := NewArtifactGenerator(d.repo)
+		if err := generator.GenerateArtifacts(ctx, deploymentID, config, result); err != nil {
+			d.logger.Error("failed to generate config artifacts", slog.String("error", err.Error()))
+			// Record error but don't fail the deployment - contracts are already deployed
+			if setErr := d.repo.SetDeploymentError(ctx, deploymentID, fmt.Sprintf("artifact generation failed: %s", err.Error())); setErr != nil {
+				d.logger.Warn("failed to set deployment error", slog.String("error", setErr.Error()))
+			}
+			// Mark as completed with warning (deployment succeeded, artifacts failed)
+			if updateErr := d.repo.UpdateDeploymentStatus(ctx, deploymentID, repository.StatusCompleted, nil); updateErr != nil {
+				d.logger.Warn("failed to update deployment status", slog.String("error", updateErr.Error()))
+			}
+			return result, fmt.Errorf("deployment succeeded but artifact generation failed: %w", err)
 		}
 	}
+
+	reportProgress("generating_artifacts", 1.0, "Artifacts generated successfully")
 
 	// Mark as completed
 	if err := d.repo.UpdateDeploymentStatus(ctx, deploymentID, repository.StatusCompleted, nil); err != nil {
@@ -270,6 +318,13 @@ func (d *Deployer) DeployWithRetry(ctx context.Context, config *DeployConfig, ma
 
 // executeWorker runs the TypeScript deployment worker as a subprocess.
 func (d *Deployer) executeWorker(ctx context.Context, config *DeployConfig) (*DeployResult, error) {
+	// Check if TypeScript worker has been built
+	cliPath := filepath.Join(d.workerPath, "dist", "cli.js")
+	if _, err := os.Stat(cliPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("TypeScript worker not built: %s does not exist. Run 'npm run build' in %s",
+			cliPath, d.workerPath)
+	}
+
 	// Serialize config to JSON
 	configJSON, err := json.Marshal(config)
 	if err != nil {
@@ -290,7 +345,6 @@ func (d *Deployer) executeWorker(ctx context.Context, config *DeployConfig) (*De
 	}
 
 	// Construct command
-	cliPath := filepath.Join(d.workerPath, "dist", "cli.js")
 	cmd := exec.CommandContext(ctx, d.nodeCmd, cliPath, configPath)
 
 	// Capture stdout and stderr
@@ -345,7 +399,10 @@ func (d *Deployer) executeWorker(ctx context.Context, config *DeployConfig) (*De
 	return &result, nil
 }
 
-// saveArtifacts persists deployment artifacts to the repository.
+// saveArtifacts persists raw deployment artifacts to the repository.
+// Deprecated: Use ArtifactGenerator.GenerateArtifacts() instead, which generates
+// properly formatted Nitro node config artifacts (chain-info.json, node-config.json).
+// This method only saves raw TypeScript output and is kept for backwards compatibility.
 func (d *Deployer) saveArtifacts(ctx context.Context, deploymentID uuid.UUID, result *DeployResult) error {
 	// Save core contracts as artifact
 	if result.CoreContracts != nil {
