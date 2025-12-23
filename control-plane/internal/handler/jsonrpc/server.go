@@ -27,11 +27,15 @@ type Server struct {
 func NewServer(cfg ServerConfig) *Server {
 	handler := NewHandler(cfg.Logger)
 
+	// Register health_status (required for OP Stack signer client initialization)
+	healthHandler := NewHealthStatusHandler()
+	handler.RegisterMethod("health_status", healthHandler.Handle)
+
 	// Register eth_accounts
 	ethAccountsHandler := NewEthAccountsHandler(cfg.KeyRepo)
 	handler.RegisterMethod("eth_accounts", ethAccountsHandler.Handle)
 
-	// Register eth_signTransaction
+	// Register eth_signTransaction (required for op-batcher and op-proposer)
 	ethSignTxHandler := NewEthSignTransactionHandler(cfg.KeyRepo, cfg.BaoClient, cfg.AuditRepo, cfg.UsageRepo)
 	handler.RegisterMethod("eth_signTransaction", ethSignTxHandler.Handle)
 
@@ -42,14 +46,22 @@ func NewServer(cfg ServerConfig) *Server {
 	// Register personal_sign
 	handler.RegisterMethod("personal_sign", ethSignHandler.HandlePersonalSign)
 
+	// Register OP Stack signer methods (required for op-node P2P sequencer)
+	signBlockHandler := NewSignBlockPayloadHandler(cfg.KeyRepo, cfg.BaoClient)
+	handler.RegisterMethod("opsigner_signBlockPayload", signBlockHandler.Handle)
+	handler.RegisterMethod("opsigner_signBlockPayloadV2", signBlockHandler.HandleV2)
+
 	// Log registered methods
 	if cfg.Logger != nil {
 		cfg.Logger.Info("Registered JSON-RPC methods",
 			slog.Any("methods", []string{
+				"health_status",
 				"eth_accounts",
 				"eth_signTransaction",
 				"eth_sign",
 				"personal_sign",
+				"opsigner_signBlockPayload",
+				"opsigner_signBlockPayloadV2",
 			}),
 		)
 	}
