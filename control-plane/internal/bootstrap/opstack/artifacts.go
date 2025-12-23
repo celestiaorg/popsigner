@@ -718,6 +718,14 @@ func GenerateEnvExample(cfg *DeploymentConfig, addrs *ContractAddresses) string 
 		disputeGameFactory = "<set_after_deployment>"
 	}
 
+	// Determine L1 beacon URL based on chain ID
+	l1BeaconURL := "https://ethereum-sepolia-beacon-api.publicnode.com"
+	if cfg.L1ChainID == 1 {
+		l1BeaconURL = "https://ethereum-beacon-api.publicnode.com"
+	} else if cfg.L1ChainID == 17000 {
+		l1BeaconURL = "https://ethereum-holesky-beacon-api.publicnode.com"
+	}
+
 	return fmt.Sprintf(`################################################################################
 #                         %s - OP Stack Configuration
 ################################################################################
@@ -735,6 +743,12 @@ POPSIGNER_API_KEY=<REQUIRED>
 
 # L1 RPC endpoint (Alchemy, Infura, QuickNode, or self-hosted)
 L1_RPC_URL=%s
+
+# L1 Beacon API endpoint (required for op-node)
+# Public nodes: https://ethereum-sepolia-beacon-api.publicnode.com (Sepolia)
+#               https://ethereum-beacon-api.publicnode.com (Mainnet)
+#               https://ethereum-holesky-beacon-api.publicnode.com (Holesky)
+L1_BEACON_URL=%s
 
 ################################################################################
 # PRE-CONFIGURED - Usually no changes needed
@@ -759,6 +773,7 @@ DISPUTE_GAME_FACTORY_ADDRESS=%s
 `,
 		cfg.ChainName,
 		cfg.L1RPC,
+		l1BeaconURL,
 		cfg.ChainID,
 		popsignerRPC,
 		cfg.SequencerAddress,

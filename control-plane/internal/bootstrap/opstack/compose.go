@@ -9,7 +9,7 @@ import (
 // Docker image versions for OP Stack services
 const (
 	OpNodeVersion     = "v1.16.3"
-	OpBatcherVersion  = "4dd4cc93c25c0cc583b55fdba4908a9b67ef5282"
+	OpBatcherVersion  = "v1.16.3" // Use release tag, not commit hash
 	OpProposerVersion = "v1.10.0"
 	OpGethVersion     = "v1.101602.3"
 	OpAltDAVersion    = "v0.10.0"
@@ -144,10 +144,12 @@ services:
       - --l1=${L1_RPC_URL}
       - --l1.rpckind=${L1_RPC_KIND:-basic}
       - --l1.trustrpc
-      # POPSigner for sequencer signing
-      - --p2p.sequencer.endpoint=${POPSIGNER_RPC_URL}
-      - --p2p.sequencer.address=${SEQUENCER_ADDRESS}
-      - --p2p.sequencer.header=X-API-Key:${POPSIGNER_API_KEY}
+      - --l1.beacon=${L1_BEACON_URL}
+      # NOTE: P2P signer not needed since --p2p.disable is set
+      # For P2P-enabled sequencers, add:
+      #   --p2p.sequencer.endpoint=${POPSIGNER_RPC_URL}
+      #   --p2p.sequencer.address=${SEQUENCER_ADDRESS}
+      #   --p2p.sequencer.header=X-API-Key:${POPSIGNER_API_KEY}
 {{- if .UseAltDA }}
       # Celestia Alt-DA
       - --altda.enabled=true
@@ -200,6 +202,7 @@ services:
       - --signer.endpoint=${POPSIGNER_RPC_URL}
       - --signer.address=${BATCHER_ADDRESS}
       - --signer.header=X-API-Key:${POPSIGNER_API_KEY}
+      - --signer.tls.enabled=false
 {{- if .UseAltDA }}
       # Celestia Alt-DA
       - --altda.da-service=true
@@ -238,6 +241,7 @@ services:
       - --signer.endpoint=${POPSIGNER_RPC_URL}
       - --signer.address=${PROPOSER_ADDRESS}
       - --signer.header=X-API-Key:${POPSIGNER_API_KEY}
+      - --signer.tls.enabled=false
       - --metrics.enabled
       - --metrics.port=7302
     ports:
