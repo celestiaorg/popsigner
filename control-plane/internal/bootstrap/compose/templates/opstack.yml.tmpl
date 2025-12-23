@@ -9,24 +9,18 @@ x-logging: &logging
 services:
 {{- if .UseCelestia }}
   # =============================================================
-  # OP-ALT-DA - Celestia DA Server (ghcr.io/celestiaorg/op-alt-da)
+  # OP-ALT-DA - Celestia DA Server
   # Posts batches to Celestia and serves commitments to op-node/op-batcher
-  # Uses POPSigner for Celestia key management
+  # Uses config.toml for all configuration including POPSigner signing
   # =============================================================
   op-alt-da:
     image: ghcr.io/celestiaorg/op-alt-da:v0.10.0
     restart: unless-stopped
     logging: *logging
+    volumes:
+      - ./config.toml:/config/config.toml:ro
     command:
-      - --log.level=info
-      - --addr=0.0.0.0
-      - --port=3100
-      - --celestia.server=${CELESTIA_RPC_URL}
-      - --celestia.namespace=${CELESTIA_NAMESPACE}
-      # POPSigner manages Celestia keys - no local keyring needed
-      - --celestia.signer.endpoint=${POPSIGNER_CELESTIA_ENDPOINT}
-      - --celestia.signer.address=${CELESTIA_SIGNER_ADDRESS}
-      - --celestia.signer.header=X-API-Key:${POPSIGNER_API_KEY}
+      - --config=/config/config.toml
     ports:
       - "3100:3100"
     healthcheck:
@@ -107,7 +101,7 @@ services:
   # OP NODE - Derives L2 state from L1, serves as rollup consensus
   # =============================================================
   op-node:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.13.7
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.16.3
     restart: unless-stopped
     logging: *logging
     depends_on:
@@ -161,7 +155,7 @@ services:
   # Uses POPSigner for transaction signing
   # =============================================================
   op-batcher:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.15.0
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:4dd4cc93c25c0cc583b55fdba4908a9b67ef5282
     restart: unless-stopped
     logging: *logging
     depends_on:
