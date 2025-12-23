@@ -163,12 +163,51 @@ func (h *DeploymentWebHandler) DownloadArtifact(w http.ResponseWriter, r *http.R
 		chainName = h.extractChainName(deployment)
 	}
 
-	// Set headers for download
-	filename := fmt.Sprintf("%s-%s.json", chainName, artifactType)
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	// Determine content type and filename based on artifact type
+	var contentType, filename string
+	var content []byte
 
-	w.Write(artifact.Content)
+	switch artifactType {
+	case "docker-compose.yml":
+		contentType = "text/yaml"
+		filename = fmt.Sprintf("%s-docker-compose.yml", chainName)
+		content = unwrapJSONString(artifact.Content)
+	case ".env.example":
+		contentType = "text/plain"
+		filename = fmt.Sprintf("%s.env.example", chainName)
+		content = unwrapJSONString(artifact.Content)
+	case "jwt.txt":
+		contentType = "text/plain"
+		filename = fmt.Sprintf("%s-jwt.txt", chainName)
+		content = unwrapJSONString(artifact.Content)
+	case "config.toml":
+		contentType = "text/plain"
+		filename = fmt.Sprintf("%s-config.toml", chainName)
+		content = unwrapJSONString(artifact.Content)
+	case "README.md":
+		contentType = "text/markdown"
+		filename = fmt.Sprintf("%s-README.md", chainName)
+		content = unwrapJSONString(artifact.Content)
+	default:
+		// JSON artifacts
+		contentType = "application/json"
+		filename = fmt.Sprintf("%s-%s.json", chainName, artifactType)
+		content = artifact.Content
+	}
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
+	w.Write(content)
+}
+
+// unwrapJSONString unwraps a JSON-encoded string back to plain text.
+// Used for non-JSON artifacts that were stored as JSON strings.
+func unwrapJSONString(data []byte) []byte {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		return []byte(s)
+	}
+	return data
 }
 
 // DeploymentStatus shows the deployment progress/status page.

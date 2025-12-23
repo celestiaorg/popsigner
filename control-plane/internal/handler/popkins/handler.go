@@ -974,6 +974,8 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 	// Map artifact types to file paths in the ZIP
 	for _, artifact := range artifacts {
 		var path string
+		var isPlainText bool // Non-JSON files need to be unwrapped from JSON string encoding
+
 		switch artifact.ArtifactType {
 		case "genesis.json", "genesis":
 			path = bundlePrefix + "genesis.json"
@@ -985,18 +987,29 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 			path = bundlePrefix + "deploy-config.json"
 		case "docker-compose.yml":
 			path = bundlePrefix + "docker-compose.yml"
+			isPlainText = true
 		case ".env.example":
 			path = bundlePrefix + ".env.example"
+			isPlainText = true
 		case "jwt.txt":
 			path = bundlePrefix + "jwt.txt"
+			isPlainText = true
 		case "config.toml":
 			// op-alt-da config for Celestia DA
 			path = bundlePrefix + "config.toml"
+			isPlainText = true
 		case "README.md":
 			path = bundlePrefix + "README.md"
+			isPlainText = true
 		default:
 			// Skip internal artifacts like deployment_state
 			continue
+		}
+
+		// Get content - unwrap JSON string encoding for plain text files
+		content := artifact.Content
+		if isPlainText {
+			content = unwrapJSONString(content)
 		}
 
 		// Add file to ZIP
@@ -1005,7 +1018,7 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 			slog.Error("failed to create zip entry", "path", path, "error", err)
 			continue
 		}
-		if _, err := fw.Write(artifact.Content); err != nil {
+		if _, err := fw.Write(content); err != nil {
 			slog.Error("failed to write zip entry", "path", path, "error", err)
 			continue
 		}
@@ -1236,5 +1249,17 @@ func placeholderDeploymentComplete() templ.Component {
 		`))
 		return err
 	})
+}
+
+// unwrapJSONString unwraps a JSON-encoded string back to plain text.
+// Used for non-JSON artifacts (docker-compose.yml, .env.example, etc.) that were
+// stored as JSON strings to satisfy the JSONB column requirement.
+func unwrapJSONString(data []byte) []byte {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		return []byte(s)
+	}
+	// If it's not a JSON string, return as-is
+	return data
 }
 
