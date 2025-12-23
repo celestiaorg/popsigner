@@ -8,6 +8,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1252,14 +1253,32 @@ func placeholderDeploymentComplete() templ.Component {
 }
 
 // unwrapJSONString unwraps a JSON-encoded string back to plain text.
+// unwrapJSONString unwraps content that was stored for JSONB column.
+// Supports two formats:
+// 1. NEW: base64 wrapper {"_type":"base64","data":"..."}
+// 2. LEGACY: JSON string "content..." (with PostgreSQL normalization issues)
 // Used for non-JSON artifacts (docker-compose.yml, .env.example, etc.) that were
-// stored as JSON strings to satisfy the JSONB column requirement.
+// stored as JSON strings or base64 objects to satisfy the JSONB column requirement.
 func unwrapJSONString(data []byte) []byte {
+	// Try new base64 wrapper format first
+	var wrapper struct {
+		Type string `json:"_type"`
+		Data string `json:"data"`
+	}
+	if err := json.Unmarshal(data, &wrapper); err == nil && wrapper.Type == "base64" {
+		decoded, err := base64.StdEncoding.DecodeString(wrapper.Data)
+		if err == nil {
+			return decoded
+		}
+	}
+
+	// Try legacy JSON string format
 	var s string
 	if err := json.Unmarshal(data, &s); err == nil {
 		return []byte(s)
 	}
-	// If it's not a JSON string, return as-is
+
+	// If it's not a recognized format, return as-is
 	return data
 }
 

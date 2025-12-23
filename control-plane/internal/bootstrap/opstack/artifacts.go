@@ -579,11 +579,16 @@ func unwrapJSONString(data []byte) []byte {
 		Type string `json:"_type"`
 		Data string `json:"data"`
 	}
-	if err := json.Unmarshal(data, &wrapper); err == nil && wrapper.Type == "base64" {
-		decoded, err := base64.StdEncoding.DecodeString(wrapper.Data)
-		if err == nil {
+	err := json.Unmarshal(data, &wrapper)
+	fmt.Printf("[DEBUG] unwrapJSONString: len=%d, unmarshal_err=%v, type='%s', data_len=%d\n", 
+		len(data), err, wrapper.Type, len(wrapper.Data))
+	if err == nil && wrapper.Type == "base64" {
+		decoded, decErr := base64.StdEncoding.DecodeString(wrapper.Data)
+		if decErr == nil {
+			fmt.Printf("[DEBUG] unwrapJSONString: base64 decoded, result_len=%d\n", len(decoded))
 			return decoded
 		}
+		fmt.Printf("[DEBUG] unwrapJSONString: base64 decode failed: %v\n", decErr)
 	}
 
 	// Try legacy JSON string format
