@@ -1,4 +1,4 @@
-version: "3.8"
+name: {{ .SanitizedChainName }}-opstack
 
 x-logging: &logging
   driver: json-file
@@ -7,159 +7,241 @@ x-logging: &logging
     max-file: "3"
 
 services:
+{{- if .UseCelestia }}
   # =============================================================
-  # OP NODE - Derives L2 state from L1
+  # OP-ALT-DA - Celestia DA Server (ghcr.io/celestiaorg/op-alt-da)
+  # Posts batches to Celestia and serves commitments to op-node/op-batcher
+  # Uses POPSigner for Celestia key management
   # =============================================================
-  op-node:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.9.0
+  op-alt-da:
+    image: ghcr.io/celestiaorg/op-alt-da:v0.10.0
     restart: unless-stopped
     logging: *logging
     command:
-      - op-node
-      - --l1=${L1_RPC_URL}
-      - --l2=http://op-geth:8551
-      - --l2.jwt-secret=/secrets/jwt.txt
-      - --rollup.config=/config/rollup.json
-      - --rpc.addr=0.0.0.0
-      - --rpc.port=8545
-      - --p2p.listen.tcp=9003
-{{- if .UseCelestia }}
-      - --altda.enabled=true
-      - --altda.da-server=http://op-alt-da:3100
-{{- end }}
-    volumes:
-      - ./config:/config:ro
-      - ./secrets:/secrets:ro
-      - op-node-data:/data
+      - --log.level=info
+      - --addr=0.0.0.0
+      - --port=3100
+      - --celestia.server=${CELESTIA_RPC_URL}
+      - --celestia.namespace=${CELESTIA_NAMESPACE}
+      # POPSigner manages Celestia keys - no local keyring needed
+      - --celestia.signer.endpoint=${POPSIGNER_CELESTIA_ENDPOINT}
+      - --celestia.signer.address=${CELESTIA_SIGNER_ADDRESS}
+      - --celestia.signer.header=X-API-Key:${POPSIGNER_API_KEY}
     ports:
-      - "9545:8545"
-      - "9003:9003"
+      - "3100:3100"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8545/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    depends_on:
-      op-geth:
-        condition: service_healthy
-{{- if .UseCelestia }}
-      op-alt-da:
-        condition: service_started
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
 {{- end }}
+
+  # =============================================================
+  # OP GETH INIT - Initialize genesis state (runs once)
+  # =============================================================
+  op-geth-init:
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101602.3
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -f /data/geth/chaindata/CURRENT ] || [ -d /data/geth/chaindata ]; then
+          echo "op-geth data found in /data, skipping genesis init"
+        else
+          echo "No op-geth data found, initializing genesis..."
+          geth init --datadir=/data /config/genesis.json
+        fi
+    volumes:
+      - ./op-geth/data:/data
+      - ./genesis.json:/config/genesis.json:ro
 
   # =============================================================
   # OP GETH - L2 execution layer
   # =============================================================
   op-geth:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101408.0
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:v1.101602.3
     restart: unless-stopped
     logging: *logging
+    depends_on:
+      op-geth-init:
+        condition: service_completed_successfully
     command:
       - --datadir=/data
       - --http
       - --http.addr=0.0.0.0
       - --http.port=8545
-      - --http.api=eth,net,web3,debug,txpool
+      - --http.vhosts=*
+      - --http.corsdomain=*
+      - --http.api=web3,debug,eth,txpool,net,engine,miner
       - --ws
       - --ws.addr=0.0.0.0
       - --ws.port=8546
-      - --ws.api=eth,net,web3
+      - --ws.origins=*
+      - --ws.api=debug,eth,txpool,net,engine,miner
+      - --syncmode=full
+      - --gcmode=archive
+      - --nodiscover
+      - --maxpeers=0
       - --authrpc.addr=0.0.0.0
       - --authrpc.port=8551
-      - --authrpc.jwtsecret=/secrets/jwt.txt
-      - --gcmode=archive
-      - --syncmode=full
+      - --authrpc.vhosts=*
+      - --authrpc.jwtsecret=/config/jwt.txt
+      - --rollup.disabletxpoolgossip=true
+      - --ipcdisable
+      - --metrics
+      - --metrics.port=7299
     volumes:
-      - geth-data:/data
-      - ./secrets:/secrets:ro
-      - ./genesis/genesis.json:/genesis.json:ro
+      - ./op-geth/data:/data
+      - ./jwt.txt:/config/jwt.txt:ro
     ports:
-      - "8545:8545"
-      - "8546:8546"
+      - "8545:8545"  # JSON-RPC
+      - "8546:8546"  # WebSocket
+      - "8551:8551"  # Engine API (JWT auth)
+      - "7299:7299"  # Metrics
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8545"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "wget", "-qO-", "http://localhost:8545"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
 
   # =============================================================
-  # OP BATCHER - Submits L2 batches to L1 (uses POPSigner API key auth)
+  # OP NODE - Derives L2 state from L1, serves as rollup consensus
   # =============================================================
-  op-batcher:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.9.0
+  op-node:
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-node:v1.13.7
     restart: unless-stopped
     logging: *logging
+    depends_on:
+      op-geth:
+        condition: service_healthy
+{{- if .UseCelestia }}
+      op-alt-da:
+        condition: service_healthy
+{{- end }}
     command:
-      - op-batcher
-      - --l1-eth-rpc=${L1_RPC_URL}
-      - --l2-eth-rpc=http://op-geth:8545
-      - --rollup-rpc=http://op-node:8545
-      # POPSigner integration (API Key authentication)
-      - --signer.endpoint=${POPSIGNER_RPC_URL}
-      - --signer.address=${BATCHER_ADDRESS}
-      - --signer.header=X-API-Key=${POPSIGNER_API_KEY}
+      - op-node
+      - --l2=http://op-geth:8551
+      - --l2.jwt-secret=/config/jwt.txt
+      - --sequencer.enabled
+      - --sequencer.l1-confs=5
+      - --verifier.l1-confs=4
+      - --rollup.config=/config/rollup.json
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=9545
+      - --rpc.enable-admin
+      - --p2p.disable
+      - --l1=${L1_RPC_URL}
+      - --l1.rpckind=${L1_RPC_KIND:-basic}
+      - --l1.trustrpc
+      # POPSigner integration for sequencer signing
+      - --p2p.sequencer.endpoint=${POPSIGNER_RPC_URL}
+      - --p2p.sequencer.address=${SEQUENCER_ADDRESS}
+      - --p2p.sequencer.header=X-API-Key:${POPSIGNER_API_KEY}
 {{- if .UseCelestia }}
       # Alt-DA configuration
       - --altda.enabled=true
+      - --altda.verify-on-read=true
       - --altda.da-server=http://op-alt-da:3100
 {{- end }}
-      # Batching parameters
-      - --max-channel-duration=1
-      - --sub-safety-margin=10
-    depends_on:
-      - op-node
-      - op-geth
-{{- if .UseCelestia }}
-      - op-alt-da
-{{- end }}
+      - --metrics.enabled
+      - --metrics.port=7300
+    volumes:
+      - ./rollup.json:/config/rollup.json:ro
+      - ./jwt.txt:/config/jwt.txt:ro
+    ports:
+      - "9545:9545"  # op-node RPC
+      - "7300:7300"  # Metrics
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9545"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
 
   # =============================================================
-  # OP PROPOSER - Submits L2 state roots to L1 (uses POPSigner API key auth)
+  # OP BATCHER - Submits L2 batches to DA layer
+  # Uses POPSigner for transaction signing
+  # =============================================================
+  op-batcher:
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-batcher:v1.15.0
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      op-geth:
+        condition: service_healthy
+      op-node:
+        condition: service_healthy
+{{- if .UseCelestia }}
+      op-alt-da:
+        condition: service_healthy
+{{- end }}
+    command:
+      - op-batcher
+      - --l2-eth-rpc=http://op-geth:8545
+      - --rollup-rpc=http://op-node:9545
+      - --poll-interval=1s
+      - --sub-safety-margin=6
+      - --num-confirmations=1
+      - --safe-abort-nonce-too-low-count=3
+      - --resubmission-timeout=30s
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=8548
+      - --max-channel-duration=25
+      - --l1-eth-rpc=${L1_RPC_URL}
+      # POPSigner integration for batcher signing
+      - --signer.endpoint=${POPSIGNER_RPC_URL}
+      - --signer.address=${BATCHER_ADDRESS}
+      - --signer.header=X-API-Key:${POPSIGNER_API_KEY}
+{{- if .UseCelestia }}
+      # Alt-DA configuration
+      - --altda.da-service=true
+      - --altda.enabled=true
+      - --altda.da-server=http://op-alt-da:3100
+{{- end }}
+      - --metrics.enabled
+      - --metrics.port=7301
+    ports:
+      - "8548:8548"  # Batcher admin RPC
+      - "7301:7301"  # Metrics
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8548/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  # =============================================================
+  # OP PROPOSER - Submits L2 state roots to L1
+  # Uses POPSigner for transaction signing
   # =============================================================
   op-proposer:
-    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.9.0
+    image: us-docker.pkg.dev/oplabs-tools-artifacts/images/op-proposer:v1.10.0
     restart: unless-stopped
     logging: *logging
+    depends_on:
+      op-node:
+        condition: service_healthy
     command:
       - op-proposer
+      - --poll-interval=12s
+      - --rpc.port=8560
+      - --rollup-rpc=http://op-node:9545
+      - --game-factory-address=${DISPUTE_GAME_FACTORY_ADDRESS}
+      - --proposal-interval=6h
       - --l1-eth-rpc=${L1_RPC_URL}
-      - --rollup-rpc=http://op-node:8545
-      - --l2oo-address=${L2_OUTPUT_ORACLE_ADDRESS}
-      # POPSigner integration (API Key authentication)
+      # POPSigner integration for proposer signing
       - --signer.endpoint=${POPSIGNER_RPC_URL}
       - --signer.address=${PROPOSER_ADDRESS}
-      - --signer.header=X-API-Key=${POPSIGNER_API_KEY}
-    depends_on:
-      - op-node
-
-{{- if .UseCelestia }}
-
-  # =============================================================
-  # OP-ALT-DA - Celestia DA sidecar
-  # =============================================================
-  op-alt-da:
-    image: ghcr.io/celestiaorg/op-alt-da:latest
-    restart: unless-stopped
-    logging: *logging
+      - --signer.header=X-API-Key:${POPSIGNER_API_KEY}
+      - --metrics.enabled
+      - --metrics.port=7302
     ports:
-      - "3100:3100"
-    environment:
-      - CELESTIA_NODE_AUTH_TOKEN=${CELESTIA_AUTH_TOKEN}
-      - CELESTIA_NODE_RPC_URL=${CELESTIA_RPC_URL}
-      - CELESTIA_NAMESPACE=${CELESTIA_NAMESPACE}
-      - SERVER_LISTEN_ADDR=0.0.0.0:3100
+      - "8560:8560"  # Proposer RPC
+      - "7302:7302"  # Metrics
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3100/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-{{- end }}
-
-volumes:
-  op-node-data:
-  geth-data:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8560/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
 
 networks:
   default:
-    name: {{ .SanitizedChainName }}-opstack-network
-
+    name: {{ .SanitizedChainName }}-opstack
+    driver: bridge
