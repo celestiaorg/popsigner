@@ -236,14 +236,14 @@ func (d *InfrastructureDeployer) deployInfrastructure(
 		reader4844Addr = zeroAddress
 		d.logger.Info("Detected Arbitrum chain, using zero address for Reader4844")
 	} else {
-		// Deploy Reader4844 mock for L1/local testing
-		d.logger.Info("Deploying Reader4844 mock for L1/local chain...")
-		reader4844Addr, err = d.deployReader4844Mock(ctx, client, gasPrice, chainID)
+		// Deploy Reader4844 for L1/local chains (requires Cancun hardfork for EIP-4844)
+		d.logger.Info("Deploying Reader4844 for L1/local chain (requires Cancun EVM)...")
+		reader4844Addr, err = d.deployReader4844(ctx, client, gasPrice, chainID)
 		if err != nil {
-			return nil, fmt.Errorf("deploy Reader4844 mock: %w", err)
+			return nil, fmt.Errorf("deploy Reader4844: %w", err)
 		}
 		deployed["Reader4844"] = reader4844Addr
-		d.logger.Info("deployed Reader4844 mock", slog.String("address", reader4844Addr.Hex()))
+		d.logger.Info("deployed Reader4844", slog.String("address", reader4844Addr.Hex()))
 	}
 
 	// ============================================
@@ -480,26 +480,21 @@ func (d *InfrastructureDeployer) isArbitrumChain(ctx context.Context, client *et
 	return len(code) > 0
 }
 
-// deployReader4844Mock deploys a simple Reader4844 mock contract.
-// This mock returns dummy values for getBlobBaseFee and getDataHashes.
-// Used for testing on non-Arbitrum chains without real EIP-4844 support.
-func (d *InfrastructureDeployer) deployReader4844Mock(
+// deployReader4844 deploys the real Reader4844 contract.
+// Reader4844 is a Yul contract that wraps EIP-4844 opcodes (BLOBBASEFEE, BLOBHASH).
+// Requires the chain to support Cancun hardfork (EIP-4844).
+func (d *InfrastructureDeployer) deployReader4844(
 	ctx context.Context,
 	client *ethclient.Client,
 	gasPrice *big.Int,
 	chainID *big.Int,
 ) (common.Address, error) {
-	// Reader4844 mock bytecode
-	// This is a minimal contract that implements IReader4844:
-	// - getBlobBaseFee() returns 1 gwei
-	// - getDataHashes() returns empty array
-	//
-	// Solidity source (compiled with solc 0.8.x):
-	// contract Reader4844Mock {
-	//     function getBlobBaseFee() external pure returns (uint256) { return 1000000000; }
-	//     function getDataHashes() external pure returns (bytes32[] memory) { return new bytes32[](0); }
-	// }
-	mockBytecode := common.FromHex("0x608060405234801561001057600080fd5b5060e98061001f6000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c806322c5a3ba146037578063e83a2d82146051575b600080fd5b603f633b9aca0081565b60405190815260200160405180910390f35b60576069565b60405160059190910b8152602001f35b606060806060830181019052908152906020015056fea264697066735822122000000000000000000000000000000000000000000000000000000000000000006473")
+	// Real Reader4844 bytecode compiled from Yul with Foundry (Cancun EVM)
+	// Source: https://github.com/OffchainLabs/nitro-contracts/blob/main/yul/Reader4844.yul
+	// This contract calls:
+	// - BLOBBASEFEE opcode (0x4a) for getBlobBaseFee()
+	// - BLOBHASH opcode (0x49) for getDataHashes()
+	reader4844Bytecode := common.FromHex("0x605780600a5f395ff3fe346053575f3560e01c8063e83a2d8214602757631f6d6ef714601f575f80fd5b4a5f5260205ff35b5f5b804990811560415760019160408260051b0152016029565b60409060205f528060205260051b015ff35b5f80fd")
 
 	nonce, err := client.PendingNonceAt(ctx, d.signer.Address())
 	if err != nil {
@@ -513,14 +508,14 @@ func (d *InfrastructureDeployer) deployReader4844Mock(
 		Gas:      0,
 		GasPrice: gasPrice,
 		Value:    big.NewInt(0),
-		Data:     mockBytecode,
+		Data:     reader4844Bytecode,
 	})
 	if err != nil {
 		gasLimit = 200000 // Default for small contract
 	}
 	gasLimit = gasLimit * 120 / 100
 
-	tx := types.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, mockBytecode)
+	tx := types.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, reader4844Bytecode)
 	signedTx, err := d.signer.SignTransaction(ctx, tx)
 	if err != nil {
 		return common.Address{}, fmt.Errorf("sign: %w", err)

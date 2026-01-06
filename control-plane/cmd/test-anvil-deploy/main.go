@@ -22,6 +22,9 @@ const (
 	anvilChainID    = 31337
 )
 
+// NOTE: Start Anvil with Cancun hardfork for EIP-4844 support:
+// anvil --hardfork cancun --chain-id 31337 --accounts 1 --balance 10000
+
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
