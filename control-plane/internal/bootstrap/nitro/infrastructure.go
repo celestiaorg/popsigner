@@ -72,23 +72,27 @@ func (d *InfrastructureDeployer) EnsureInfrastructure(
 		slog.Int64("parent_chain_id", cfg.ParentChainID),
 	)
 
-	// Check if infrastructure already exists
-	existing, err := d.repo.Get(ctx, cfg.ParentChainID)
-	if err != nil {
-		return nil, fmt.Errorf("check existing infrastructure: %w", err)
-	}
-
-	if existing != nil && existing.Version == d.artifacts.Version {
-		d.logger.Info("using existing Nitro infrastructure",
-			slog.String("rollup_creator", existing.RollupCreatorAddress),
-			slog.String("version", existing.Version),
-		)
-		return &InfrastructureResult{
-			RollupCreatorAddress: common.HexToAddress(existing.RollupCreatorAddress),
-			BridgeCreatorAddress: common.HexToAddress(ptrToString(existing.BridgeCreatorAddress)),
-			Version:              existing.Version,
-			AlreadyDeployed:      true,
-		}, nil
+	// Check if infrastructure already exists (only if repo is available)
+	if d.repo != nil {
+		existing, err := d.repo.Get(ctx, cfg.ParentChainID)
+		if err != nil {
+			d.logger.Warn("failed to check existing infrastructure, will deploy new",
+				slog.String("error", err.Error()),
+			)
+		} else if existing != nil && existing.Version == d.artifacts.Version {
+			d.logger.Info("using existing Nitro infrastructure",
+				slog.String("rollup_creator", existing.RollupCreatorAddress),
+				slog.String("version", existing.Version),
+			)
+			return &InfrastructureResult{
+				RollupCreatorAddress: common.HexToAddress(existing.RollupCreatorAddress),
+				BridgeCreatorAddress: common.HexToAddress(ptrToString(existing.BridgeCreatorAddress)),
+				Version:              existing.Version,
+				AlreadyDeployed:      true,
+			}, nil
+		}
+	} else {
+		d.logger.Info("no infrastructure repository configured, will deploy new infrastructure")
 	}
 
 	// Connect to parent chain
@@ -134,10 +138,15 @@ func (d *InfrastructureDeployer) EnsureInfrastructure(
 		infraRecord.DeploymentTxHash = &hash
 	}
 
-	if err := d.repo.Upsert(ctx, infraRecord); err != nil {
-		d.logger.Warn("failed to save infrastructure to database, but deployment succeeded",
-			slog.String("error", err.Error()),
-		)
+	// Save to database if repo is available
+	if d.repo != nil {
+		if err := d.repo.Upsert(ctx, infraRecord); err != nil {
+			d.logger.Warn("failed to save infrastructure to database, but deployment succeeded",
+				slog.String("error", err.Error()),
+			)
+		}
+	} else {
+		d.logger.Info("no infrastructure repository configured, skipping database save")
 	}
 
 	d.logger.Info("Nitro infrastructure deployed successfully",
