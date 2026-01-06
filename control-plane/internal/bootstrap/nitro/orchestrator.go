@@ -295,24 +295,22 @@ func (o *Orchestrator) deployWithGo(
 	// 3. Get or deploy RollupCreator
 	var rollupCreatorAddr common.Address
 
-	// First check if there's well-known infrastructure with compatible version
-	// We require TargetContractVersion (v3.2.0+) for External DA support (Celestia)
-	if addr, ok := GetWellKnownRollupCreator(config.ParentChainID, TargetContractVersion); ok {
+	// Use well-known infrastructure if available (any version for now)
+	// TODO: Implement full infrastructure deployment for v3.2+ with External DA support
+	// For now, we use Arbitrum's existing RollupCreator which is v3.1 on most chains
+	if addr, version, exists := GetWellKnownRollupCreatorAnyVersion(config.ParentChainID); exists {
 		rollupCreatorAddr = addr
-		o.logger.Info("using well-known RollupCreator (version compatible)",
+		o.logger.Info("using well-known RollupCreator",
 			slog.String("address", addr.Hex()),
-			slog.Int64("chain_id", config.ParentChainID),
-			slog.String("target_version", TargetContractVersion),
-		)
-	} else if addr, version, exists := GetWellKnownRollupCreatorAnyVersion(config.ParentChainID); exists {
-		// Well-known exists but version doesn't match - log this for visibility
-		o.logger.Info("well-known RollupCreator exists but version incompatible, will deploy our own",
-			slog.String("well_known_address", addr.Hex()),
-			slog.String("well_known_version", version),
-			slog.String("required_version", TargetContractVersion),
+			slog.String("version", version),
 			slog.Int64("chain_id", config.ParentChainID),
 		)
-		// Fall through to check database or deploy
+		if version != TargetContractVersion {
+			o.logger.Warn("well-known RollupCreator is older version, External DA (0x01 header) may not work",
+				slog.String("well_known_version", version),
+				slog.String("target_version", TargetContractVersion),
+			)
+		}
 	}
 
 	// Check database for our previously deployed infrastructure (if not already found)
