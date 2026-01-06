@@ -17,12 +17,23 @@ import (
 	"github.com/Bidon15/popsigner/control-plane/internal/repository"
 )
 
+// TransactionSigner is the interface for signing transactions.
+// This abstraction allows using either POPSigner (production) or local keys (testing).
+type TransactionSigner interface {
+	// Address returns the signer's Ethereum address.
+	Address() common.Address
+	// ChainID returns the chain ID for transaction signing.
+	ChainID() *big.Int
+	// SignTransaction signs a transaction and returns the signed version.
+	SignTransaction(ctx context.Context, tx *types.Transaction) (*types.Transaction, error)
+}
+
 // InfrastructureDeployer handles deployment of shared Nitro infrastructure.
 // The RollupCreator and associated contracts are deployed once per parent chain
 // and reused for all customer rollups on that chain.
 type InfrastructureDeployer struct {
 	artifacts *NitroArtifacts
-	signer    *NitroSigner
+	signer    TransactionSigner
 	repo      repository.NitroInfrastructureRepository
 	logger    *slog.Logger
 }
@@ -52,7 +63,7 @@ type InfrastructureResult struct {
 // NewInfrastructureDeployer creates a new infrastructure deployer.
 func NewInfrastructureDeployer(
 	artifacts *NitroArtifacts,
-	signer *NitroSigner,
+	signer TransactionSigner,
 	repo repository.NitroInfrastructureRepository,
 	logger *slog.Logger,
 ) *InfrastructureDeployer {
@@ -213,27 +224,46 @@ func (d *InfrastructureDeployer) deployInfrastructure(
 		return nil
 	}
 
+	// Constants for constructor args
+	const maxDataSize = 117964 // MAX_DATA_SIZE from Arbitrum contracts
+	zeroAddress := common.Address{}
+
+	// Check if we're on an Arbitrum chain (then Reader4844 should be zero)
+	// For non-Arbitrum chains, we need to deploy a Reader4844 mock
+	var reader4844Addr common.Address
+	isArbitrum := d.isArbitrumChain(ctx, client)
+	if isArbitrum {
+		reader4844Addr = zeroAddress
+		d.logger.Info("Detected Arbitrum chain, using zero address for Reader4844")
+	} else {
+		// Deploy Reader4844 mock for L1/local testing
+		d.logger.Info("Deploying Reader4844 mock for L1/local chain...")
+		reader4844Addr, err = d.deployReader4844Mock(ctx, client, gasPrice, chainID)
+		if err != nil {
+			return nil, fmt.Errorf("deploy Reader4844 mock: %w", err)
+		}
+		deployed["Reader4844"] = reader4844Addr
+		d.logger.Info("deployed Reader4844 mock", slog.String("address", reader4844Addr.Hex()))
+	}
+
 	// ============================================
 	// Phase 1: Simple contracts (no constructor args)
 	// ============================================
 	d.logger.Info("Phase 1: Deploying simple contracts...")
 
-	// OneStepProvers
 	simpleContracts := []struct {
 		name     string
 		artifact *ContractArtifact
 	}{
+		// OneStepProvers (except HostIo which needs _customDAValidator)
 		{"OneStepProver0", d.artifacts.OneStepProver0},
 		{"OneStepProverMemory", d.artifacts.OneStepProverMemory},
 		{"OneStepProverMath", d.artifacts.OneStepProverMath},
-		{"OneStepProverHostIo", d.artifacts.OneStepProverHostIo},
-		// Bridge templates (ETH)
+		// Bridge templates (only Bridge and Outbox have no constructor args)
 		{"Bridge", d.artifacts.Bridge},
-		{"SequencerInbox", d.artifacts.SequencerInbox},
-		{"Inbox", d.artifacts.Inbox},
 		{"Outbox", d.artifacts.Outbox},
 		{"RollupEventInbox", d.artifacts.RollupEventInbox},
-		// ERC20 variants
+		// ERC20 variants (ERC20Bridge has no constructor)
 		{"ERC20Bridge", d.artifacts.ERC20Bridge},
 		// Rollup logic
 		{"EdgeChallengeManager", d.artifacts.EdgeChallengeManager},
@@ -251,11 +281,60 @@ func (d *InfrastructureDeployer) deployInfrastructure(
 		}
 	}
 
-	// ERC20Inbox needs maxDataSize constructor arg
-	d.logger.Info("Deploying ERC20Inbox with maxDataSize...")
-	erc20InboxArgs, err := d.artifacts.ERC20Inbox.EncodeConstructorArgs(
-		big.NewInt(117964), // MAX_DATA_SIZE from Arbitrum
+	// ============================================
+	// Phase 1b: Contracts with simple constructor args
+	// ============================================
+	d.logger.Info("Phase 1b: Deploying contracts with constructor args...")
+
+	// OneStepProverHostIo(_customDAValidator)
+	ospHostIoArgs, err := d.artifacts.OneStepProverHostIo.EncodeConstructorArgs(zeroAddress)
+	if err != nil {
+		return nil, fmt.Errorf("encode OneStepProverHostIo args: %w", err)
+	}
+	if err := deploy("OneStepProverHostIo", d.artifacts.OneStepProverHostIo, ospHostIoArgs); err != nil {
+		return nil, err
+	}
+
+	// SequencerInbox(_maxDataSize, reader4844_, _isUsingFeeToken, _isDelayBufferable)
+	// Deploy non-delay-bufferable variant for ETH
+	seqInboxArgs, err := d.artifacts.SequencerInbox.EncodeConstructorArgs(
+		big.NewInt(maxDataSize),
+		reader4844Addr, // reader4844_ (zero for Arbitrum, deployed mock for L1)
+		false,          // _isUsingFeeToken
+		false,          // _isDelayBufferable
 	)
+	if err != nil {
+		return nil, fmt.Errorf("encode SequencerInbox args: %w", err)
+	}
+	if err := deploy("SequencerInbox", d.artifacts.SequencerInbox, seqInboxArgs); err != nil {
+		return nil, err
+	}
+
+	// Deploy delay-bufferable variant (same params but isDelayBufferable=true)
+	seqInboxDelayArgs, err := d.artifacts.SequencerInbox.EncodeConstructorArgs(
+		big.NewInt(maxDataSize),
+		reader4844Addr, // reader4844_
+		false,          // _isUsingFeeToken
+		true,           // _isDelayBufferable = true
+	)
+	if err != nil {
+		return nil, fmt.Errorf("encode SequencerInboxDelay args: %w", err)
+	}
+	if err := deploy("SequencerInboxDelay", d.artifacts.SequencerInbox, seqInboxDelayArgs); err != nil {
+		return nil, err
+	}
+
+	// Inbox(_maxDataSize)
+	inboxArgs, err := d.artifacts.Inbox.EncodeConstructorArgs(big.NewInt(maxDataSize))
+	if err != nil {
+		return nil, fmt.Errorf("encode Inbox args: %w", err)
+	}
+	if err := deploy("Inbox", d.artifacts.Inbox, inboxArgs); err != nil {
+		return nil, err
+	}
+
+	// ERC20Inbox(_maxDataSize)
+	erc20InboxArgs, err := d.artifacts.ERC20Inbox.EncodeConstructorArgs(big.NewInt(maxDataSize))
 	if err != nil {
 		return nil, fmt.Errorf("encode ERC20Inbox args: %w", err)
 	}
@@ -294,7 +373,7 @@ func (d *InfrastructureDeployer) deployInfrastructure(
 	}{
 		Bridge:                        deployed["Bridge"],
 		SequencerInbox:                deployed["SequencerInbox"],
-		DelayBufferableSequencerInbox: deployed["SequencerInbox"], // Same as SequencerInbox for now
+		DelayBufferableSequencerInbox: deployed["SequencerInboxDelay"], // Delay bufferable variant
 		Inbox:                         deployed["Inbox"],
 		RollupEventInbox:              deployed["RollupEventInbox"],
 		Outbox:                        deployed["Outbox"],
@@ -309,8 +388,8 @@ func (d *InfrastructureDeployer) deployInfrastructure(
 		Outbox                        common.Address
 	}{
 		Bridge:                        deployed["ERC20Bridge"],
-		SequencerInbox:                deployed["SequencerInbox"], // Same SequencerInbox
-		DelayBufferableSequencerInbox: deployed["SequencerInbox"],
+		SequencerInbox:                deployed["SequencerInbox"],      // Same SequencerInbox (ETH based)
+		DelayBufferableSequencerInbox: deployed["SequencerInboxDelay"], // Delay bufferable
 		Inbox:                         deployed["ERC20Inbox"],
 		RollupEventInbox:              deployed["RollupEventInbox"],
 		Outbox:                        deployed["Outbox"],
@@ -387,6 +466,80 @@ func (d *InfrastructureDeployer) deployInfrastructure(
 		AlreadyDeployed:      false,
 		DeployedContracts:    deployed,
 	}, nil
+}
+
+// isArbitrumChain checks if the connected chain is an Arbitrum chain.
+// Arbitrum chains have the ArbSys precompile at 0x64.
+func (d *InfrastructureDeployer) isArbitrumChain(ctx context.Context, client *ethclient.Client) bool {
+	// ArbSys precompile address on Arbitrum chains
+	arbSysAddr := common.HexToAddress("0x0000000000000000000000000000000000000064")
+	code, err := client.CodeAt(ctx, arbSysAddr, nil)
+	if err != nil {
+		return false
+	}
+	return len(code) > 0
+}
+
+// deployReader4844Mock deploys a simple Reader4844 mock contract.
+// This mock returns dummy values for getBlobBaseFee and getDataHashes.
+// Used for testing on non-Arbitrum chains without real EIP-4844 support.
+func (d *InfrastructureDeployer) deployReader4844Mock(
+	ctx context.Context,
+	client *ethclient.Client,
+	gasPrice *big.Int,
+	chainID *big.Int,
+) (common.Address, error) {
+	// Reader4844 mock bytecode
+	// This is a minimal contract that implements IReader4844:
+	// - getBlobBaseFee() returns 1 gwei
+	// - getDataHashes() returns empty array
+	//
+	// Solidity source (compiled with solc 0.8.x):
+	// contract Reader4844Mock {
+	//     function getBlobBaseFee() external pure returns (uint256) { return 1000000000; }
+	//     function getDataHashes() external pure returns (bytes32[] memory) { return new bytes32[](0); }
+	// }
+	mockBytecode := common.FromHex("0x608060405234801561001057600080fd5b5060e98061001f6000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c806322c5a3ba146037578063e83a2d82146051575b600080fd5b603f633b9aca0081565b60405190815260200160405180910390f35b60576069565b60405160059190910b8152602001f35b606060806060830181019052908152906020015056fea264697066735822122000000000000000000000000000000000000000000000000000000000000000006473")
+
+	nonce, err := client.PendingNonceAt(ctx, d.signer.Address())
+	if err != nil {
+		return common.Address{}, fmt.Errorf("get nonce: %w", err)
+	}
+
+	// Estimate gas
+	gasLimit, err := client.EstimateGas(ctx, ethereum.CallMsg{
+		From:     d.signer.Address(),
+		To:       nil,
+		Gas:      0,
+		GasPrice: gasPrice,
+		Value:    big.NewInt(0),
+		Data:     mockBytecode,
+	})
+	if err != nil {
+		gasLimit = 200000 // Default for small contract
+	}
+	gasLimit = gasLimit * 120 / 100
+
+	tx := types.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, mockBytecode)
+	signedTx, err := d.signer.SignTransaction(ctx, tx)
+	if err != nil {
+		return common.Address{}, fmt.Errorf("sign: %w", err)
+	}
+
+	if err := client.SendTransaction(ctx, signedTx); err != nil {
+		return common.Address{}, fmt.Errorf("send: %w", err)
+	}
+
+	receipt, err := bind.WaitMined(ctx, client, signedTx)
+	if err != nil {
+		return common.Address{}, fmt.Errorf("wait: %w", err)
+	}
+
+	if receipt.Status != types.ReceiptStatusSuccessful {
+		return common.Address{}, fmt.Errorf("deployment reverted")
+	}
+
+	return receipt.ContractAddress, nil
 }
 
 // deployContract deploys a single contract and waits for confirmation.
