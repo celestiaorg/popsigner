@@ -480,7 +480,7 @@ func (d *InfrastructureDeployer) isArbitrumChain(ctx context.Context, client *et
 	return len(code) > 0
 }
 
-// deployReader4844 deploys the real Reader4844 contract.
+// deployReader4844 deploys the Reader4844 contract from artifacts.
 // Reader4844 is a Yul contract that wraps EIP-4844 opcodes (BLOBBASEFEE, BLOBHASH).
 // Requires the chain to support Cancun hardfork (EIP-4844).
 func (d *InfrastructureDeployer) deployReader4844(
@@ -489,12 +489,11 @@ func (d *InfrastructureDeployer) deployReader4844(
 	gasPrice *big.Int,
 	chainID *big.Int,
 ) (common.Address, error) {
-	// Real Reader4844 bytecode compiled from Yul with Foundry (Cancun EVM)
-	// Source: https://github.com/OffchainLabs/nitro-contracts/blob/main/yul/Reader4844.yul
-	// This contract calls:
-	// - BLOBBASEFEE opcode (0x4a) for getBlobBaseFee()
-	// - BLOBHASH opcode (0x49) for getDataHashes()
-	reader4844Bytecode := common.FromHex("0x605780600a5f395ff3fe346053575f3560e01c8063e83a2d8214602757631f6d6ef714601f575f80fd5b4a5f5260205ff35b5f5b804990811560415760019160408260051b0152016029565b60409060205f528060205260051b015ff35b5f80fd")
+	// Use Reader4844 bytecode from S3 artifacts
+	reader4844Bytecode, err := d.artifacts.Reader4844.GetBytecodeBytes()
+	if err != nil {
+		return common.Address{}, fmt.Errorf("get Reader4844 bytecode: %w", err)
+	}
 
 	nonce, err := client.PendingNonceAt(ctx, d.signer.Address())
 	if err != nil {

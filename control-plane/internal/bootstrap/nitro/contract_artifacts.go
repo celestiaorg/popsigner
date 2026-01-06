@@ -118,6 +118,9 @@ type NitroArtifacts struct {
 	// L2 Factory deployer
 	DeployHelper *ContractArtifact
 
+	// EIP-4844 blob reader (for L1 chains, wraps BLOBBASEFEE/BLOBHASH opcodes)
+	Reader4844 *ContractArtifact
+
 	// Version metadata
 	Version   string
 	LoadedAt  time.Time
@@ -255,6 +258,8 @@ func (d *ContractArtifactDownloader) parseZip(zipPath string) (*NitroArtifacts, 
 		"UpgradeExecutor",
 		"ValidatorWalletCreator",
 		"DeployHelper",
+		// EIP-4844 blob reader
+		"Reader4844",
 	}
 
 	// Build a set for quick lookup
@@ -343,6 +348,8 @@ func (d *ContractArtifactDownloader) parseZip(zipPath string) (*NitroArtifacts, 
 		UpgradeExecutor:        loaded["UpgradeExecutor"],
 		ValidatorWalletCreator: loaded["ValidatorWalletCreator"],
 		DeployHelper:           loaded["DeployHelper"],
+		// EIP-4844 blob reader
+		Reader4844: loaded["Reader4844"],
 	}, nil
 }
 
@@ -378,6 +385,8 @@ func LoadFromDirectory(dir string) (*NitroArtifacts, error) {
 	contracts["UpgradeExecutor"] = &artifacts.UpgradeExecutor
 	contracts["ValidatorWalletCreator"] = &artifacts.ValidatorWalletCreator
 	contracts["DeployHelper"] = &artifacts.DeployHelper
+	// EIP-4844 blob reader
+	contracts["Reader4844"] = &artifacts.Reader4844
 
 	var missing []string
 	for name, ptr := range contracts {
