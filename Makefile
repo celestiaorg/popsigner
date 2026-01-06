@@ -13,6 +13,7 @@ PLATFORM ?= linux/arm64
 # Image names (simplified for Scaleway)
 OPERATOR_IMAGE := $(REGISTRY)/operator:$(VERSION)
 CONTROL_PLANE_IMAGE := $(REGISTRY)/control-plane:$(VERSION)
+RPC_GATEWAY_IMAGE := $(REGISTRY)/rpc-gateway:$(VERSION)
 PLUGIN_IMAGE := $(REGISTRY)/secp256k1-plugin:$(VERSION)
 
 ##@ General
@@ -53,7 +54,7 @@ lint: ## Run linters
 docker-setup: ## Setup Docker buildx for cross-platform builds
 	docker buildx create --name banhbao-builder --use 2>/dev/null || docker buildx use banhbao-builder
 
-docker-build: docker-setup docker-build-operator docker-build-control-plane docker-build-plugin ## Build all Docker images (amd64)
+docker-build: docker-setup docker-build-operator docker-build-control-plane docker-build-rpc-gateway docker-build-plugin ## Build all Docker images
 
 docker-build-operator: ## Build operator image
 	docker buildx build --platform $(PLATFORM) -t $(OPERATOR_IMAGE) --load ./operator
@@ -61,12 +62,16 @@ docker-build-operator: ## Build operator image
 docker-build-control-plane: ## Build control-plane image
 	docker buildx build --platform $(PLATFORM) -t $(CONTROL_PLANE_IMAGE) --load -f ./control-plane/docker/Dockerfile ./control-plane
 
+docker-build-rpc-gateway: ## Build RPC gateway image
+	docker buildx build --platform $(PLATFORM) -t $(RPC_GATEWAY_IMAGE) --load -f ./control-plane/docker/Dockerfile.rpc-gateway ./control-plane
+
 docker-build-plugin: ## Build plugin image
 	docker buildx build --platform $(PLATFORM) -t $(PLUGIN_IMAGE) --load ./plugin
 
 docker-push: docker-setup ## Build and push all images to registry
 	docker buildx build --platform $(PLATFORM) -t $(OPERATOR_IMAGE) --push ./operator
 	docker buildx build --platform $(PLATFORM) -t $(CONTROL_PLANE_IMAGE) --push -f ./control-plane/docker/Dockerfile ./control-plane
+	docker buildx build --platform $(PLATFORM) -t $(RPC_GATEWAY_IMAGE) --push -f ./control-plane/docker/Dockerfile.rpc-gateway ./control-plane
 	docker buildx build --platform $(PLATFORM) -t $(PLUGIN_IMAGE) --push ./plugin
 
 ##@ Kind (Local K8s)
@@ -80,6 +85,7 @@ kind-delete: ## Delete kind cluster
 kind-load: docker-build ## Load images into kind
 	kind load docker-image $(OPERATOR_IMAGE) --name banhbaoring
 	kind load docker-image $(CONTROL_PLANE_IMAGE) --name banhbaoring
+	kind load docker-image $(RPC_GATEWAY_IMAGE) --name banhbaoring
 	kind load docker-image $(PLUGIN_IMAGE) --name banhbaoring
 
 ##@ Helm
@@ -125,5 +131,6 @@ release: docker-build docker-push ## Build and push release
 	@echo "Released $(VERSION)"
 	@echo "  - $(OPERATOR_IMAGE)"
 	@echo "  - $(CONTROL_PLANE_IMAGE)"
+	@echo "  - $(RPC_GATEWAY_IMAGE)"
 	@echo "  - $(PLUGIN_IMAGE)"
 

@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	RPCGatewayImage = "popsigner/rpc-gateway"
+	// RPCGatewayImage is the default RPC gateway image (Scaleway registry)
+	RPCGatewayImage = "rg.nl-ams.scw.cloud/banhbao/rpc-gateway"
 )
 
 // Deployment builds the RPC Gateway Deployment.

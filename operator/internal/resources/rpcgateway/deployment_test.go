@@ -51,7 +51,7 @@ func TestDeployment(t *testing.T) {
 	}
 
 	// Verify container image
-	expectedImage := "popsigner/rpc-gateway:1.0.0"
+	expectedImage := "rg.nl-ams.scw.cloud/banhbao/rpc-gateway:1.0.0"
 	if deployment.Spec.Template.Spec.Containers[0].Image != expectedImage {
 		t.Errorf("expected image %q, got %q", expectedImage, deployment.Spec.Template.Spec.Containers[0].Image)
 	}
@@ -120,7 +120,7 @@ func TestDeploymentDefaultVersion(t *testing.T) {
 	deployment := Deployment(cluster)
 
 	// Verify default version is used
-	expectedImage := "popsigner/rpc-gateway:" + constants.DefaultRPCGatewayVersion
+	expectedImage := "rg.nl-ams.scw.cloud/banhbao/rpc-gateway:" + constants.DefaultRPCGatewayVersion
 	if deployment.Spec.Template.Spec.Containers[0].Image != expectedImage {
 		t.Errorf("expected image %q, got %q", expectedImage, deployment.Spec.Template.Spec.Containers[0].Image)
 	}
