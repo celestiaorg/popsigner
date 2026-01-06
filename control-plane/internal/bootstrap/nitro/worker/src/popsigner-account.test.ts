@@ -18,7 +18,7 @@ jest.mock('https');
 
 // Test fixtures
 const TEST_ADDRESS = '0x742d35Cc6634C0532925a3b844Bc454b332';
-const TEST_ENDPOINT = 'https://rpc.popsigner.com:8546';
+const TEST_ENDPOINT = 'https://rpc-mtls.popsigner.com';
 
 const TEST_CLIENT_CERT = `-----BEGIN CERTIFICATE-----
 MIIBkTCB+wIJAKHBfpegZZMeMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
@@ -86,7 +86,7 @@ describe('createPOPSignerAccount', () => {
       expect(() =>
         createPOPSignerAccount({
           ...validConfig,
-          endpoint: 'http://rpc.popsigner.com:8546',
+          endpoint: 'http://rpc-mtls.popsigner.com',
         }),
       ).toThrow('POPSigner endpoint must use HTTPS for mTLS');
     });

@@ -36,7 +36,7 @@ const validConfig: NitroDeploymentConfig = {
   stakeToken: ZERO_ADDRESS,
   baseStake: '100000000000000000',
   dataAvailability: 'celestia',
-  popsignerEndpoint: 'https://rpc.popsigner.com:8546',
+  popsignerEndpoint: 'https://rpc-mtls.popsigner.com',
   clientCert: TEST_CLIENT_CERT,
   clientKey: TEST_CLIENT_KEY,
 };
@@ -169,7 +169,7 @@ describe('validateConfig', () => {
       expect(() =>
         validateConfig({
           ...validConfig,
-          popsignerEndpoint: 'http://rpc.popsigner.com:8546',
+          popsignerEndpoint: 'http://rpc-mtls.popsigner.com',
         }),
       ).toThrow('popsignerEndpoint must use HTTPS');
     });
@@ -198,7 +198,7 @@ describe('parseConfig', () => {
       stakeToken: ZERO_ADDRESS,
       baseStake: '100000000000000000',
       dataAvailability: 'celestia',
-      popsignerEndpoint: 'https://rpc.popsigner.com:8546',
+      popsignerEndpoint: 'https://rpc-mtls.popsigner.com',
       clientCert: TEST_CLIENT_CERT,
       clientKey: TEST_CLIENT_KEY,
     };

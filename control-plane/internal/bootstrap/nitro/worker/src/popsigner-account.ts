@@ -202,7 +202,7 @@ function toTransactionParams(
  * import fs from 'fs';
  *
  * const account = createPOPSignerAccount({
- *   endpoint: 'https://rpc.popsigner.com:8546',
+ *   endpoint: 'https://rpc-mtls.popsigner.com',
  *   address: '0x742d35Cc6634C0532925a3b844Bc9e7595f...',
  *   clientCert: fs.readFileSync('./certs/client.crt', 'utf-8'),
  *   clientKey: fs.readFileSync('./certs/client.key', 'utf-8'),

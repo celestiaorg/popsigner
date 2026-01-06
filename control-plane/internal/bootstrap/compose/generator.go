@@ -78,7 +78,7 @@ type ComposeConfig struct {
 	// ========================================
 
 	// POPSignerMTLSEndpoint is the POPSigner mTLS URL for certificate auth.
-	// Example: "https://mtls.popsigner.com:8546"
+	// Example: "https://rpc-mtls.popsigner.com"
 	POPSignerMTLSEndpoint string
 	// BatchPosterAddress is the Ethereum address for batch posting.
 	BatchPosterAddress string

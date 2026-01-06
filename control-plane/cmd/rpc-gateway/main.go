@@ -252,7 +252,7 @@ func createAPIKeyRouter(
 
 // createMTLSRouter creates the router for mTLS authentication (Port 8546).
 // Used by Arbitrum Nitro components (batch-poster, staker).
-// Endpoint: POST https://rpc.popsigner.com:8546/ with client certificate
+// Endpoint: POST https://rpc-mtls.popsigner.com/ with client certificate
 func createMTLSRouter(
 	certRepo repository.CertificateRepository,
 	redis *database.Redis,
@@ -277,7 +277,7 @@ func createMTLSRouter(
 	r.Get("/ready", readyHandler(db, redis))
 
 	// JSON-RPC endpoint at root with mTLS auth and rate limiting
-	// Nitro: --*.external-signer.url="https://rpc.popsigner.com:8546"
+	// Nitro: --*.external-signer.url="https://rpc-mtls.popsigner.com"
 	r.Group(func(r chi.Router) {
 		r.Use(auth.MTLSOnlyMiddleware(certRepo, logger))
 		r.Use(middleware.RPCRateLimit(redis, rateLimitCfg))

@@ -73,7 +73,7 @@ Config JSON format:
   "stakeToken": "0x0000000000000000000000000000000000000000",
   "baseStake": "100000000000000000",
   "dataAvailability": "celestia",  // optional, defaults to "celestia"
-  "popsignerEndpoint": "https://rpc.popsigner.com:8546",
+  "popsignerEndpoint": "https://rpc-mtls.popsigner.com",
   "clientCert": "-----BEGIN CERTIFICATE-----...",
   "clientKey": "-----BEGIN PRIVATE KEY-----..."
 }

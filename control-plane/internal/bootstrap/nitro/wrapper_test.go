@@ -139,7 +139,7 @@ func testConfig() *DeployConfig {
 		StakeToken:        "0x0000000000000000000000000000000000000000",
 		BaseStake:         "100000000000000000",
 		DataAvailability:  "celestia",
-		PopsignerEndpoint: "https://rpc.popsigner.com:8546",
+		PopsignerEndpoint: "https://rpc-mtls.popsigner.com",
 		ClientCert:        "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----",
 		ClientKey:         "-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----",
 	}
@@ -208,7 +208,7 @@ func TestDeployConfig_Serialization(t *testing.T) {
 		assert.Equal(t, "Test L3", parsed["chainName"])
 		assert.Equal(t, float64(421614), parsed["parentChainId"])
 		assert.Equal(t, "celestia", parsed["dataAvailability"])
-		assert.Equal(t, "https://rpc.popsigner.com:8546", parsed["popsignerEndpoint"])
+		assert.Equal(t, "https://rpc-mtls.popsigner.com", parsed["popsignerEndpoint"])
 	})
 
 	t.Run("omits empty optional fields", func(t *testing.T) {
@@ -219,7 +219,7 @@ func TestDeployConfig_Serialization(t *testing.T) {
 			ParentChainRpc:    "https://rpc.example.com",
 			Owner:             "0x123",
 			DataAvailability:  "celestia",
-			PopsignerEndpoint: "https://rpc.popsigner.com:8546",
+			PopsignerEndpoint: "https://rpc-mtls.popsigner.com",
 			ClientCert:        "cert",
 			ClientKey:         "key",
 			// NativeToken is empty - should be omitted
@@ -415,7 +415,7 @@ func TestBuildConfigFromDeployment(t *testing.T) {
 			"stakeToken":        "0x000",
 			"baseStake":         "100000000000000000",
 			"dataAvailability":  "anytrust",
-			"popsignerEndpoint": "https://rpc.popsigner.com:8546",
+			"popsignerEndpoint": "https://rpc-mtls.popsigner.com",
 		}
 
 		configJSON, err := json.Marshal(deploymentConfig)

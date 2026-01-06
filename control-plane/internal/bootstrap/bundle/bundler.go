@@ -143,7 +143,7 @@ func (b *Bundler) buildBundleConfig(deployment *repository.Deployment, artifacts
 	case StackOPStack:
 		cfg.POPSignerEndpoint = "https://rpc.popsigner.com"
 	case StackNitro:
-		cfg.POPSignerMTLSEndpoint = "https://mtls.popsigner.com:8546"
+		cfg.POPSignerMTLSEndpoint = "https://rpc-mtls.popsigner.com"
 	}
 
 	return cfg

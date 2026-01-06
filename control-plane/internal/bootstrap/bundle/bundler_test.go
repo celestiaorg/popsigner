@@ -179,7 +179,7 @@ func TestCreateNitroBundle(t *testing.T) {
 		ChainID:               42170,
 		ChainName:             "my-orbit-chain",
 		DAType:                "celestia",
-		POPSignerMTLSEndpoint: "https://mtls.popsigner.com:8546",
+		POPSignerMTLSEndpoint: "https://rpc-mtls.popsigner.com",
 		ValidatorAddress:      "0x4444444444444444444444444444444444444444",
 		Artifacts: map[string][]byte{
 			"chain_info":     []byte(`[{"chain-id": 42170}]`),
@@ -272,7 +272,7 @@ func TestNitroBundleWithoutCerts(t *testing.T) {
 		Stack:                 StackNitro,
 		ChainID:               42170,
 		ChainName:             "no-certs-chain",
-		POPSignerMTLSEndpoint: "https://mtls.popsigner.com:8546",
+		POPSignerMTLSEndpoint: "https://rpc-mtls.popsigner.com",
 		Artifacts: map[string][]byte{
 			"chain_info":  []byte(`[{"chain-id": 42170}]`),
 			"node_config": []byte(`{"parent-chain": {}}`),
@@ -321,7 +321,7 @@ func TestClientKeyPermissions(t *testing.T) {
 		Stack:                 StackNitro,
 		ChainID:               42170,
 		ChainName:             "perms-test",
-		POPSignerMTLSEndpoint: "https://mtls.popsigner.com:8546",
+		POPSignerMTLSEndpoint: "https://rpc-mtls.popsigner.com",
 		Artifacts:             map[string][]byte{},
 		ClientCert:            []byte("cert"),
 		ClientKey:             []byte("key"),
@@ -525,7 +525,7 @@ func TestNitroCelestiaDAIncluded(t *testing.T) {
 		ChainID:               42170,
 		ChainName:             "celestia-nitro",
 		DAType:                "celestia",
-		POPSignerMTLSEndpoint: "https://mtls.popsigner.com:8546",
+		POPSignerMTLSEndpoint: "https://rpc-mtls.popsigner.com",
 		Artifacts:             map[string][]byte{},
 	}
 

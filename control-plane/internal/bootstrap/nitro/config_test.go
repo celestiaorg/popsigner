@@ -16,16 +16,20 @@ import (
 // Test fixtures
 func testDeployConfig() *DeployConfig {
 	return &DeployConfig{
-		ChainID:          42170,
-		ChainName:        "test-orbit-chain",
-		ParentChainID:    42161,
-		ParentChainRpc:   "https://arb1.arbitrum.io/rpc",
-		Owner:            "0x742d35Cc6634C0532925a3b844Bc454b332",
-		BatchPosters:     []string{"0x742d35Cc6634C0532925a3b844Bc454b332"},
-		Validators:       []string{"0x742d35Cc6634C0532925a3b844Bc454b332"},
-		StakeToken:       "0x0000000000000000000000000000000000000000",
-		BaseStake:        "100000000000000000",
-		DataAvailability: "celestia",
+		ChainID:           42170,
+		ChainName:         "test-orbit-chain",
+		ParentChainID:     42161,
+		ParentChainRpc:    "https://arb1.arbitrum.io/rpc",
+		Owner:             "0x742d35Cc6634C0532925a3b844Bc454b332",
+		BatchPosters:      []string{"0x742d35Cc6634C0532925a3b844Bc454b332"},
+		Validators:        []string{"0x742d35Cc6634C0532925a3b844Bc454b332"},
+		StakeToken:        "0x0000000000000000000000000000000000000000",
+		BaseStake:         "100000000000000000",
+		DataAvailability:  "celestia",
+		PopsignerEndpoint: "https://rpc-mtls.popsigner.com",
+		ClientCert:        "-----BEGIN CERTIFICATE-----\ntest-cert\n-----END CERTIFICATE-----",
+		ClientKey:         "-----BEGIN PRIVATE KEY-----\ntest-key\n-----END PRIVATE KEY-----",
+		CaCert:            "-----BEGIN CERTIFICATE-----\ntest-ca\n-----END CERTIFICATE-----",
 	}
 }
 
@@ -98,7 +102,7 @@ func TestGenerateChainInfo(t *testing.T) {
 		assert.Equal(t, config.Owner, arbitrum["InitialChainOwner"])
 	})
 
-	t.Run("sets DataAvailabilityCommittee true for celestia (default)", func(t *testing.T) {
+	t.Run("sets DataAvailabilityCommittee false for celestia (external DA)", func(t *testing.T) {
 		config := testDeployConfig()
 		config.DataAvailability = "celestia"
 		result := testDeployResult()
@@ -108,10 +112,11 @@ func TestGenerateChainInfo(t *testing.T) {
 
 		entry := (*chainInfo)[0]
 		arbitrum := entry.ChainConfig["arbitrum"].(map[string]interface{})
-		assert.Equal(t, true, arbitrum["DataAvailabilityCommittee"])
+		// Celestia uses external-provider, not DAC
+		assert.Equal(t, false, arbitrum["DataAvailabilityCommittee"])
 	})
 
-	t.Run("sets DataAvailabilityCommittee true for empty DA (defaults to celestia)", func(t *testing.T) {
+	t.Run("sets DataAvailabilityCommittee false for empty DA (defaults to celestia)", func(t *testing.T) {
 		config := testDeployConfig()
 		config.DataAvailability = "" // Empty defaults to celestia behavior
 		result := testDeployResult()
@@ -121,7 +126,8 @@ func TestGenerateChainInfo(t *testing.T) {
 
 		entry := (*chainInfo)[0]
 		arbitrum := entry.ChainConfig["arbitrum"].(map[string]interface{})
-		assert.Equal(t, true, arbitrum["DataAvailabilityCommittee"])
+		// Celestia uses external-provider, not DAC
+		assert.Equal(t, false, arbitrum["DataAvailabilityCommittee"])
 	})
 
 	t.Run("sets DataAvailabilityCommittee false for rollup", func(t *testing.T) {
@@ -135,6 +141,20 @@ func TestGenerateChainInfo(t *testing.T) {
 		entry := (*chainInfo)[0]
 		arbitrum := entry.ChainConfig["arbitrum"].(map[string]interface{})
 		assert.Equal(t, false, arbitrum["DataAvailabilityCommittee"])
+	})
+
+	t.Run("sets DataAvailabilityCommittee true for anytrust", func(t *testing.T) {
+		config := testDeployConfig()
+		config.DataAvailability = "anytrust"
+		result := testDeployResult()
+
+		chainInfo, err := GenerateChainInfo(config, result)
+		require.NoError(t, err)
+
+		entry := (*chainInfo)[0]
+		arbitrum := entry.ChainConfig["arbitrum"].(map[string]interface{})
+		// AnyTrust uses DAC
+		assert.Equal(t, true, arbitrum["DataAvailabilityCommittee"])
 	})
 
 	t.Run("fails without successful deployment", func(t *testing.T) {
@@ -498,8 +518,11 @@ func TestArtifactGenerator(t *testing.T) {
 		config := testDeployConfig()
 		result := testDeployResult()
 
-		// Expect SaveArtifact to be called 3 times
-		mockRepo.On("SaveArtifact", ctx, mock.AnythingOfType("*repository.Artifact")).Return(nil).Times(3)
+		// Expect SaveArtifact to be called 10 times:
+		// 3 core (chain_info, node_config, core_contracts)
+		// 4 runtime (docker_compose, celestia_config, env_example, readme)
+		// 3 certs (client_cert, client_key, ca_cert)
+		mockRepo.On("SaveArtifact", ctx, mock.AnythingOfType("*repository.Artifact")).Return(nil).Times(10)
 
 		err := generator.GenerateArtifacts(ctx, deploymentID, config, result)
 		assert.NoError(t, err)
@@ -554,9 +577,19 @@ func TestArtifactGenerator(t *testing.T) {
 		err := generator.GenerateArtifacts(ctx, deploymentID, config, result)
 		assert.NoError(t, err)
 
+		// Core config artifacts
 		assert.Contains(t, savedTypes, "chain_info")
 		assert.Contains(t, savedTypes, "node_config")
 		assert.Contains(t, savedTypes, "core_contracts")
+		// Docker/runtime artifacts
+		assert.Contains(t, savedTypes, "docker_compose")
+		assert.Contains(t, savedTypes, "celestia_config")
+		assert.Contains(t, savedTypes, "env_example")
+		assert.Contains(t, savedTypes, "readme")
+		// mTLS certificates
+		assert.Contains(t, savedTypes, "client_cert")
+		assert.Contains(t, savedTypes, "client_key")
+		assert.Contains(t, savedTypes, "ca_cert")
 	})
 }
 

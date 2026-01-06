@@ -40,7 +40,7 @@ import (
 
 // Environment variables for Nitro integration tests.
 const (
-	envMTLSURL      = "POPSIGNER_MTLS_URL"       // e.g., https://rpc.popsigner.com:8546
+	envMTLSURL      = "POPSIGNER_MTLS_URL"       // e.g., https://rpc-mtls.popsigner.com
 	envCACert       = "POPSIGNER_CA_CERT"        // Path to CA certificate
 	envClientCert   = "POPSIGNER_CLIENT_CERT"    // Path to client certificate
 	envClientKey    = "POPSIGNER_CLIENT_KEY"     // Path to client private key

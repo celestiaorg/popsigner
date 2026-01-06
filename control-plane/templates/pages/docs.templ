@@ -882,7 +882,7 @@ func nitroBatchPosterExample() string {
 	return `# Nitro batch poster with POPSigner mTLS
 nitro \
   --node.batch-poster.enable=true \
-  --node.batch-poster.data-poster.external-signer.url="https://rpc.popsigner.com:8546" \
+  --node.batch-poster.data-poster.external-signer.url="https://rpc-mtls.popsigner.com" \
   --node.batch-poster.data-poster.external-signer.address="0x742d35Cc6634C0532925a3b844Bc454e4438f44e" \
   --node.batch-poster.data-poster.external-signer.method="eth_signTransaction" \
   --node.batch-poster.data-poster.external-signer.client-cert="/etc/nitro/certs/client.crt" \
@@ -894,7 +894,7 @@ func nitroStakerExample() string {
 	return `# Nitro staker with POPSigner mTLS
 nitro \
   --node.staker.enable=true \
-  --node.staker.data-poster.external-signer.url="https://rpc.popsigner.com:8546" \
+  --node.staker.data-poster.external-signer.url="https://rpc-mtls.popsigner.com" \
   --node.staker.data-poster.external-signer.address="0x9876543210abcdef..." \
   --node.staker.data-poster.external-signer.method="eth_signTransaction" \
   --node.staker.data-poster.external-signer.client-cert="/etc/nitro/certs/client.crt" \
@@ -913,8 +913,8 @@ func nitroArchitectureDiagram() string {
          │  (client.crt/key)     │
          ▼                       ▼
 ┌─────────────────────────────────────────┐
-│      POPSigner mTLS Gateway :8546       │
-│    https://rpc.popsigner.com:8546   │
+│      POPSigner mTLS Gateway             │
+│    https://rpc-mtls.popsigner.com   │
 ├─────────────────────────────────────────┤
 │  • mTLS Client Cert Authentication      │
 │  • Cert → Organization mapping          │

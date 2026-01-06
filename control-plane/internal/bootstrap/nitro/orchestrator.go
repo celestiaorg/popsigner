@@ -28,7 +28,7 @@ type OrchestratorConfig struct {
 	// WorkerPath is the path to the TypeScript nitro-deployer-worker directory
 	WorkerPath string
 
-	// POPSignerMTLSEndpoint is the mTLS endpoint for POPSigner (e.g., "https://rpc.popsigner.com:8546")
+	// POPSignerMTLSEndpoint is the mTLS endpoint for POPSigner (e.g., "https://rpc-mtls.popsigner.com")
 	POPSignerMTLSEndpoint string
 
 	// RetryAttempts for transient failures
@@ -67,7 +67,7 @@ func NewOrchestrator(
 		config.RetryDelay = 5 * time.Second
 	}
 	if config.POPSignerMTLSEndpoint == "" {
-		config.POPSignerMTLSEndpoint = "https://rpc.popsigner.com:8546"
+		config.POPSignerMTLSEndpoint = "https://rpc-mtls.popsigner.com"
 	}
 
 	// Initialize the deployer wrapper
@@ -128,6 +128,11 @@ func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onPro
 	// 3. Get mTLS certificates for POPSigner
 	var certs *CertificateBundle
 	if o.certProvider != nil {
+		o.logger.Info("using CertificateProvider to issue deployment certificate",
+			slog.String("deployment_id", deploymentID.String()),
+			slog.String("org_id", config.OrgID),
+		)
+
 		orgID, err := uuid.Parse(config.OrgID)
 		if err != nil {
 			return o.failDeployment(ctx, deploymentID, fmt.Errorf("invalid org_id: %w", err))
@@ -135,9 +140,22 @@ func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onPro
 
 		certs, err = o.certProvider.GetCertificates(ctx, orgID)
 		if err != nil {
+			o.logger.Error("failed to issue deployment certificate",
+				slog.String("deployment_id", deploymentID.String()),
+				slog.String("error", err.Error()),
+			)
 			return o.failDeployment(ctx, deploymentID, fmt.Errorf("get mTLS certificates: %w", err))
 		}
+
+		o.logger.Info("deployment certificate issued successfully",
+			slog.String("deployment_id", deploymentID.String()),
+			slog.Bool("has_cert", certs.ClientCert != ""),
+			slog.Bool("has_key", certs.ClientKey != ""),
+		)
 	} else {
+		o.logger.Warn("no CertificateProvider configured, using certs from config",
+			slog.String("deployment_id", deploymentID.String()),
+		)
 		// For testing or when certs are already in config
 		certs = &CertificateBundle{
 			ClientCert: config.ClientCert,
@@ -147,6 +165,12 @@ func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onPro
 	}
 
 	if certs.ClientCert == "" || certs.ClientKey == "" {
+		o.logger.Error("mTLS certificates missing",
+			slog.String("deployment_id", deploymentID.String()),
+			slog.Bool("has_cert", certs.ClientCert != ""),
+			slog.Bool("has_key", certs.ClientKey != ""),
+			slog.Bool("has_provider", o.certProvider != nil),
+		)
 		return o.failDeployment(ctx, deploymentID, fmt.Errorf("mTLS certificates not available"))
 	}
 

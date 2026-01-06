@@ -157,16 +157,26 @@ func main() {
 	// Initialize Nitro orchestrator for Orbit chain deployments
 	// Uses CertificateServiceProvider to auto-issue mTLS certs for each deployment
 	nitroCertProvider := nitro.NewCertificateServiceProvider(certSvc)
+
+	// Determine POPSigner mTLS endpoint for Nitro deployments
+	// mTLS endpoint for Nitro integration
+	// Uses dedicated hostname with passthrough LoadBalancer for client cert verification
+	nitroMTLSEndpoint := "https://rpc-mtls.popsigner.com"
+	if cfg.Server.Environment == "dev" {
+		// In dev k8s, use the mTLS LoadBalancer IP which is in the cert's SANs
+		nitroMTLSEndpoint = "https://51.15.112.44:8546"
+	}
+
 	nitroOrch := nitro.NewOrchestrator(
 		bootstrapRepo,
 		nitroCertProvider,
 		nitro.OrchestratorConfig{
 			Logger:                logger,
 			WorkerPath:            "internal/bootstrap/nitro/worker",
-			POPSignerMTLSEndpoint: "https://rpc.popsigner.com:8546",
+			POPSignerMTLSEndpoint: nitroMTLSEndpoint,
 		},
 	)
-	logger.Info("Nitro orchestrator initialized")
+	logger.Info("Nitro orchestrator initialized", slog.String("mtls_endpoint", nitroMTLSEndpoint))
 
 	// Initialize key resolver and API key manager for orchestrator
 	keyResolver := bootstraporchestrator.NewKeyServiceResolver(keySvc)
@@ -1461,7 +1471,7 @@ func settingsCertificatesCreateHandler(sessionRepo repository.SessionRepository,
 		if err != nil {
 			slog.Error("Failed to create certificate", slog.String("error", err.Error()))
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			pages.CertificateCreateError("Failed to create certificate: " + err.Error()).Render(r.Context(), w)
+			pages.CertificateCreateError("Failed to create certificate: "+err.Error()).Render(r.Context(), w)
 			return
 		}
 

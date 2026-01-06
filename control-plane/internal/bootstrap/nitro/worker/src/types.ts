@@ -13,7 +13,7 @@ import type { Address, Hex } from 'viem';
 export interface POPSignerConfig {
   /**
    * POPSigner RPC Gateway endpoint URL.
-   * Must be an HTTPS URL (e.g., "https://rpc.popsigner.com:8546").
+   * Must be an HTTPS URL (e.g., "https://rpc-mtls.popsigner.com").
    */
   endpoint: string;
 

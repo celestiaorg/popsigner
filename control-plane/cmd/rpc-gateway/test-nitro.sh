@@ -8,7 +8,7 @@
 #   ./test-nitro.sh <mtls_url> <ca_cert> <client_cert> <client_key> <signer_address> [chain_id]
 #
 # Example:
-#   ./test-nitro.sh https://rpc.popsigner.com:8546 \
+#   ./test-nitro.sh https://rpc-mtls.popsigner.com \
 #     /path/to/popsigner-ca.crt \
 #     /path/to/client.crt \
 #     /path/to/client.key \
@@ -16,7 +16,7 @@
 #     42161
 #
 # Using environment variables:
-#   POPSIGNER_MTLS_URL=https://rpc.popsigner.com:8546 \
+#   POPSIGNER_MTLS_URL=https://rpc-mtls.popsigner.com \
 #   POPSIGNER_CA_CERT=/path/to/popsigner-ca.crt \
 #   POPSIGNER_CLIENT_CERT=/path/to/client.crt \
 #   POPSIGNER_CLIENT_KEY=/path/to/client.key \

@@ -50,7 +50,7 @@ func TestNewOrchestrator(t *testing.T) {
 		orch := NewOrchestrator(mockRepo, nil, OrchestratorConfig{})
 
 		assert.NotNil(t, orch)
-		assert.Equal(t, "https://rpc.popsigner.com:8546", orch.config.POPSignerMTLSEndpoint)
+		assert.Equal(t, "https://rpc-mtls.popsigner.com", orch.config.POPSignerMTLSEndpoint)
 		assert.Equal(t, 3, orch.config.RetryAttempts)
 		assert.Equal(t, 5*time.Second, orch.config.RetryDelay)
 	})
