@@ -285,11 +285,8 @@ func (s *NitroSigner) doRPCCall(ctx context.Context, rpcReq nitroRPCRequest) (st
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
-	// Determine endpoint - append /rpc for mTLS endpoint
+	// Use endpoint as-is (both mTLS and API key endpoints expect POST to root /)
 	endpoint := s.config.Endpoint
-	if s.config.ClientCert != "" && !strings.HasSuffix(endpoint, "/rpc") {
-		endpoint = strings.TrimSuffix(endpoint, "/") + "/rpc"
-	}
 
 	// Create HTTP request
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(reqBody))
