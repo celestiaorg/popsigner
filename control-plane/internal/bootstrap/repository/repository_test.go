@@ -44,6 +44,14 @@ func (m *MockRepository) GetDeploymentByChainID(ctx context.Context, chainID int
 	return args.Get(0).(*Deployment), args.Error(1)
 }
 
+func (m *MockRepository) GetDeploymentByChainIDAndOrg(ctx context.Context, chainID int64, orgID uuid.UUID) (*Deployment, error) {
+	args := m.Called(ctx, chainID, orgID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*Deployment), args.Error(1)
+}
+
 func (m *MockRepository) UpdateDeploymentStatus(ctx context.Context, id uuid.UUID, status Status, stage *string) error {
 	args := m.Called(ctx, id, status, stage)
 	return args.Error(0)
@@ -75,8 +83,24 @@ func (m *MockRepository) ListAllDeployments(ctx context.Context) ([]*Deployment,
 	return args.Get(0).([]*Deployment), args.Error(1)
 }
 
-func (m *MockRepository) MarkStaleDeploymentsFailed(ctx context.Context, timeout time.Duration) (int, error) {
-	args := m.Called(ctx, timeout)
+func (m *MockRepository) ListDeploymentsByOrg(ctx context.Context, orgID uuid.UUID) ([]*Deployment, error) {
+	args := m.Called(ctx, orgID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*Deployment), args.Error(1)
+}
+
+func (m *MockRepository) ListDeploymentsByOrgAndStatus(ctx context.Context, orgID uuid.UUID, status Status) ([]*Deployment, error) {
+	args := m.Called(ctx, orgID, status)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]*Deployment), args.Error(1)
+}
+
+func (m *MockRepository) MarkStaleDeploymentsFailed(ctx context.Context, orgID uuid.UUID, timeout time.Duration) (int, error) {
+	args := m.Called(ctx, orgID, timeout)
 	return args.Int(0), args.Error(1)
 }
 

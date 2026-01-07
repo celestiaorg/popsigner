@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,6 +21,21 @@ import (
 // ArtifactVersion is the current version of the nitro-contracts artifacts.
 // Update this when uploading new artifacts to S3.
 const ArtifactVersion = "v3.2.0-beta.0"
+
+// ArtifactChecksums contains SHA256 hashes for each artifact version.
+// CRIT-020: These checksums are verified after download to ensure artifact integrity.
+// To calculate: sha256sum /path/to/downloaded/v3.2.0-beta.0.zip
+// Update this map when uploading new artifacts to S3.
+var ArtifactChecksums = map[string]string{
+	// Calculated: curl -skL "https://nitro-contracts.s3.nl-ams.scw.cloud/v3.2.0-beta.0.zip" | sha256sum
+	"v3.2.0-beta.0": "sha256:10f1c0eade0e1d9c51ddc9df04d96bca108f6794dc132139c3a1ae1024608b9c",
+	// Add previous versions for rollback support:
+	// "v3.1.0": "sha256:...",
+}
+
+// SkipChecksumVerification can be set to true in test environments to skip checksum verification.
+// WARNING: Never set this to true in production!
+var SkipChecksumVerification = false
 
 // ArtifactBaseURL is the base URL for Nitro contract artifact storage.
 const ArtifactBaseURL = "https://nitro-contracts.s3.nl-ams.scw.cloud"
@@ -145,7 +161,8 @@ func NewContractArtifactDownloader(cacheDir string) *ContractArtifactDownloader 
 
 // Download downloads and parses Nitro contract artifacts from S3.
 // Returns a NitroArtifacts struct with all contracts loaded.
-func (d *ContractArtifactDownloader) Download(ctx context.Context, url string) (*NitroArtifacts, error) {
+// The version parameter is used for checksum verification.
+func (d *ContractArtifactDownloader) Download(ctx context.Context, url string, version string) (*NitroArtifacts, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -161,22 +178,27 @@ func (d *ContractArtifactDownloader) Download(ctx context.Context, url string) (
 	}
 	defer os.Remove(zipPath)
 
+	// CRIT-020: Verify checksum BEFORE parsing to prevent use of tampered artifacts
+	if err := d.verifyChecksum(zipPath, version); err != nil {
+		return nil, fmt.Errorf("artifact integrity check failed: %w", err)
+	}
+
 	// Extract and parse artifacts
 	artifacts, err := d.parseZip(zipPath)
 	if err != nil {
 		return nil, fmt.Errorf("parse artifacts: %w", err)
 	}
 
-	artifacts.Version = ArtifactVersion
+	artifacts.Version = version
 	artifacts.LoadedAt = time.Now()
 	artifacts.SourceURL = url
 
 	return artifacts, nil
 }
 
-// DownloadDefault downloads artifacts from the default URL.
+// DownloadDefault downloads artifacts from the default URL and version.
 func (d *ContractArtifactDownloader) DownloadDefault(ctx context.Context) (*NitroArtifacts, error) {
-	return d.Download(ctx, ContractArtifactURL)
+	return d.Download(ctx, ContractArtifactURL, ArtifactVersion)
 }
 
 // downloadFile downloads a file from URL to the given path.
@@ -213,6 +235,38 @@ func (d *ContractArtifactDownloader) downloadFile(ctx context.Context, url, dest
 	if err := os.Rename(tmpPath, destPath); err != nil {
 		os.Remove(tmpPath)
 		return fmt.Errorf("rename temp file: %w", err)
+	}
+
+	return nil
+}
+
+// verifyChecksum calculates SHA256 of the downloaded file and compares with expected.
+// CRIT-020: This prevents use of tampered artifacts if S3 storage is compromised.
+func (d *ContractArtifactDownloader) verifyChecksum(filePath, version string) error {
+	// Allow skipping in test environments (but never in production)
+	if SkipChecksumVerification {
+		return nil
+	}
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("open file for checksum verification: %w", err)
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return fmt.Errorf("calculate checksum: %w", err)
+	}
+
+	actualHash := fmt.Sprintf("sha256:%x", h.Sum(nil))
+	expectedHash, ok := ArtifactChecksums[version]
+	if !ok {
+		return fmt.Errorf("SECURITY: no checksum registered for artifact version %s - refusing to use unverified artifacts", version)
+	}
+
+	if actualHash != expectedHash {
+		return fmt.Errorf("SECURITY: checksum mismatch for %s - expected %s, got %s - artifacts may be tampered", version, expectedHash, actualHash)
 	}
 
 	return nil

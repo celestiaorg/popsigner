@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -36,9 +37,8 @@ const ContractArtifactURL = ArtifactBaseURL + "/artifacts-op-node-v1.16.3-" + Ar
 // Update this map when uploading new artifacts to S3.
 var ArtifactChecksums = map[string]string{
 	// v27: Blueprint.sol fix
-	// TODO: Calculate and add the real SHA256 hash after uploading to S3:
-	//   sha256sum artifacts-op-node-v1.16.3-v27.tzst
-	"v27": "", // Empty string disables verification until hash is added
+	// Calculated: curl -skL "https://op-contracts.s3.nl-ams.scw.cloud/artifacts-op-node-v1.16.3-v27.tzst" | sha256sum
+	"v27": "363edcd70bc86f19c273b931fe906a68d8085a2649bcbabfe5c9050d282d6001",
 }
 
 // ContractArtifactDownloader handles downloading and extracting OP Stack contract artifacts.
@@ -89,7 +89,7 @@ func (d *ContractArtifactDownloader) DownloadWithVersion(ctx context.Context, ur
 	}
 	// Log the downloaded file size for debugging
 	if info, err := os.Stat(tzstPath); err == nil {
-		fmt.Printf("[DEBUG] Downloaded artifact size: %d bytes from %s\n", info.Size(), url)
+		slog.Debug("downloaded artifact", slog.Int64("size_bytes", info.Size()), slog.String("url", url))
 	}
 
 	// Verify artifact integrity before extraction
@@ -126,7 +126,7 @@ func (d *ContractArtifactDownloader) DownloadWithVersion(ctx context.Context, ur
 	nestedForgeDir := filepath.Join(forgeArtifactsDir, "forge-artifacts")
 	if info, err := os.Stat(nestedForgeDir); err == nil && info.IsDir() {
 		// Move contents from nested dir to parent
-		fmt.Printf("[DEBUG] Detected nested forge-artifacts, restructuring...\n")
+		slog.Debug("detected nested forge-artifacts, restructuring")
 		entries, _ := os.ReadDir(nestedForgeDir)
 		for _, e := range entries {
 			src := filepath.Join(nestedForgeDir, e.Name())
@@ -141,24 +141,24 @@ func (d *ContractArtifactDownloader) DownloadWithVersion(ctx context.Context, ur
 	if _, err := os.Stat(testPath); err != nil {
 		// List what we have for debugging
 		entries, _ := os.ReadDir(forgeArtifactsDir)
-		fmt.Printf("[DEBUG] forge-artifacts contents (first 10):\n")
+		slog.Debug("forge-artifacts contents", slog.Int("showing_first", 10))
 		for i, e := range entries {
 			if i >= 10 {
 				break
 			}
-			fmt.Printf("[DEBUG]   - %s\n", e.Name())
+			slog.Debug("artifact entry", slog.String("name", e.Name()))
 		}
 	}
 
 	// Debug: Check the actual bytecode in the extracted file
 	validatorPath := filepath.Join(forgeArtifactsDir, "OPContractsManagerStandardValidator.sol", "OPContractsManagerStandardValidator.json")
 	if data, err := os.ReadFile(validatorPath); err == nil {
-		fmt.Printf("[DEBUG] Extracted OPContractsManagerStandardValidator.json size: %d bytes\n", len(data))
+		slog.Debug("extracted validator contract", slog.Int("size_bytes", len(data)))
 		if len(data) > 200 {
-			fmt.Printf("[DEBUG] First 200 chars: %s\n", string(data[:200]))
+			slog.Debug("validator contract preview", slog.String("first_200", string(data[:min(200, len(data))])))
 		}
 	} else {
-		fmt.Printf("[DEBUG] Could not read validator file: %v\n", err)
+		slog.Debug("could not read validator file", slog.String("error", err.Error()))
 	}
 
 	return extractDir, nil
@@ -175,7 +175,7 @@ func (d *ContractArtifactDownloader) verifyChecksum(filePath, version string) er
 	// If checksum is empty, skip verification with a warning
 	// This allows rolling out new versions before checksums are calculated
 	if expectedHash == "" {
-		fmt.Printf("[WARN] No checksum configured for artifact version %s - skipping integrity verification\n", version)
+		slog.Warn("no checksum configured for artifact version, skipping integrity verification", slog.String("version", version))
 		return nil
 	}
 
@@ -198,7 +198,7 @@ func (d *ContractArtifactDownloader) verifyChecksum(filePath, version string) er
 		return fmt.Errorf("checksum mismatch: expected %s, got %s", expectedHash, actualHash)
 	}
 
-	fmt.Printf("[DEBUG] Artifact checksum verified: %s\n", actualHash)
+	slog.Debug("artifact checksum verified", slog.String("hash", actualHash))
 	return nil
 }
 
