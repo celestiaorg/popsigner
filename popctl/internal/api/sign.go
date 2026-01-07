@@ -47,3 +47,19 @@ func (c *Client) SignBatch(ctx context.Context, requests []SignRequest) (*BatchS
 	return &resp.Data, nil
 }
 
+// SignEVM signs an EVM transaction hash with the specified key.
+// The txHash should be the hash of the unsigned transaction (32 bytes).
+// Returns the signature in Ethereum format (v, r, s concatenated, 65 bytes).
+func (c *Client) SignEVM(ctx context.Context, keyID uuid.UUID, txHash []byte, chainID uint64) (*SignEVMResponse, error) {
+	body := map[string]interface{}{
+		"tx_hash":  fmt.Sprintf("0x%x", txHash),
+		"chain_id": chainID,
+	}
+
+	var resp signEVMResponseWrapper
+	if err := c.Post(ctx, fmt.Sprintf("/v1/keys/%s/sign-evm", keyID), body, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp.Data, nil
+}

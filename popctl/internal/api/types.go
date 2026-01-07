@@ -122,6 +122,14 @@ type BatchSignResponse struct {
 	Count      int               `json:"count"`
 }
 
+// SignEVMResponse is the response from signing an EVM transaction.
+type SignEVMResponse struct {
+	Signature  string `json:"signature"`  // hex-encoded signature with v, r, s
+	PublicKey  string `json:"public_key"` // hex-encoded public key
+	Address    string `json:"address"`    // Ethereum address
+	KeyVersion int    `json:"key_version"`
+}
+
 // CertificateStatus represents the status of a certificate.
 type CertificateStatus string
 
@@ -245,6 +253,10 @@ type signResponse struct {
 
 type batchSignResponseWrapper struct {
 	Data BatchSignResponse `json:"data"`
+}
+
+type signEVMResponseWrapper struct {
+	Data SignEVMResponse `json:"data"`
 }
 
 type certificateResponse struct {
