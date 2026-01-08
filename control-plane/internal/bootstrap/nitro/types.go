@@ -198,6 +198,8 @@ type RollupInfo struct {
 	Rollup                 string `json:"rollup"`
 	ValidatorWalletCreator string `json:"validator-wallet-creator,omitempty"`
 	DeployedAt             uint64 `json:"deployed-at"`
+	StakeToken             string `json:"stake-token,omitempty"`
+	NativeToken            string `json:"native-token,omitempty"`
 }
 
 // ============================================================================

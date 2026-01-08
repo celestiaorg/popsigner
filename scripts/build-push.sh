@@ -6,7 +6,7 @@ set -euo pipefail
 # Configuration
 REGISTRY="${REGISTRY:-rg.nl-ams.scw.cloud/banhbao}"
 VERSION="${VERSION:-latest}"
-PLATFORM="linux/amd64"
+PLATFORM="linux/arm64"
 
 echo "🔔 Building POPSigner images for $PLATFORM"
 echo "Registry: $REGISTRY"

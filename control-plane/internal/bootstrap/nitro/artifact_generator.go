@@ -162,6 +162,17 @@ func GenerateChainInfo(config *DeployConfig, result *DeployResult) (*ChainInfo, 
 
 	chainConfig := buildChainConfig(config)
 
+	// Get stake token - BOLD protocol requires this
+	stakeToken := config.StakeToken
+	if stakeToken == "" {
+		// Default to Sepolia WETH if not specified
+		if config.ParentChainID == 11155111 {
+			stakeToken = "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"
+		} else if config.ParentChainID == 1 {
+			stakeToken = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+		}
+	}
+
 	info := ChainInfo{
 		{
 			ChainID:       uint64(config.ChainID),
@@ -175,6 +186,8 @@ func GenerateChainInfo(config *DeployConfig, result *DeployResult) (*ChainInfo, 
 				Rollup:                 result.CoreContracts.Rollup,
 				ValidatorWalletCreator: result.CoreContracts.ValidatorWalletCreator,
 				DeployedAt:             uint64(result.CoreContracts.DeployedAtBlockNumber),
+				StakeToken:             stakeToken,
+				NativeToken:            result.CoreContracts.NativeToken,
 			},
 		},
 	}

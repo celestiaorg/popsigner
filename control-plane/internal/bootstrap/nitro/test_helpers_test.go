@@ -97,8 +97,8 @@ func (m *MockRepository) ListDeploymentsByOrgAndStatus(ctx context.Context, orgI
 	return args.Get(0).([]*repository.Deployment), args.Error(1)
 }
 
-func (m *MockRepository) MarkStaleDeploymentsFailed(ctx context.Context, timeout time.Duration) (int, error) {
-	args := m.Called(ctx, timeout)
+func (m *MockRepository) MarkStaleDeploymentsFailed(ctx context.Context, orgID uuid.UUID, timeout time.Duration) (int, error) {
+	args := m.Called(ctx, orgID, timeout)
 	return args.Int(0), args.Error(1)
 }
 

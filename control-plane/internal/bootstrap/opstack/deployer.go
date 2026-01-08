@@ -29,14 +29,16 @@ import (
 // It manages the deployment pipeline stages and integrates with POPSigner for
 // transaction signing.
 type OPDeployer struct {
-	logger   *slog.Logger
-	cacheDir string
+	logger      *slog.Logger
+	cacheDir    string
+	infraMgr    *InfrastructureManager
 }
 
 // OPDeployerConfig contains configuration for the OPDeployer.
 type OPDeployerConfig struct {
-	Logger   *slog.Logger
-	CacheDir string // Directory for caching downloaded artifacts
+	Logger                 *slog.Logger
+	CacheDir               string                    // Directory for caching downloaded artifacts
+	InfrastructureManager  *InfrastructureManager    // Optional: for infrastructure reuse
 }
 
 // NewOPDeployer creates a new OPDeployer instance.
@@ -54,6 +56,7 @@ func NewOPDeployer(cfg OPDeployerConfig) *OPDeployer {
 	return &OPDeployer{
 		logger:   logger,
 		cacheDir: cacheDir,
+		infraMgr: cfg.InfrastructureManager,
 	}
 }
 
@@ -70,6 +73,12 @@ type DeployResult struct {
 
 	// ChainStates contains state for each deployed chain
 	ChainStates []*state.ChainState
+
+	// InfrastructureReused indicates if existing infrastructure was used
+	InfrastructureReused bool
+
+	// Create2Salt used for this deployment
+	Create2Salt common.Hash
 }
 
 // DeployerProgressCallback reports deployment progress from the deployer.
@@ -80,33 +89,75 @@ type DeployerProgressCallback func(stage string, progress float64, message strin
 // It runs all pipeline stages: Init, DeploySuperchain, DeployImplementations,
 // DeployOPChain, and GenerateL2Genesis.
 //
-// IMPORTANT: Each deployment is ISOLATED with its own OPCM, blueprints, and infrastructure.
-// The CREATE2 salt is derived from chainName + chainID + artifactVersion.
+// Behavior depends on ReuseInfrastructure in config:
+// - false: ISOLATED deployment with fresh OPCM, blueprints, infrastructure
+// - true: Reuses existing infrastructure (~10x cheaper, faster)
+//
+// For isolated deployments, CREATE2 salt = hash(chainName + chainID + artifactVersion).
 func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAdapter *POPSignerAdapter, onProgress DeployerProgressCallback) (*DeployResult, error) {
 	// Calculate salt upfront for logging
 	salt := GetDeploymentSalt(cfg.ChainName, cfg.ChainID)
+	infraReused := false
 
-	d.logger.Info("starting ISOLATED OP Stack deployment via op-deployer",
+	// Check for infrastructure reuse
+	if cfg.ReuseInfrastructure && d.infraMgr != nil {
+		existingInfra, err := d.infraMgr.GetExistingInfrastructure(ctx, cfg.L1ChainID, ArtifactVersion)
+		if err != nil {
+			d.logger.Warn("failed to check for existing infrastructure, proceeding with fresh deployment",
+				slog.String("error", err.Error()),
+			)
+		} else if existingInfra != nil {
+			// Populate config with existing infrastructure addresses
+			d.infraMgr.PopulateConfigFromInfra(cfg, existingInfra)
+			// Use the same salt as the existing infrastructure for consistency
+			salt = existingInfra.Create2Salt
+			infraReused = true
+			d.logger.Info("reusing existing OP Stack infrastructure",
+				slog.Uint64("l1_chain_id", cfg.L1ChainID),
+				slog.String("opcm_address", cfg.ExistingOPCMAddress),
+				slog.String("version", existingInfra.Version),
+			)
+		}
+	}
+
+	deployMode := "ISOLATED"
+	if infraReused {
+		deployMode = "REUSE"
+	}
+
+	d.logger.Info(fmt.Sprintf("starting %s OP Stack deployment via op-deployer", deployMode),
 		slog.String("chain_name", cfg.ChainName),
 		slog.Uint64("chain_id", cfg.ChainID),
 		slog.Uint64("l1_chain_id", cfg.L1ChainID),
 		slog.String("artifact_version", ArtifactVersion),
 		slog.String("create2_salt", salt.Hex()),
 		slog.String("deployer", cfg.DeployerAddress),
+		slog.Bool("reusing_infrastructure", infraReused),
 	)
 
-	// 1. Build the Intent from our config (includes unique salt for isolation)
+	// 1. Build the Intent from our config (optionally with OPCM address for reuse)
 	intent, err := BuildIntent(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("build intent: %w", err)
 	}
 
-	// 2. Initialize state with unique salt for ISOLATED deployment
-	st := BuildState(cfg.ChainName, cfg.ChainID)
+	// 2. Initialize state with the appropriate salt
+	var st *state.State
+	if infraReused {
+		// For reuse, use a unique salt for this chain (not the infra salt)
+		chainSalt := GetDeploymentSalt(cfg.ChainName, cfg.ChainID)
+		st = &state.State{
+			Version:     1,
+			Create2Salt: chainSalt,
+		}
+	} else {
+		st = BuildState(cfg.ChainName, cfg.ChainID)
+	}
 
-	d.logger.Info("intent and state built with isolation salt",
+	d.logger.Info("intent and state built",
 		slog.String("create2_salt", st.Create2Salt.Hex()),
 		slog.Bool("opcmAddress_is_nil", intent.OPCMAddress == nil),
+		slog.Bool("reusing_infrastructure", infraReused),
 	)
 
 	// 3. Connect to L1
@@ -391,16 +442,36 @@ func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAd
 	// 10. Store the applied intent
 	st.AppliedIntent = intent
 
-	d.logger.Info("OP Stack deployment completed successfully",
-		slog.Int("chains_deployed", len(st.Chains)),
-	)
-
-	return &DeployResult{
+	result := &DeployResult{
 		State:                    st,
 		SuperchainContracts:      st.SuperchainDeployment,
 		ImplementationsContracts: st.ImplementationsDeployment,
 		ChainStates:              st.Chains,
-	}, nil
+		InfrastructureReused:     infraReused,
+		Create2Salt:              st.Create2Salt,
+	}
+
+	// 11. Save infrastructure for future reuse (only on first deployment)
+	if !infraReused && d.infraMgr != nil {
+		if err := d.infraMgr.SaveInfrastructure(ctx, cfg.L1ChainID, result, st.Create2Salt, nil); err != nil {
+			d.logger.Warn("failed to save infrastructure for reuse",
+				slog.String("error", err.Error()),
+			)
+			// Don't fail the deployment, just log the warning
+		} else {
+			d.logger.Info("infrastructure saved for future reuse",
+				slog.Uint64("l1_chain_id", cfg.L1ChainID),
+				slog.String("version", ArtifactVersion),
+			)
+		}
+	}
+
+	d.logger.Info("OP Stack deployment completed successfully",
+		slog.Int("chains_deployed", len(st.Chains)),
+		slog.Bool("infrastructure_reused", infraReused),
+	)
+
+	return result, nil
 }
 
 // stateWriter returns a pipeline.StateWriter that updates the given state.

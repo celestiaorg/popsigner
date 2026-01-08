@@ -63,9 +63,11 @@ func GenerateDeploymentSalt(chainName string, chainID uint64, artifactVersion st
 // BuildIntent creates an op-deployer Intent from our DeploymentConfig.
 // The Intent is the primary input to the op-deployer pipeline stages.
 //
-// IMPORTANT: Each deployment gets ISOLATED infrastructure (own OPCM, blueprints, etc.)
-// using a unique CREATE2 salt based on chainName + chainID + artifactVersion.
-// This prevents reusing contracts from previous deployments.
+// Behavior depends on ReuseInfrastructure flag:
+// - false (default): ISOLATED deployment - deploys fresh OPCM, blueprints, superchain contracts
+// - true: REUSE mode - uses existing infrastructure to save gas (~10x cheaper)
+//
+// When reusing, set ExistingOPCMAddress and ExistingSuperchainConfigAddress in config.
 func BuildIntent(cfg *DeploymentConfig) (*state.Intent, error) {
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
@@ -119,18 +121,23 @@ func BuildIntent(cfg *DeploymentConfig) (*state.Intent, error) {
 		Challenger:                parseAddressOrDefault(cfg.ChallengerAddress, deployerAddr),
 	}
 
-	// Create ISOLATED intent - each chain gets its own infrastructure
-	// - OPCMAddress is nil = deploy fresh OPCM (don't reuse existing)
-	// - The caller must set Create2Salt on state.State (not Intent)
+	// Create intent - behavior depends on ReuseInfrastructure flag
 	intent := &state.Intent{
 		ConfigType:      state.IntentTypeCustom,
 		L1ChainID:       cfg.L1ChainID,
 		FundDevAccounts: false, // Production deployments don't fund dev accounts
 		SuperchainRoles: superchainRoles,
-		// OPCMAddress: nil = deploy new OPCM (CRITICAL for isolation!)
 		// L1ContractsLocator and L2ContractsLocator set by deployer
 		Chains: []*state.ChainIntent{chainIntent},
 	}
+
+	// Configure OPCM address for infrastructure reuse
+	if cfg.ReuseInfrastructure && cfg.ExistingOPCMAddress != "" {
+		opcmAddr := common.HexToAddress(cfg.ExistingOPCMAddress)
+		intent.OPCMAddress = &opcmAddr
+	}
+	// If ReuseInfrastructure is true but ExistingOPCMAddress is empty,
+	// the caller (OPDeployer) should look it up from the database
 
 	return intent, nil
 }

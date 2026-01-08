@@ -49,6 +49,19 @@ type DeploymentConfig struct {
 
 	// Funding (optional - for funding check)
 	RequiredFundingWei *big.Int `json:"-"` // Not serialized, set programmatically
+
+	// Infrastructure reuse options
+	// When ReuseInfrastructure is true, the deployer will look for existing OPCM
+	// and superchain contracts on the L1 chain and reuse them instead of deploying new ones.
+	// This saves significant gas costs (~10x) for subsequent L2 deployments.
+	ReuseInfrastructure bool `json:"reuse_infrastructure,omitempty"`
+
+	// ExistingOPCMAddress allows specifying a known OPCM address to use.
+	// If empty and ReuseInfrastructure is true, we'll look up the address from the database.
+	ExistingOPCMAddress string `json:"existing_opcm_address,omitempty"`
+
+	// ExistingSuperchainConfigAddress is the superchain config to join (if reusing)
+	ExistingSuperchainConfigAddress string `json:"existing_superchain_config_address,omitempty"`
 }
 
 // Validate checks that required fields are set and values are valid.
