@@ -34,6 +34,7 @@ type DeploymentConfig struct {
 	// when they download the docker-compose bundle
 	CelestiaRPC       string `json:"celestia_rpc,omitempty"`       // Optional: Celestia RPC endpoint
 	CelestiaNamespace string `json:"celestia_namespace,omitempty"` // Celestia namespace (hex, auto-generated if empty)
+	CelestiaKeyID     string `json:"celestia_key_id,omitempty"`    // POPSigner Celestia key UUID
 
 	// Fee recipients
 	BaseFeeVaultRecipient      string `json:"base_fee_vault_recipient,omitempty"`
