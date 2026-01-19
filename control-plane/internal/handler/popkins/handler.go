@@ -1176,6 +1176,9 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 			// op-alt-da config for Celestia DA
 			path = bundlePrefix + "config.toml"
 			isPlainText = true
+		case "anvil-state.json":
+			// Pre-deployed L1 state for POPKins Bundle
+			path = bundlePrefix + "anvil-state.json"
 		case "README.md":
 			path = bundlePrefix + "README.md"
 			isPlainText = true
