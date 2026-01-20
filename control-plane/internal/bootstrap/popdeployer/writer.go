@@ -353,7 +353,7 @@ services:
   # OP-ALT-DA - Celestia DA Server
   # =============================================================
   op-alt-da:
-    image: ghcr.io/celestiaorg/op-alt-da:v0.10.0
+    image: rg.nl-ams.scw.cloud/banhbao/op-alt-da:v0.10.1
     restart: unless-stopped
     depends_on:
       localestia:
