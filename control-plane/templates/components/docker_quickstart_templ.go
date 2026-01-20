@@ -8,7 +8,7 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-// DockerQuickstart renders the 4-step Docker Compose quickstart guide
+// DockerQuickstart renders the 3-step Docker Compose quickstart guide
 func DockerQuickstart(deploymentID, chainName, stack string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -30,54 +30,76 @@ func DockerQuickstart(deploymentID, chainName, stack string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"space-y-4\" x-data=\"{ copied: '' }\"><!-- Step 1: Download -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"space-y-4\" x-data=\"{ copied: '' }\"><!-- Step 1: Download --><div class=\"border-l-2 border-[#333300] pl-4 hover:border-[#FFB000] transition-colors\"><div class=\"text-[#FFB000] text-sm font-bold mb-1 uppercase\">STEP 1: DOWNLOAD</div><p class=\"text-[#33FF00] text-sm mb-2\">Click the \"DOWNLOAD BUNDLE\" button below</p><p class=\"text-[#444] text-xs\">Then extract: <code class=\"text-[#33FF00]\">unzip ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = dockerStep("1", "Download", getDownloadCommand(deploymentID, chainName), "Download the artifact bundle with all configs").Render(ctx, templ_7745c5c3_Buffer)
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(chainName)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 12, Col: 94}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<!-- Step 2: Configure -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "-pop-bundle.zip</code></p></div><!-- Step 2: Configure (only for opstack/nitro, not pop-bundle) -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = dockerStep("2", "Configure", getConfigureCommand(chainName), "Set your L1 RPC URL and credentials").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Step 3: Run -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = dockerStep("3", "Run", "docker compose up -d", "Start all services in background").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<!-- Step 4: Verify -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = dockerStep("4", "Verify", "./scripts/healthcheck.sh", "Check all services are healthy").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<!-- What's Included --><div class=\"mt-6 pt-4 border-t border-[#222]\"><div class=\"text-[#666600] text-xs uppercase mb-3\">Bundle includes:</div><ul class=\"text-[#999] text-sm space-y-1\"><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> docker-compose.yml (ready to run)</li><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> .env.example (environment template)</li>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if stack == "opstack" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> genesis.json, rollup.json, addresses.json</li><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> JWT secret for op-node auth</li>")
+		if stack == "opstack" || stack == "nitro" {
+			templ_7745c5c3_Err = dockerStep("2", "Configure", getConfigureCommand(chainName), "Set your L1 RPC URL and credentials").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = dockerStep("3", "Run", "docker compose up -d", "Start all services in background").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> chain-info.json, node-config.json</li><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> mTLS certificates (./certs/)</li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<!-- pop-bundle is ready to run, no config needed --> <div class=\"border-l-2 border-[#333300] pl-4 hover:border-[#FFB000] transition-colors\"><div class=\"text-[#FFB000] text-sm font-bold mb-1 uppercase\">STEP 2: RUN</div><div class=\"bg-[#0a0a00] p-3 font-mono text-sm text-[#33FF00] relative group cursor-pointer border border-transparent hover:border-[#333300] transition-colors\" x-data=\"{ justCopied: false }\" @click=\"navigator.clipboard.writeText($refs.code.textContent); justCopied = true; setTimeout(() => justCopied = false, 2000)\"><code x-ref=\"code\" class=\"block pr-8 break-all\">cd ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(chainName)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 30, Col: 67}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "-pop-bundle && docker compose up -d</code> <button class=\"absolute right-2 top-2 text-[#444] hover:text-[#33FF00] opacity-0 group-hover:opacity-100 transition-all\" :class=\"{ 'text-[#33FF00]': justCopied }\"><span x-show=\"!justCopied\">📋</span> <span x-show=\"justCopied\" x-cloak>✓</span></button></div><p class=\"text-[#444] text-xs mt-1\">No configuration needed - everything is pre-configured!</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> Health check scripts</li></ul></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!-- What's Included --><div class=\"mt-6 pt-4 border-t border-[#222]\"><div class=\"text-[#666600] text-xs uppercase mb-3\">Bundle includes:</div><ul class=\"text-[#999] text-sm space-y-1\"><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> docker-compose.yml (ready to run)</li><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> .env.example (environment template)</li>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if stack == "pop-bundle" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> genesis.json, rollup.json, addresses.json</li><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> anvil-state.json (pre-deployed L1 contracts)</li><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> config.toml (Celestia DA), jwt.txt, l1-chain-config.json</li>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else if stack == "opstack" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> genesis.json, rollup.json, addresses.json</li><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> JWT secret for op-node auth</li>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> chain-info.json, node-config.json</li><li class=\"flex items-center gap-2\"><span class=\"text-[#33FF00]\">✓</span> mTLS certificates (./certs/)</li>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</ul></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -102,64 +124,64 @@ func dockerStep(stepNum, title, command, description string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var2 == nil {
-			templ_7745c5c3_Var2 = templ.NopComponent
+		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var4 == nil {
+			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"border-l-2 border-[#333300] pl-4 hover:border-[#FFB000] transition-colors\"><div class=\"text-[#FFB000] text-sm font-bold mb-1 uppercase\">STEP ")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(stepNum)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 62, Col: 17}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, ": ")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 62, Col: 28}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div><div class=\"bg-[#0a0a00] p-3 font-mono text-sm text-[#33FF00] relative group cursor-pointer border border-transparent hover:border-[#333300] transition-colors\" x-data=\"{ justCopied: false }\" @click=\"navigator.clipboard.writeText($refs.code.textContent); justCopied = true; setTimeout(() => justCopied = false, 2000)\"><code x-ref=\"code\" class=\"block pr-8 break-all\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"border-l-2 border-[#333300] pl-4 hover:border-[#FFB000] transition-colors\"><div class=\"text-[#FFB000] text-sm font-bold mb-1 uppercase\">STEP ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(command)
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(stepNum)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 69, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 96, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</code> <button class=\"absolute right-2 top-2 text-[#444] hover:text-[#33FF00] opacity-0 group-hover:opacity-100 transition-all\" :class=\"{ 'text-[#33FF00]': justCopied }\"><span x-show=\"!justCopied\">📋</span> <span x-show=\"justCopied\" x-cloak>✓</span></button></div><p class=\"text-[#444] text-xs mt-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, ": ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(description)
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 78, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 96, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div><div class=\"bg-[#0a0a00] p-3 font-mono text-sm text-[#33FF00] relative group cursor-pointer border border-transparent hover:border-[#333300] transition-colors\" x-data=\"{ justCopied: false }\" @click=\"navigator.clipboard.writeText($refs.code.textContent); justCopied = true; setTimeout(() => justCopied = false, 2000)\"><code x-ref=\"code\" class=\"block pr-8 break-all\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(command)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 103, Col: 60}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</code> <button class=\"absolute right-2 top-2 text-[#444] hover:text-[#33FF00] opacity-0 group-hover:opacity-100 transition-all\" :class=\"{ 'text-[#33FF00]': justCopied }\"><span x-show=\"!justCopied\">📋</span> <span x-show=\"justCopied\" x-cloak>✓</span></button></div><p class=\"text-[#444] text-xs mt-1\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(description)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 112, Col: 51}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -167,11 +189,7 @@ func dockerStep(stepNum, title, command, description string) templ.Component {
 	})
 }
 
-// Helper functions to generate commands
-func getDownloadCommand(deploymentID, chainName string) string {
-	return "popctl bootstrap artifacts " + deploymentID + " -o ./" + chainName + "/"
-}
-
+// Helper function to generate configure command
 func getConfigureCommand(chainName string) string {
 	return "cd " + chainName + " && cp .env.example .env && vim .env"
 }

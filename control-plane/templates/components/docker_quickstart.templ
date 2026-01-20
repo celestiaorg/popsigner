@@ -1,19 +1,44 @@
 package components
 
-// DockerQuickstart renders the 4-step Docker Compose quickstart guide
+// DockerQuickstart renders the 3-step Docker Compose quickstart guide
 templ DockerQuickstart(deploymentID, chainName, stack string) {
 	<div class="space-y-4" x-data="{ copied: '' }">
 		<!-- Step 1: Download -->
-		@dockerStep("1", "Download", getDownloadCommand(deploymentID, chainName), "Download the artifact bundle with all configs")
+		<div class="border-l-2 border-[#333300] pl-4 hover:border-[#FFB000] transition-colors">
+			<div class="text-[#FFB000] text-sm font-bold mb-1 uppercase">
+				STEP 1: DOWNLOAD
+			</div>
+			<p class="text-[#33FF00] text-sm mb-2">Click the "DOWNLOAD BUNDLE" button below</p>
+			<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">unzip { chainName }-pop-bundle.zip</code></p>
+		</div>
 
-		<!-- Step 2: Configure -->
-		@dockerStep("2", "Configure", getConfigureCommand(chainName), "Set your L1 RPC URL and credentials")
-
-		<!-- Step 3: Run -->
-		@dockerStep("3", "Run", "docker compose up -d", "Start all services in background")
-
-		<!-- Step 4: Verify -->
-		@dockerStep("4", "Verify", "./scripts/healthcheck.sh", "Check all services are healthy")
+		<!-- Step 2: Configure (only for opstack/nitro, not pop-bundle) -->
+		if stack == "opstack" || stack == "nitro" {
+			@dockerStep("2", "Configure", getConfigureCommand(chainName), "Set your L1 RPC URL and credentials")
+			@dockerStep("3", "Run", "docker compose up -d", "Start all services in background")
+		} else {
+			<!-- pop-bundle is ready to run, no config needed -->
+			<div class="border-l-2 border-[#333300] pl-4 hover:border-[#FFB000] transition-colors">
+				<div class="text-[#FFB000] text-sm font-bold mb-1 uppercase">
+					STEP 2: RUN
+				</div>
+				<div
+					class="bg-[#0a0a00] p-3 font-mono text-sm text-[#33FF00] relative group cursor-pointer border border-transparent hover:border-[#333300] transition-colors"
+					x-data="{ justCopied: false }"
+					@click="navigator.clipboard.writeText($refs.code.textContent); justCopied = true; setTimeout(() => justCopied = false, 2000)"
+				>
+					<code x-ref="code" class="block pr-8 break-all">cd { chainName }-pop-bundle && docker compose up -d</code>
+					<button
+						class="absolute right-2 top-2 text-[#444] hover:text-[#33FF00] opacity-0 group-hover:opacity-100 transition-all"
+						:class="{ 'text-[#33FF00]': justCopied }"
+					>
+						<span x-show="!justCopied">📋</span>
+						<span x-show="justCopied" x-cloak>✓</span>
+					</button>
+				</div>
+				<p class="text-[#444] text-xs mt-1">No configuration needed - everything is pre-configured!</p>
+			</div>
+		}
 
 		<!-- What's Included -->
 		<div class="mt-6 pt-4 border-t border-[#222]">
@@ -27,7 +52,20 @@ templ DockerQuickstart(deploymentID, chainName, stack string) {
 					<span class="text-[#33FF00]">✓</span>
 					.env.example (environment template)
 				</li>
-				if stack == "opstack" {
+				if stack == "pop-bundle" {
+					<li class="flex items-center gap-2">
+						<span class="text-[#33FF00]">✓</span>
+						genesis.json, rollup.json, addresses.json
+					</li>
+					<li class="flex items-center gap-2">
+						<span class="text-[#33FF00]">✓</span>
+						anvil-state.json (pre-deployed L1 contracts)
+					</li>
+					<li class="flex items-center gap-2">
+						<span class="text-[#33FF00]">✓</span>
+						config.toml (Celestia DA), jwt.txt, l1-chain-config.json
+					</li>
+				} else if stack == "opstack" {
 					<li class="flex items-center gap-2">
 						<span class="text-[#33FF00]">✓</span>
 						genesis.json, rollup.json, addresses.json
@@ -46,10 +84,6 @@ templ DockerQuickstart(deploymentID, chainName, stack string) {
 						mTLS certificates (./certs/)
 					</li>
 				}
-				<li class="flex items-center gap-2">
-					<span class="text-[#33FF00]">✓</span>
-					Health check scripts
-				</li>
 			</ul>
 		</div>
 	</div>
@@ -79,11 +113,7 @@ templ dockerStep(stepNum, title, command, description string) {
 	</div>
 }
 
-// Helper functions to generate commands
-func getDownloadCommand(deploymentID, chainName string) string {
-	return "popctl bootstrap artifacts " + deploymentID + " -o ./" + chainName + "/"
-}
-
+// Helper function to generate configure command
 func getConfigureCommand(chainName string) string {
 	return "cd " + chainName + " && cp .env.example .env && vim .env"
 }

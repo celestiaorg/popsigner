@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/a-h/templ"
@@ -399,8 +400,18 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.deployRepo.CreateDeployment(r.Context(), deployment); err != nil {
-		slog.Error("failed to create deployment", "error", err)
-		http.Redirect(w, r, buildErrorRedirect(4, "Failed to create deployment - please try again"), http.StatusFound)
+		slog.Error("failed to create deployment", "error", err, "chain_id", chainID, "stack", stack)
+		// Provide more specific error messages based on the error
+		errMsg := "Failed to create deployment"
+		errStr := err.Error()
+		if strings.Contains(errStr, "unique") || strings.Contains(errStr, "duplicate") || strings.Contains(errStr, "violates unique constraint") {
+			errMsg = fmt.Sprintf("Chain ID %d already exists - please use a different chain ID", chainID)
+		} else if strings.Contains(errStr, "invalid input value for enum") {
+			errMsg = fmt.Sprintf("Stack type '%s' is not supported - database migration may be needed", stack)
+		} else {
+			errMsg = fmt.Sprintf("Database error: %s", errStr)
+		}
+		http.Redirect(w, r, buildErrorRedirect(4, errMsg), http.StatusFound)
 		return
 	}
 
