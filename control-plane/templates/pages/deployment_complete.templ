@@ -118,8 +118,8 @@ templ DeploymentCompletePage(deployment DeploymentData, artifacts []ArtifactInfo
 									<span class="text-[#444] text-xs">Size: { deployment.BundleSize }</span>
 								}
 							</div>
-							<a 
-								href={ templ.URL("/api/v1/deployments/" + deployment.DeploymentID + "/bundle") }
+							<a
+								href={ templ.URL("/deployments/" + deployment.DeploymentID + "/bundle") }
 								class="px-6 py-3 bg-[#33FF00] text-black font-bold text-sm uppercase hover:bg-[#44FF11] transition-colors whitespace-nowrap"
 							>
 								DOWNLOAD BUNDLE

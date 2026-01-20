@@ -143,6 +143,19 @@ func (b *Bundler) createPopBundleBundle(cfg *BundleConfig) (*BundleResult, error
 		})
 	}
 
+	// l1-chain-config.json (L1 chain configuration for op-node)
+	if l1ChainConfig, ok := cfg.Artifacts["l1-chain-config.json"]; ok {
+		if err := tarW.addFile(baseDir+"/l1-chain-config.json", l1ChainConfig); err != nil {
+			return nil, fmt.Errorf("add l1-chain-config.json: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "l1-chain-config.json",
+			Description: "L1 chain configuration (required for op-node with Anvil)",
+			Required:    true,
+			SizeBytes:   int64(len(l1ChainConfig)),
+		})
+	}
+
 	// ===========================================
 	// README
 	// ===========================================

@@ -23,7 +23,14 @@ import (
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/pipeline"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/state"
 	openv "github.com/ethereum-optimism/optimism/op-deployer/pkg/env"
+	opcrypto "github.com/ethereum-optimism/optimism/op-service/crypto"
 )
+
+// SignerAdapter is an interface for transaction signing adapters.
+// Both POPSignerAdapter (HTTP-based) and AnvilSigner (local ECDSA) implement this.
+type SignerAdapter interface {
+	SignerFn() opcrypto.SignerFn
+}
 
 // OPDeployer wraps the op-deployer library for OP Stack contract deployment.
 // It manages the deployment pipeline stages and integrates with POPSigner for
@@ -94,7 +101,7 @@ type DeployerProgressCallback func(stage string, progress float64, message strin
 // - true: Reuses existing infrastructure (~10x cheaper, faster)
 //
 // For isolated deployments, CREATE2 salt = hash(chainName + chainID + artifactVersion).
-func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAdapter *POPSignerAdapter, onProgress DeployerProgressCallback) (*DeployResult, error) {
+func (d *OPDeployer) Deploy(ctx context.Context, cfg *DeploymentConfig, signerAdapter SignerAdapter, onProgress DeployerProgressCallback) (*DeployResult, error) {
 	// Calculate salt upfront for logging
 	salt := GetDeploymentSalt(cfg.ChainName, cfg.ChainID)
 	infraReused := false

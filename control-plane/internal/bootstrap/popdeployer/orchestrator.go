@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -178,6 +177,7 @@ type DeploymentContext struct {
 
 	// Process handles for cleanup
 	AnvilCmd *exec.Cmd
+	AnvilIPC string // IPC socket path for Anvil (unique per deployment)
 }
 
 // Cleanup terminates any running processes.
@@ -218,33 +218,16 @@ func (o *Orchestrator) populateDefaults(cfg DeploymentConfig) DeploymentConfig {
 		cfg.GasLimit = 30000000
 	}
 
-	// Set POPSigner-Lite configuration
-	cfg.PopSignerRPC = "http://localhost:8555"
-	cfg.PopSignerAPIKey = "psk_local_dev_00000000000000000000000000000000"
+	// Note: POPSigner-Lite is NOT needed during bundle build phase
+	// We use AnvilSigner for direct ECDSA signing with Anvil's well-known keys
+	// POPSigner-Lite is only needed at runtime (op-batcher, op-proposer in docker-compose)
 
 	return cfg
 }
 
-// waitForHTTP polls an HTTP endpoint until it responds or timeout expires.
-func waitForHTTP(url string, timeout time.Duration) bool {
-	start := time.Now()
-	client := &http.Client{
-		Timeout: 2 * time.Second,
-	}
-
-	for time.Since(start) < timeout {
-		resp, err := client.Get(url)
-		if err == nil && resp.StatusCode < 500 {
-			resp.Body.Close()
-			return true
-		}
-		time.Sleep(1 * time.Second)
-	}
-
-	return false
-}
-
-// startAnvil starts an ephemeral Anvil L1 node.
+// startAnvil starts an ephemeral Anvil L1 node using IPC for isolation.
+// Using IPC instead of HTTP ports allows multiple concurrent deployments
+// without port conflicts.
 func (o *Orchestrator) startAnvil(ctx context.Context, dc *DeploymentContext, sw *StageWriter) error {
 	if dc.OnProgress != nil {
 		dc.OnProgress(StageStartingAnvil, 0.1, "Starting ephemeral Anvil L1...")
@@ -255,14 +238,22 @@ func (o *Orchestrator) startAnvil(ctx context.Context, dc *DeploymentContext, sw
 
 	stateFile := filepath.Join(dc.WorkDir, "anvil-state.json")
 
+	// Use IPC socket in the work directory - unique per deployment
+	// This avoids port conflicts when multiple deployments run concurrently
+	ipcPath := filepath.Join(dc.WorkDir, "anvil.ipc")
+	dc.AnvilIPC = ipcPath
+
+	// Update L1RPC to use IPC path instead of HTTP
+	// go-ethereum's rpc.DialContext supports IPC paths directly
+	dc.Config.L1RPC = ipcPath
+
 	dc.AnvilCmd = exec.CommandContext(ctx, "anvil",
 		"--chain-id", fmt.Sprintf("%d", dc.Config.L1ChainID),
 		"--accounts", "10",
 		"--balance", "10000",
 		"--gas-limit", fmt.Sprintf("%d", dc.Config.GasLimit),
 		"--block-time", fmt.Sprintf("%d", dc.Config.BlockTime),
-		"--port", "8545",
-		"--host", "0.0.0.0",
+		"--ipc", ipcPath,
 		"--state", stateFile,
 	)
 
@@ -281,17 +272,31 @@ func (o *Orchestrator) startAnvil(ctx context.Context, dc *DeploymentContext, sw
 		return fmt.Errorf("start anvil process: %w", err)
 	}
 
-	// Wait for Anvil to be ready
-	if !waitForHTTP("http://localhost:8545", 30*time.Second) {
-		return fmt.Errorf("anvil failed to start within 30 seconds")
+	// Wait for Anvil IPC socket to be ready
+	if !waitForIPC(ipcPath, 30*time.Second) {
+		return fmt.Errorf("anvil IPC socket failed to appear within 30 seconds")
 	}
 
-	o.logger.Info("Anvil is ready",
-		slog.String("rpc", dc.Config.L1RPC),
+	o.logger.Info("Anvil is ready (IPC mode)",
+		slog.String("ipc", ipcPath),
 		slog.String("state_file", stateFile),
 	)
 
 	return nil
+}
+
+// waitForIPC polls for an IPC socket file to exist.
+func waitForIPC(path string, timeout time.Duration) bool {
+	start := time.Now()
+	for time.Since(start) < timeout {
+		if _, err := os.Stat(path); err == nil {
+			// Socket exists, give it a moment to be ready
+			time.Sleep(500 * time.Millisecond)
+			return true
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return false
 }
 
 // deployOPStack deploys OP Stack contracts using the op-deployer.
@@ -304,18 +309,20 @@ func (o *Orchestrator) deployOPStack(ctx context.Context, dc *DeploymentContext,
 	}
 
 	// Create opstack deployment config
+	// UseLocalSigning=true skips POPSigner validation - we use AnvilSigner instead
+	// FundDevAccounts=true pre-funds Anvil's accounts on L2 for testing
 	opstackCfg := &opstack.DeploymentConfig{
-		ChainID:           dc.Config.ChainID,
-		ChainName:         dc.Config.ChainName,
-		L1ChainID:         dc.Config.L1ChainID,
-		L1RPC:             dc.Config.L1RPC,
-		POPSignerEndpoint: dc.Config.PopSignerRPC,
-		POPSignerAPIKey:   dc.Config.PopSignerAPIKey,
-		DeployerAddress:   dc.Config.DeployerAddress,
-		BatcherAddress:    dc.Config.BatcherAddress,
-		ProposerAddress:   dc.Config.ProposerAddress,
-		BlockTime:         dc.Config.BlockTime,
-		GasLimit:          dc.Config.GasLimit,
+		ChainID:         dc.Config.ChainID,
+		ChainName:       dc.Config.ChainName,
+		L1ChainID:       dc.Config.L1ChainID,
+		L1RPC:           dc.Config.L1RPC,
+		DeployerAddress: dc.Config.DeployerAddress,
+		BatcherAddress:  dc.Config.BatcherAddress,
+		ProposerAddress: dc.Config.ProposerAddress,
+		BlockTime:       dc.Config.BlockTime,
+		GasLimit:        dc.Config.GasLimit,
+		UseLocalSigning: true, // Use AnvilSigner for Anvil's well-known keys
+		FundDevAccounts: true, // Pre-fund Anvil accounts on L2 for local testing
 	}
 
 	// Create deployer
@@ -324,13 +331,13 @@ func (o *Orchestrator) deployOPStack(ctx context.Context, dc *DeploymentContext,
 		CacheDir: o.config.CacheDir,
 	})
 
-	// Create POPSigner adapter - uses Anvil directly for signing (Anvil has built-in signing)
+	// Create AnvilSigner for direct local ECDSA signing
+	// This is much faster than HTTP-based signing and works with IPC
 	chainIDBigInt := new(big.Int).SetUint64(dc.Config.L1ChainID)
-	adapter := opstack.NewPOPSignerAdapter(
-		dc.Config.L1RPC, // Use Anvil RPC directly - it handles signing for its deterministic accounts
-		dc.Config.PopSignerAPIKey,
-		chainIDBigInt,
-	)
+	adapter, err := opstack.NewAnvilSigner(chainIDBigInt)
+	if err != nil {
+		return nil, fmt.Errorf("create anvil signer: %w", err)
+	}
 
 	// Progress callback
 	progressCallback := func(stage string, progress float64, message string) {

@@ -133,7 +133,7 @@ func BuildIntent(cfg *DeploymentConfig) (*state.Intent, error) {
 	intent := &state.Intent{
 		ConfigType:      state.IntentTypeCustom,
 		L1ChainID:       cfg.L1ChainID,
-		FundDevAccounts: false, // Production deployments don't fund dev accounts
+		FundDevAccounts: cfg.FundDevAccounts, // Pre-fund dev accounts for local devnets
 		SuperchainRoles: superchainRoles,
 		// L1ContractsLocator and L2ContractsLocator set by deployer
 		Chains: []*state.ChainIntent{chainIntent},

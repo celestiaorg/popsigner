@@ -189,9 +189,9 @@ func DeploymentCompletePage(deployment DeploymentData, artifacts []ArtifactInfo)
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 templ.SafeURL
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/api/v1/deployments/" + deployment.DeploymentID + "/bundle"))
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/deployments/" + deployment.DeploymentID + "/bundle"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 122, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 122, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {

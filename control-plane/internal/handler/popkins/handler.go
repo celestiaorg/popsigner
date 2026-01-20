@@ -1179,6 +1179,9 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 		case "anvil-state.json":
 			// Pre-deployed L1 state for POPKins Bundle
 			path = bundlePrefix + "anvil-state.json"
+		case "l1-chain-config.json":
+			// L1 chain configuration for op-node (required for Anvil)
+			path = bundlePrefix + "l1-chain-config.json"
 		case "README.md":
 			path = bundlePrefix + "README.md"
 			isPlainText = true
