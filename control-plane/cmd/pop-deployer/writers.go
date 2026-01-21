@@ -90,7 +90,7 @@ func (w *ConfigWriter) writeGenesis() error {
 
 	path := filepath.Join(w.bundleDir, "genesis.json")
 	if err := os.WriteFile(path, data, 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", path, err)
 	}
 
 	w.logger.Info("genesis.json written", slog.String("path", path), slog.Int("size_mb", len(data)/(1024*1024)))
@@ -123,7 +123,7 @@ func (w *ConfigWriter) writeRollupConfig() error {
 
 	path := filepath.Join(w.bundleDir, "rollup.json")
 	if err := os.WriteFile(path, data, 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", path, err)
 	}
 
 	w.logger.Info("rollup.json written", slog.String("path", path))
@@ -170,7 +170,7 @@ func (w *ConfigWriter) writeAddresses() error {
 
 	path := filepath.Join(w.bundleDir, "addresses.json")
 	if err := os.WriteFile(path, data, 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", path, err)
 	}
 
 	w.logger.Info("addresses.json written", slog.String("path", path))
@@ -191,7 +191,7 @@ func (w *ConfigWriter) writeJWT() error {
 
 	path := filepath.Join(w.bundleDir, "jwt.txt")
 	if err := os.WriteFile(path, []byte(hexSecret), 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", path, err)
 	}
 
 	w.logger.Info("jwt.txt written", slog.String("path", path))
@@ -242,7 +242,7 @@ key_id = "%s"
 
 	path := filepath.Join(w.bundleDir, "config.toml")
 	if err := os.WriteFile(path, []byte(config), 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", path, err)
 	}
 
 	w.logger.Info("config.toml written", slog.String("path", path))
@@ -286,7 +286,7 @@ func (w *ConfigWriter) writeL1ChainConfig() error {
 
 	path := filepath.Join(w.bundleDir, "l1-chain-config.json")
 	if err := os.WriteFile(path, data, 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", path, err)
 	}
 
 	w.logger.Info("l1-chain-config.json written", slog.String("path", path))
@@ -625,7 +625,7 @@ networks:
 
 	path := filepath.Join(w.bundleDir, "docker-compose.yml")
 	if err := os.WriteFile(path, []byte(compose), 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", path, err)
 	}
 
 	w.logger.Info("docker-compose.yml written", slog.String("path", path))
@@ -679,13 +679,13 @@ DISPUTE_GAME_FACTORY_ADDRESS=%s
 
 	path := filepath.Join(w.bundleDir, ".env.example")
 	if err := os.WriteFile(path, []byte(env), 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", path, err)
 	}
 
 	// Also copy to .env for immediate use
 	envPath := filepath.Join(w.bundleDir, ".env")
 	if err := os.WriteFile(envPath, []byte(env), 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", envPath, err)
 	}
 
 	w.logger.Info(".env.example and .env written", slog.String("path", path))
@@ -742,7 +742,7 @@ func (w *ConfigWriter) writeREADME() error {
 
 	path := filepath.Join(w.bundleDir, "README.md")
 	if err := os.WriteFile(path, []byte(readme), 0644); err != nil {
-		return err
+		return fmt.Errorf("write file %s: %w", path, err)
 	}
 
 	w.logger.Info("README.md written", slog.String("path", path))

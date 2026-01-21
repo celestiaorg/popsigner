@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/opstack"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/state"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 const (
@@ -32,84 +32,169 @@ const (
 	l2ChainName = "local-opstack-devnet"
 
 	// POPSigner-Lite
-	popSignerRPC    = "http://localhost:8555"
-	popSignerAPIKey = "psk_local_dev_00000000000000000000000000000000"
+	popSignerRPCPort  = "8555"
+	popSignerRestPort = "3000"
+	popSignerRPC      = "http://localhost:" + popSignerRPCPort
+	popSignerRestURL  = "http://localhost:" + popSignerRestPort
+	popSignerAPIKey   = "psk_local_dev_00000000000000000000000000000000"
 
 	// Anvil Accounts (deterministic)
 	deployerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" // anvil-0
-	batcherAddress  = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"  // anvil-1
-	proposerAddress = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"  // anvil-2
+	batcherAddress  = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" // anvil-1
+	proposerAddress = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC" // anvil-2
+	celestiaAddress = "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720" // anvil-9
 
 	// Chain Parameters
 	blockTime = 2
 	gasLimit  = 30000000
+
+	// Timeouts
+	httpReadyTimeout     = 30 * time.Second
+	deploymentTimeout    = 30 * time.Minute
+	anvilShutdownTimeout = 5 * time.Second
+	httpClientTimeout    = 2 * time.Second
+	httpPollInterval     = 1 * time.Second
 )
 
+// bundleBuilder orchestrates the creation of a pre-deployed OP Stack devnet bundle.
+type bundleBuilder struct {
+	ctx       context.Context
+	cancel    context.CancelFunc
+	logger    *slog.Logger
+	bundleDir string
+
+	// Managed processes
+	anvilCmd     *exec.Cmd
+	popSignerCmd *exec.Cmd
+}
+
 func main() {
-	// Parse command-line flags
+	bundleDir := parseFlags()
+
+	builder := newBundleBuilder(bundleDir)
+	defer builder.cleanup()
+	builder.setupSignalHandler()
+
+	if err := builder.run(); err != nil {
+		builder.logger.Error("bundle creation failed", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+func parseFlags() string {
 	bundleDirFlag := flag.String("bundle-dir", filepath.Join(os.TempDir(), "pop-deployer-bundle"),
 		"Directory to write bundle files (default: /tmp/pop-deployer-bundle)")
 	flag.Parse()
+	return *bundleDirFlag
+}
 
-	// Dereference the flag to get the actual string value
-	bundleDir := *bundleDirFlag
-
+func newBundleBuilder(bundleDir string) *bundleBuilder {
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Setup signal handling
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	// Setup logger
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
 
-	// Track processes for cleanup
-	var anvilCmd *exec.Cmd
-	var popSignerCmd *exec.Cmd
-
-	// Cleanup handler
-	cleanup := func() {
-		logger.Info("Cleaning up processes...")
-		if popSignerCmd != nil && popSignerCmd.Process != nil {
-			popSignerCmd.Process.Kill()
-		}
-		if anvilCmd != nil && anvilCmd.Process != nil {
-			anvilCmd.Process.Kill()
-		}
+	return &bundleBuilder{
+		ctx:       ctx,
+		cancel:    cancel,
+		logger:    logger,
+		bundleDir: bundleDir,
 	}
-	defer cleanup()
+}
 
-	// Handle interrupts
+func (b *bundleBuilder) cleanup() {
+	b.logger.Info("Cleaning up processes...")
+	if b.popSignerCmd != nil && b.popSignerCmd.Process != nil {
+		b.popSignerCmd.Process.Kill()
+	}
+	if b.anvilCmd != nil && b.anvilCmd.Process != nil {
+		b.anvilCmd.Process.Kill()
+	}
+}
+
+func (b *bundleBuilder) setupSignalHandler() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		<-sigChan
-		logger.Info("Received interrupt signal, cleaning up...")
-		cleanup()
+		b.logger.Info("Received interrupt signal, cleaning up...")
+		b.cleanup()
 		os.Exit(1)
 	}()
+}
 
+// run executes the 7-step bundle creation pipeline.
+func (b *bundleBuilder) run() error {
+	b.printBanner()
+
+	if err := b.prepareBundleDirectory(); err != nil {
+		return fmt.Errorf("prepare bundle directory: %w", err)
+	}
+
+	stateFile, err := b.startAnvil()
+	if err != nil {
+		return fmt.Errorf("start anvil: %w", err)
+	}
+
+	if err := b.startPOPSignerLite(); err != nil {
+		return fmt.Errorf("start popsigner-lite: %w", err)
+	}
+
+	result, cfg, err := b.deployOPStack()
+	if err != nil {
+		return fmt.Errorf("deploy OP stack: %w", err)
+	}
+
+	if err := b.populateStartBlock(result); err != nil {
+		return fmt.Errorf("populate start block: %w", err)
+	}
+
+	if err := b.shutdownAnvilAndDumpState(stateFile); err != nil {
+		return fmt.Errorf("shutdown anvil: %w", err)
+	}
+
+	celestiaKeyID, err := b.getCelestiaKeyID()
+	if err != nil {
+		return fmt.Errorf("get celestia key: %w", err)
+	}
+
+	if err := b.writeConfigs(result, cfg, celestiaKeyID); err != nil {
+		return fmt.Errorf("write configs: %w", err)
+	}
+
+	archivePath, err := b.createArchive()
+	if err != nil {
+		return fmt.Errorf("create archive: %w", err)
+	}
+
+	b.printSuccess(archivePath)
+	return nil
+}
+
+func (b *bundleBuilder) printBanner() {
 	log.Println()
 	log.Println("🚀 POPKins Bundle Builder")
 	log.Println("Creating pre-deployed local devnet bundle...")
-	log.Printf("Bundle directory: %s\n", bundleDir)
+	log.Printf("Bundle directory: %s\n", b.bundleDir)
 	log.Println()
+}
 
-	// Create bundle directory (remove if exists to start fresh)
-	if err := os.RemoveAll(bundleDir); err != nil {
-		logger.Error("failed to remove old bundle directory", slog.String("error", err.Error()))
-		os.Exit(1)
+func (b *bundleBuilder) prepareBundleDirectory() error {
+	if err := os.RemoveAll(b.bundleDir); err != nil {
+		return fmt.Errorf("remove old directory: %w", err)
 	}
-	if err := os.MkdirAll(bundleDir, 0755); err != nil {
-		logger.Error("failed to create bundle directory", slog.String("error", err.Error()))
-		os.Exit(1)
+	if err := os.MkdirAll(b.bundleDir, 0755); err != nil {
+		return fmt.Errorf("create directory: %w", err)
 	}
+	return nil
+}
 
-	// Step 1: Start ephemeral Anvil
-	logger.Info("1️⃣  Starting ephemeral Anvil...")
-	stateFile := filepath.Join(bundleDir, "anvil-state.json")
-	anvilCmd = exec.CommandContext(ctx, "anvil",
+func (b *bundleBuilder) startAnvil() (stateFile string, err error) {
+	b.logger.Info("1️⃣  Starting ephemeral Anvil...")
+
+	stateFile = filepath.Join(b.bundleDir, "anvil-state.json")
+	b.anvilCmd = exec.CommandContext(b.ctx, "anvil",
 		"--chain-id", fmt.Sprintf("%d", l1ChainID),
 		"--accounts", "10",
 		"--balance", "10000",
@@ -119,58 +204,56 @@ func main() {
 		"--host", "0.0.0.0",
 		"--state", stateFile,
 	)
-	anvilCmd.Stdout = os.Stdout
-	anvilCmd.Stderr = os.Stderr
+	b.anvilCmd.Stdout = os.Stdout
+	b.anvilCmd.Stderr = os.Stderr
 
-	if err := anvilCmd.Start(); err != nil {
-		logger.Error("failed to start Anvil", slog.String("error", err.Error()))
-		os.Exit(1)
+	if err := b.anvilCmd.Start(); err != nil {
+		return "", fmt.Errorf("start process: %w", err)
 	}
 
-	// Wait for Anvil to be ready
-	if !waitForHTTP("http://localhost:8545", 30*time.Second) {
-		logger.Error("Anvil failed to start")
-		os.Exit(1)
+	if !waitForHTTP(b.ctx, l1RPC, httpReadyTimeout) {
+		return "", fmt.Errorf("anvil failed to become ready")
 	}
-	logger.Info("Anvil is ready", slog.String("rpc", l1RPC))
 
-	// Step 2: Start popsigner-lite
-	logger.Info("2️⃣  Starting popsigner-lite...")
+	b.logger.Info("Anvil is ready", slog.String("rpc", l1RPC))
+	return stateFile, nil
+}
 
-	// Build popsigner-lite if not already built
-	// Path is relative to pop-deployer directory: ../popsigner-lite
+func (b *bundleBuilder) startPOPSignerLite() error {
+	b.logger.Info("2️⃣  Starting popsigner-lite...")
+
+	// Build popsigner-lite
 	buildCmd := exec.Command("go", "build", "-o", "popsigner-lite", ".")
 	buildCmd.Dir = "../popsigner-lite"
 	buildCmd.Stdout = os.Stdout
 	buildCmd.Stderr = os.Stderr
 	if err := buildCmd.Run(); err != nil {
-		logger.Error("failed to build popsigner-lite", slog.String("error", err.Error()))
-		os.Exit(1)
+		return fmt.Errorf("build: %w", err)
 	}
 
-	// Run popsigner-lite from its directory
-	popSignerCmd = exec.CommandContext(ctx, "../popsigner-lite/popsigner-lite")
-	popSignerCmd.Env = append(os.Environ(),
-		"JSONRPC_PORT=8555",
-		"REST_API_PORT=3000",
+	// Run popsigner-lite
+	b.popSignerCmd = exec.CommandContext(b.ctx, "../popsigner-lite/popsigner-lite")
+	b.popSignerCmd.Env = append(os.Environ(),
+		"JSONRPC_PORT="+popSignerRPCPort,
+		"REST_API_PORT="+popSignerRestPort,
 	)
-	popSignerCmd.Stdout = os.Stdout
-	popSignerCmd.Stderr = os.Stderr
+	b.popSignerCmd.Stdout = os.Stdout
+	b.popSignerCmd.Stderr = os.Stderr
 
-	if err := popSignerCmd.Start(); err != nil {
-		logger.Error("failed to start popsigner-lite", slog.String("error", err.Error()))
-		os.Exit(1)
+	if err := b.popSignerCmd.Start(); err != nil {
+		return fmt.Errorf("start process: %w", err)
 	}
 
-	// Wait for popsigner-lite to be ready
-	if !waitForHTTP("http://localhost:3000/health", 30*time.Second) {
-		logger.Error("popsigner-lite failed to start")
-		os.Exit(1)
+	if !waitForHTTP(b.ctx, popSignerRestURL+"/health", httpReadyTimeout) {
+		return fmt.Errorf("popsigner-lite failed to become ready")
 	}
-	logger.Info("popsigner-lite is ready", slog.String("rpc", popSignerRPC))
 
-	// Step 3: Deploy OP Stack contracts
-	logger.Info("3️⃣  Deploying OP Stack contracts...")
+	b.logger.Info("popsigner-lite is ready", slog.String("rpc", popSignerRPC))
+	return nil
+}
+
+func (b *bundleBuilder) deployOPStack() (*opstack.DeployResult, *opstack.DeploymentConfig, error) {
+	b.logger.Info("3️⃣  Deploying OP Stack contracts...")
 
 	cfg := &opstack.DeploymentConfig{
 		ChainID:           l2ChainID,
@@ -187,225 +270,235 @@ func main() {
 	}
 
 	deployer := opstack.NewOPDeployer(opstack.OPDeployerConfig{
-		Logger:   logger,
+		Logger:   b.logger,
 		CacheDir: filepath.Join(os.TempDir(), "pop-deployer-cache"),
 	})
 
 	chainIDBigInt := new(big.Int).SetUint64(l1ChainID)
-	adapter := opstack.NewPOPSignerAdapter(
-		l1RPC,
-		popSignerAPIKey,
-		chainIDBigInt,
-	)
-
-	var result *opstack.DeployResult
-	var deployErr error
+	adapter := opstack.NewPOPSignerAdapter(l1RPC, popSignerAPIKey, chainIDBigInt)
 
 	progressCallback := func(stage string, progress float64, message string) {
-		logger.Info(message,
+		b.logger.Info(message,
 			slog.String("stage", stage),
 			slog.Float64("progress", progress*100),
 		)
 	}
 
-	// Run deployment with timeout
-	deployCtx, deployCancel := context.WithTimeout(ctx, 30*time.Minute)
+	deployCtx, deployCancel := context.WithTimeout(b.ctx, deploymentTimeout)
 	defer deployCancel()
 
-	result, deployErr = deployer.Deploy(deployCtx, cfg, adapter, progressCallback)
-	if deployErr != nil {
-		logger.Error("deployment failed", slog.String("error", deployErr.Error()))
-		os.Exit(1)
+	result, err := deployer.Deploy(deployCtx, cfg, adapter, progressCallback)
+	if err != nil {
+		return nil, nil, fmt.Errorf("deploy: %w", err)
 	}
 
-	logger.Info("Deployment completed successfully",
+	b.logger.Info("Deployment completed successfully",
 		slog.Int("chains", len(result.ChainStates)),
 		slog.String("create2_salt", result.Create2Salt.Hex()),
 	)
 
-	// Populate StartBlock (required for genesis generation)
-	// This follows the pattern from orchestrator.go lines 319-334
+	return result, cfg, nil
+}
+
+func (b *bundleBuilder) populateStartBlock(result *opstack.DeployResult) error {
 	if len(result.ChainStates) == 0 {
-		logger.Error("no chain states returned from deployment")
-		os.Exit(1)
+		return fmt.Errorf("no chain states returned from deployment")
 	}
 
 	chainState := result.ChainStates[0]
-
-	// Ensure StartBlock is populated (required for GenesisAndRollup)
-	if chainState.StartBlock == nil {
-		logger.Info("populating StartBlock from L1 (was nil)")
-
-		// Connect to L1 to fetch latest block
-		l1Client, err := ethclient.Dial(l1RPC)
-		if err != nil {
-			logger.Error("failed to connect to L1 for StartBlock", slog.String("error", err.Error()))
-			os.Exit(1)
-		}
-		defer l1Client.Close()
-
-		header, err := l1Client.HeaderByNumber(ctx, nil)
-		if err != nil {
-			logger.Error("failed to get L1 header for StartBlock", slog.String("error", err.Error()))
-			os.Exit(1)
-		}
-
-		chainState.StartBlock = state.BlockRefJsonFromHeader(header)
-		logger.Info("StartBlock populated",
-			slog.Uint64("block_number", header.Number.Uint64()),
-			slog.String("block_hash", header.Hash().Hex()),
-		)
-
-		// Also update the state's chain
-		for i, c := range result.State.Chains {
-			if c.ID == chainState.ID {
-				result.State.Chains[i].StartBlock = chainState.StartBlock
-				break
-			}
-		}
-	} else {
-		logger.Info("StartBlock already populated",
+	if chainState.StartBlock != nil {
+		b.logger.Info("StartBlock already populated",
 			slog.Uint64("block_number", uint64(chainState.StartBlock.Number)),
 		)
+		return nil
 	}
 
-	// Step 4: Shutdown Anvil gracefully to trigger state dump
-	logger.Info("4️⃣  Shutting down Anvil to dump state...")
+	b.logger.Info("populating StartBlock from L1 (was nil)")
 
-	// Send SIGTERM to Anvil for graceful shutdown
-	if err := anvilCmd.Process.Signal(syscall.SIGTERM); err != nil {
-		logger.Error("failed to send SIGTERM to Anvil", slog.String("error", err.Error()))
-		os.Exit(1)
+	l1Client, err := ethclient.Dial(l1RPC)
+	if err != nil {
+		return fmt.Errorf("connect to L1: %w", err)
+	}
+	defer l1Client.Close()
+
+	header, err := l1Client.HeaderByNumber(b.ctx, nil)
+	if err != nil {
+		return fmt.Errorf("get L1 header: %w", err)
 	}
 
-	// Wait for Anvil to finish (with timeout)
+	chainState.StartBlock = state.BlockRefJsonFromHeader(header)
+	b.logger.Info("StartBlock populated",
+		slog.Uint64("block_number", header.Number.Uint64()),
+		slog.String("block_hash", header.Hash().Hex()),
+	)
+
+	// Update the state's chain reference
+	for i, c := range result.State.Chains {
+		if c.ID == chainState.ID {
+			result.State.Chains[i].StartBlock = chainState.StartBlock
+			break
+		}
+	}
+
+	return nil
+}
+
+func (b *bundleBuilder) shutdownAnvilAndDumpState(stateFile string) error {
+	b.logger.Info("4️⃣  Shutting down Anvil to dump state...")
+
+	if err := b.anvilCmd.Process.Signal(syscall.SIGTERM); err != nil {
+		return fmt.Errorf("send SIGTERM: %w", err)
+	}
+
+	// Wait for Anvil to finish with timeout
 	anvilDone := make(chan error, 1)
 	go func() {
-		anvilDone <- anvilCmd.Wait()
+		anvilDone <- b.anvilCmd.Wait()
 	}()
 
 	select {
 	case err := <-anvilDone:
 		if err != nil && err.Error() != "signal: terminated" {
-			logger.Warn("Anvil exited with error", slog.String("error", err.Error()))
+			b.logger.Warn("Anvil exited with error", slog.String("error", err.Error()))
 		}
-	case <-time.After(5 * time.Second):
-		logger.Warn("Anvil shutdown timeout, forcing kill")
-		anvilCmd.Process.Kill()
+	case <-time.After(anvilShutdownTimeout):
+		b.logger.Warn("Anvil shutdown timeout, forcing kill")
+		b.anvilCmd.Process.Kill()
 	}
 
 	// Verify state file was created
-	if info, err := os.Stat(stateFile); err == nil {
-		logger.Info("Anvil state dumped successfully",
-			slog.String("file", stateFile),
-			slog.Int64("size_kb", info.Size()/1024),
-		)
-	} else {
-		logger.Error("Anvil state file not created", slog.String("error", err.Error()))
-		os.Exit(1)
-	}
-
-	// Step 5: Get Celestia key from popsigner-lite
-	// We use Anvil account #9 as the Celestia key (0xa0Ee7A142d267C1f36714E4a8F75612F20a79720)
-	// This key is deterministic and exists in both the ephemeral popsigner-lite (during deployment)
-	// and the Docker Compose popsigner-lite (at runtime)
-	logger.Info("5️⃣  Getting Celestia key from popsigner-lite...")
-
-	celestiaAddress := "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720" // anvil-9
-	celestiaKeyID, err := getKeyID("http://localhost:3000", celestiaAddress)
+	info, err := os.Stat(stateFile)
 	if err != nil {
-		logger.Error("failed to get Celestia key", slog.String("error", err.Error()))
-		os.Exit(1)
+		return fmt.Errorf("state file not created: %w", err)
 	}
-	logger.Info("Celestia key found",
-		slog.String("key_id", celestiaKeyID),
-		slog.String("address", celestiaAddress))
 
-	// Step 6: Write all configs
-	logger.Info("6️⃣  Writing bundle configs...")
+	b.logger.Info("Anvil state dumped successfully",
+		slog.String("file", stateFile),
+		slog.Int64("size_kb", info.Size()/1024),
+	)
+	return nil
+}
+
+func (b *bundleBuilder) getCelestiaKeyID() (string, error) {
+	b.logger.Info("5️⃣  Getting Celestia key from popsigner-lite...")
+
+	keyID, err := getKeyID(b.ctx, popSignerRestURL, celestiaAddress)
+	if err != nil {
+		return "", err
+	}
+
+	b.logger.Info("Celestia key found",
+		slog.String("key_id", keyID),
+		slog.String("address", celestiaAddress),
+	)
+	return keyID, nil
+}
+
+func (b *bundleBuilder) writeConfigs(result *opstack.DeployResult, cfg *opstack.DeploymentConfig, celestiaKeyID string) error {
+	b.logger.Info("6️⃣  Writing bundle configs...")
 
 	writer := &ConfigWriter{
-		logger:        logger,
-		bundleDir:     bundleDir,
+		logger:        b.logger,
+		bundleDir:     b.bundleDir,
 		result:        result,
 		config:        cfg,
 		celestiaKeyID: celestiaKeyID,
 	}
 
 	if err := writer.WriteAll(); err != nil {
-		logger.Error("failed to write configs", slog.String("error", err.Error()))
-		os.Exit(1)
+		return err
 	}
 
-	logger.Info("All configs written successfully")
+	b.logger.Info("All configs written successfully")
+	return nil
+}
 
-	// Step 7: Package bundle
-	logger.Info("7️⃣  Creating bundle archive...")
+func (b *bundleBuilder) createArchive() (string, error) {
+	b.logger.Info("7️⃣  Creating bundle archive...")
 
 	archiveName := "opstack-local-devnet-bundle.tar.gz"
-	tarCmd := exec.Command("tar", "czf", archiveName, "-C", bundleDir, ".")
+	tarCmd := exec.Command("tar", "czf", archiveName, "-C", b.bundleDir, ".")
 	if err := tarCmd.Run(); err != nil {
-		logger.Error("failed to create bundle archive", slog.String("error", err.Error()))
-		os.Exit(1)
+		return "", fmt.Errorf("tar: %w", err)
 	}
 
-	logger.Info("Bundle archive created", slog.String("file", archiveName))
+	b.logger.Info("Bundle archive created", slog.String("file", archiveName))
 
-	// Get file size
-	stat, err := os.Stat(archiveName)
-	if err == nil {
-		logger.Info("Bundle size", slog.Int64("bytes", stat.Size()), slog.Int64("mb", stat.Size()/(1024*1024)))
+	if stat, err := os.Stat(archiveName); err == nil {
+		b.logger.Info("Bundle size",
+			slog.Int64("bytes", stat.Size()),
+			slog.Int64("mb", stat.Size()/(1024*1024)),
+		)
 	}
 
+	return archiveName, nil
+}
+
+func (b *bundleBuilder) printSuccess(archivePath string) {
 	log.Println()
 	log.Println("✅ Bundle created successfully!")
-	log.Printf("📦 File: %s\n", archiveName)
+	log.Printf("📦 File: %s\n", archivePath)
 	log.Println()
 	log.Println("Next steps:")
-	log.Println("  1. Extract the bundle: tar xzf " + archiveName)
+	log.Println("  1. Extract the bundle: tar xzf " + archivePath)
 	log.Println("  2. Review configs in ./bundle/")
 	log.Println("  3. docker compose up -d")
 	log.Println()
-
-	// Handle shutdown signal
-	go func() {
-		<-sigChan
-		logger.Info("Received shutdown signal, cleaning up...")
-		cancel()
-	}()
 }
 
-// waitForHTTP polls an HTTP endpoint until it responds or timeout expires.
-func waitForHTTP(url string, timeout time.Duration) bool {
-	start := time.Now()
+// waitForHTTP polls an HTTP endpoint until it responds, timeout expires, or context is cancelled.
+func waitForHTTP(ctx context.Context, url string, timeout time.Duration) bool {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	client := &http.Client{
-		Timeout: 2 * time.Second,
+		Timeout: httpClientTimeout,
 	}
 
-	for time.Since(start) < timeout {
-		resp, err := client.Get(url)
+	ticker := time.NewTicker(httpPollInterval)
+	defer ticker.Stop()
+
+	for {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return false
+		}
+
+		resp, err := client.Do(req)
 		if err == nil && resp.StatusCode < 500 {
 			resp.Body.Close()
 			return true
 		}
-		time.Sleep(1 * time.Second)
-	}
+		if resp != nil {
+			resp.Body.Close()
+		}
 
-	return false
+		select {
+		case <-ctx.Done():
+			return false
+		case <-ticker.C:
+			// continue polling
+		}
+	}
 }
 
-// getKeyID retrieves the key ID for a given address from popsigner-lite via REST API
-func getKeyID(baseURL string, address string) (string, error) {
-	// Send GET request to retrieve key by address
-	resp, err := http.Get(fmt.Sprintf("%s/v1/keys/%s", baseURL, address))
+// getKeyID retrieves the key ID for a given address from popsigner-lite via REST API.
+func getKeyID(ctx context.Context, baseURL, address string) (string, error) {
+	url := fmt.Sprintf("%s/v1/keys/%s", baseURL, address)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to send request: %w", err)
+		return "", fmt.Errorf("create request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("send request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("failed to get key (status %d): %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("get key (status %d): %s", resp.StatusCode, string(body))
 	}
 
 	// Parse response
@@ -416,7 +509,7 @@ func getKeyID(baseURL string, address string) (string, error) {
 		PublicKey string `json:"public_key"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", fmt.Errorf("failed to decode response: %w", err)
+		return "", fmt.Errorf("decode response: %w", err)
 	}
 
 	return result.ID, nil
