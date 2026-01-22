@@ -16,6 +16,8 @@ const (
 	StackOPStack Stack = "opstack"
 	// StackNitro represents the Arbitrum Nitro deployment type.
 	StackNitro Stack = "nitro"
+	// StackPopBundle represents the POPKins Devnet Bundle type (OP Stack + Celestia DA).
+	StackPopBundle Stack = "pop-bundle"
 )
 
 // Status represents the deployment status.

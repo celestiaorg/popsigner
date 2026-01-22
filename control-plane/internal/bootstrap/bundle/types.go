@@ -15,6 +15,8 @@ const (
 	StackOPStack Stack = "opstack"
 	// StackNitro represents the Arbitrum Nitro rollup framework.
 	StackNitro Stack = "nitro"
+	// StackPopBundle represents the POPKins Devnet Bundle (OP Stack + Celestia DA).
+	StackPopBundle Stack = "pop-bundle"
 )
 
 // BundleManifest describes the bundle contents and metadata.

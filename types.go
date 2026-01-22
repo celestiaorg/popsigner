@@ -136,8 +136,8 @@ type KeyRecord struct {
 // BatchSignRequest represents a single signing request in a batch.
 // Each request can use a different key - perfect for parallel workers.
 type BatchSignRequest struct {
-	UID  string // Key UID
-	Msg  []byte // Message to sign
+	UID string // Key UID
+	Msg []byte // Message to sign
 }
 
 // BatchSignResult represents a single signing result.
@@ -147,4 +147,3 @@ type BatchSignResult struct {
 	PubKey    []byte // 33-byte compressed secp256k1 public key
 	Error     error  // nil if successful
 }
-

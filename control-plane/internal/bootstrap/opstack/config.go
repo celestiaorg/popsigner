@@ -50,6 +50,17 @@ type DeploymentConfig struct {
 	// Funding (optional - for funding check)
 	RequiredFundingWei *big.Int `json:"-"` // Not serialized, set programmatically
 
+	// UseLocalSigning indicates that the deployment uses local ECDSA signing
+	// instead of an external POPSigner service. This is used for Anvil-based
+	// local deployments where we sign with Anvil's well-known private keys.
+	// When true, POPSignerEndpoint and POPSignerAPIKey are not required.
+	UseLocalSigning bool `json:"use_local_signing,omitempty"`
+
+	// FundDevAccounts enables pre-funding of development accounts on L2.
+	// When true, Anvil's well-known addresses (anvil-0 through anvil-9) will
+	// receive 10,000 ETH each in the L2 genesis. Use for local development only.
+	FundDevAccounts bool `json:"fund_dev_accounts,omitempty"`
+
 	// Infrastructure reuse options
 	// When ReuseInfrastructure is true, the deployer will look for existing OPCM
 	// and superchain contracts on the L1 chain and reuse them instead of deploying new ones.
@@ -78,12 +89,17 @@ func (c *DeploymentConfig) Validate() error {
 	if c.L1RPC == "" {
 		return fmt.Errorf("l1_rpc is required")
 	}
-	if c.POPSignerEndpoint == "" {
-		return fmt.Errorf("popsigner_endpoint is required")
+
+	// POPSigner is only required when NOT using local signing (e.g., Anvil)
+	if !c.UseLocalSigning {
+		if c.POPSignerEndpoint == "" {
+			return fmt.Errorf("popsigner_endpoint is required")
+		}
+		if c.POPSignerAPIKey == "" {
+			return fmt.Errorf("popsigner_api_key is required")
+		}
 	}
-	if c.POPSignerAPIKey == "" {
-		return fmt.Errorf("popsigner_api_key is required")
-	}
+
 	if c.DeployerAddress == "" {
 		return fmt.Errorf("deployer_address is required")
 	}

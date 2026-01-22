@@ -122,6 +122,8 @@ templ DeploymentsTable(deployments []DeploymentSummary) {
 								<span class="text-[#33FF00] text-lg">
 									if d.Stack == "opstack" {
 										⬡
+									} else if d.Stack == "pop-bundle" {
+										📦
 									} else {
 										◇
 									}
@@ -152,6 +154,10 @@ templ StackBadge(stack string) {
 	if stack == "opstack" {
 		<span class="inline-flex items-center gap-1 px-2 py-1 text-xs uppercase bg-[#1a0a1a] text-[#FF6B6B] border border-[#FF6B6B]/30 font-bold">
 			OP STACK
+		</span>
+	} else if stack == "pop-bundle" {
+		<span class="inline-flex items-center gap-1 px-2 py-1 text-xs uppercase bg-[#1a1a00] text-[#FFB000] border border-[#FFB000]/30 font-bold">
+			BUNDLE
 		</span>
 	} else {
 		<span class="inline-flex items-center gap-1 px-2 py-1 text-xs uppercase bg-[#0a1a1a] text-[#12AAFF] border border-[#12AAFF]/30 font-bold">

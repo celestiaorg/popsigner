@@ -63,3 +63,10 @@ v18-verify.tar
 **/target/
 Cargo.lock
 *.rs.bk
+
+# POPSigner build artifacts
+popsigner/control-plane/cmd/popsigner-lite/popsigner-lite
+popsigner/control-plane/cmd/pop-deployer/pop-deployer
+popsigner/control-plane/cmd/pop-deployer/*.tar.gz
+popsigner/control-plane/cmd/pop-deployer/*.tar
+popsigner/control-plane/cmd/pop-deployer/bundle/

@@ -12,6 +12,7 @@ import (
 
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/nitro"
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/opstack"
+	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/popdeployer"
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/repository"
 	"github.com/Bidon15/popsigner/control-plane/internal/models"
 )
@@ -32,14 +33,15 @@ type APIKeyManager interface {
 // It dispatches to the appropriate stack-specific orchestrator based
 // on the deployment configuration.
 type Orchestrator struct {
-	repo           repository.Repository
-	opstackOrch    *opstack.Orchestrator
-	nitroOrch      *nitro.Orchestrator
-	keyResolver    KeyResolver
-	apiKeyManager  APIKeyManager
-	signerEndpoint string
-	logger         *slog.Logger
-	runningJobs    map[uuid.UUID]context.CancelFunc
+	repo            repository.Repository
+	opstackOrch     *opstack.Orchestrator
+	nitroOrch       *nitro.Orchestrator
+	popBundleOrch   *popdeployer.Orchestrator
+	keyResolver     KeyResolver
+	apiKeyManager   APIKeyManager
+	signerEndpoint  string
+	logger          *slog.Logger
+	runningJobs     map[uuid.UUID]context.CancelFunc
 }
 
 // Config holds configuration for the orchestrator.
@@ -53,6 +55,7 @@ func New(
 	repo repository.Repository,
 	opstackOrch *opstack.Orchestrator,
 	nitroOrch *nitro.Orchestrator,
+	popBundleOrch *popdeployer.Orchestrator,
 	keyResolver KeyResolver,
 	apiKeyManager APIKeyManager,
 	cfg Config,
@@ -69,14 +72,15 @@ func New(
 	}
 
 	return &Orchestrator{
-		repo:           repo,
-		opstackOrch:    opstackOrch,
-		nitroOrch:      nitroOrch,
-		keyResolver:    keyResolver,
-		apiKeyManager:  apiKeyManager,
-		signerEndpoint: signerEndpoint,
-		logger:         logger,
-		runningJobs:    make(map[uuid.UUID]context.CancelFunc),
+		repo:            repo,
+		opstackOrch:     opstackOrch,
+		nitroOrch:       nitroOrch,
+		popBundleOrch:   popBundleOrch,
+		keyResolver:     keyResolver,
+		apiKeyManager:   apiKeyManager,
+		signerEndpoint:  signerEndpoint,
+		logger:          logger,
+		runningJobs:     make(map[uuid.UUID]context.CancelFunc),
 	}
 }
 
@@ -164,6 +168,20 @@ func (o *Orchestrator) StartDeployment(ctx context.Context, deploymentID uuid.UU
 				deployErr = fmt.Errorf("Nitro orchestrator not configured")
 			}
 
+		case repository.StackPopBundle:
+			if o.popBundleOrch != nil {
+				deployErr = o.popBundleOrch.Deploy(deployCtx, deploymentID, func(stage popdeployer.Stage, progress float64, message string) {
+					o.logger.Info("deployment progress",
+						slog.String("deployment_id", deploymentID.String()),
+						slog.String("stage", stage.String()),
+						slog.Float64("progress", progress),
+						slog.String("message", message),
+					)
+				})
+			} else {
+				deployErr = fmt.Errorf("POPKins bundle orchestrator not configured")
+			}
+
 		default:
 			deployErr = fmt.Errorf("unsupported stack: %s", deployment.Stack)
 		}
@@ -205,74 +223,84 @@ func (o *Orchestrator) enrichConfig(ctx context.Context, rawConfig json.RawMessa
 	// Add POPSigner endpoint
 	config["popsigner_endpoint"] = o.signerEndpoint + "/v1"
 
-	// Get or create API key for this org's deployments
-	if o.apiKeyManager != nil {
-		apiKey, err := o.apiKeyManager.GetOrCreateForDeployment(ctx, orgID)
-		if err != nil {
-			return nil, fmt.Errorf("get/create API key: %w", err)
-		}
-		config["popsigner_api_key"] = apiKey
-	} else {
-		o.logger.Warn("no API key manager configured, deployments may fail authentication")
-		config["popsigner_api_key"] = "" // Will likely fail, but allows testing config parsing
-	}
+	// Check if this is a pop-bundle deployment (uses Anvil keys, no POPSigner needed)
+	stackStr, _ := config["stack"].(string)
+	isPopBundle := stackStr == "pop-bundle"
 
-	// Resolve deployer key UUID to address
-	if o.keyResolver != nil {
-		deployerKeyStr, ok := config["deployer_key"].(string)
-		if ok && deployerKeyStr != "" {
-			deployerKeyID, err := uuid.Parse(deployerKeyStr)
-			if err == nil {
-				key, err := o.keyResolver.Get(ctx, orgID, deployerKeyID)
-				if err != nil {
-					return nil, fmt.Errorf("get deployer key: %w", err)
-				}
-				// Use EVM address if available, otherwise fall back to Address
-				if key.EthAddress != nil && *key.EthAddress != "" {
-					config["deployer_address"] = *key.EthAddress
-				} else {
-					config["deployer_address"] = key.Address
-				}
-				o.logger.Info("resolved deployer key",
-					slog.String("key_id", deployerKeyID.String()),
-					slog.String("address", config["deployer_address"].(string)),
-				)
+	// For pop-bundle, we don't need POPSigner API keys or key resolution
+	// (it uses Anvil's deterministic accounts)
+	if !isPopBundle {
+		// Get or create API key for this org's deployments
+		if o.apiKeyManager != nil {
+			apiKey, err := o.apiKeyManager.GetOrCreateForDeployment(ctx, orgID)
+			if err != nil {
+				return nil, fmt.Errorf("get/create API key: %w", err)
 			}
+			config["popsigner_api_key"] = apiKey
+		} else {
+			o.logger.Warn("no API key manager configured, deployments may fail authentication")
+			config["popsigner_api_key"] = "" // Will likely fail, but allows testing config parsing
 		}
 
-		// Resolve batcher key (optional, defaults to deployer if not found)
-		batcherKeyStr, ok := config["batcher_key"].(string)
-		if ok && batcherKeyStr != "" {
-			batcherKeyID, err := uuid.Parse(batcherKeyStr)
-			if err == nil {
-				key, err := o.keyResolver.Get(ctx, orgID, batcherKeyID)
+		// Resolve deployer key UUID to address
+		if o.keyResolver != nil {
+			deployerKeyStr, ok := config["deployer_key"].(string)
+			if ok && deployerKeyStr != "" {
+				deployerKeyID, err := uuid.Parse(deployerKeyStr)
 				if err == nil {
+					key, err := o.keyResolver.Get(ctx, orgID, deployerKeyID)
+					if err != nil {
+						return nil, fmt.Errorf("get deployer key: %w", err)
+					}
+					// Use EVM address if available, otherwise fall back to Address
 					if key.EthAddress != nil && *key.EthAddress != "" {
-						config["batcher_address"] = *key.EthAddress
+						config["deployer_address"] = *key.EthAddress
 					} else {
-						config["batcher_address"] = key.Address
+						config["deployer_address"] = key.Address
+					}
+					o.logger.Info("resolved deployer key",
+						slog.String("key_id", deployerKeyID.String()),
+						slog.String("address", config["deployer_address"].(string)),
+					)
+				}
+			}
+
+			// Resolve batcher key (optional, defaults to deployer if not found)
+			batcherKeyStr, ok := config["batcher_key"].(string)
+			if ok && batcherKeyStr != "" {
+				batcherKeyID, err := uuid.Parse(batcherKeyStr)
+				if err == nil {
+					key, err := o.keyResolver.Get(ctx, orgID, batcherKeyID)
+					if err == nil {
+						if key.EthAddress != nil && *key.EthAddress != "" {
+							config["batcher_address"] = *key.EthAddress
+						} else {
+							config["batcher_address"] = key.Address
+						}
 					}
 				}
 			}
-		}
 
-		// Resolve proposer key (optional, defaults to deployer if not found)
-		proposerKeyStr, ok := config["proposer_key"].(string)
-		if ok && proposerKeyStr != "" {
-			proposerKeyID, err := uuid.Parse(proposerKeyStr)
-			if err == nil {
-				key, err := o.keyResolver.Get(ctx, orgID, proposerKeyID)
+			// Resolve proposer key (optional, defaults to deployer if not found)
+			proposerKeyStr, ok := config["proposer_key"].(string)
+			if ok && proposerKeyStr != "" {
+				proposerKeyID, err := uuid.Parse(proposerKeyStr)
 				if err == nil {
-					if key.EthAddress != nil && *key.EthAddress != "" {
-						config["proposer_address"] = *key.EthAddress
-					} else {
-						config["proposer_address"] = key.Address
+					key, err := o.keyResolver.Get(ctx, orgID, proposerKeyID)
+					if err == nil {
+						if key.EthAddress != nil && *key.EthAddress != "" {
+							config["proposer_address"] = *key.EthAddress
+						} else {
+							config["proposer_address"] = key.Address
+						}
 					}
 				}
 			}
+		} else {
+			o.logger.Warn("no key resolver configured, key addresses must be in config")
 		}
 	} else {
-		o.logger.Warn("no key resolver configured, key addresses must be in config")
+		o.logger.Info("pop-bundle deployment: skipping POPSigner key resolution (uses Anvil accounts)")
 	}
 
 	// Marshal the enriched config

@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/a-h/templ"
@@ -167,10 +168,14 @@ func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Determine current step (1-4)
+	// Determine current step (1-5)
+	// Steps 1-4 are the normal wizard, step 5 is the POPKins bundle simplified config
 	step := 1
 	if s := r.URL.Query().Get("step"); s != "" {
-		if parsed, err := strconv.Atoi(s); err == nil && parsed >= 1 && parsed <= 4 {
+		if s == "2-bundle" {
+			// POPKins bundle uses a simplified step 2 (rendered as step 5)
+			step = 5
+		} else if parsed, err := strconv.Atoi(s); err == nil && parsed >= 1 && parsed <= 5 {
 			step = parsed
 		}
 	}
@@ -278,11 +283,17 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Helper to build redirect URL with preserved form data
+	// For pop-bundle, use step 5 (bundle config) instead of step 4 (review)
 	buildErrorRedirect := func(step int, errorMsg string) string {
+		stack := r.FormValue("stack")
+		// For pop-bundle, redirect errors to step 5 (bundle config) or step 2-bundle
+		if stack == "pop-bundle" && step >= 2 {
+			step = 5 // Use step 5 for bundle config
+		}
 		q := make(url.Values)
 		q.Set("step", strconv.Itoa(step))
 		q.Set("error", errorMsg)
-		q.Set("stack", r.FormValue("stack"))
+		q.Set("stack", stack)
 		q.Set("chain_name", r.FormValue("chain_name"))
 		q.Set("chain_id", r.FormValue("chain_id"))
 		q.Set("l1_rpc", r.FormValue("l1_rpc"))
@@ -314,25 +325,48 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, buildErrorRedirect(1, "Please select a rollup stack"), http.StatusFound)
 		return
 	}
-	if l1RPC == "" {
+
+	// POPKins bundle uses local Anvil, so L1 RPC validation is different
+	isPopBundle := stack == "pop-bundle"
+	if !isPopBundle && l1RPC == "" {
 		http.Redirect(w, r, buildErrorRedirect(2, "L1 RPC URL is required"), http.StatusFound)
 		return
 	}
 
-	// Parse L1 chain ID as uint64
-	l1ChainID, err := strconv.ParseUint(r.FormValue("l1_chain_id"), 10, 64)
-	if err != nil || l1ChainID == 0 {
-		http.Redirect(w, r, buildErrorRedirect(2, "Invalid L1 chain ID"), http.StatusFound)
-		return
+	// Parse L1 chain ID as uint64 (pop-bundle defaults to 31337 for Anvil)
+	var l1ChainID uint64
+	if isPopBundle {
+		l1ChainID = 31337 // Anvil default
+		if l1RPC == "" {
+			l1RPC = "http://localhost:8545" // Will be overridden in bundle
+		}
+	} else {
+		l1ChainID, err = strconv.ParseUint(r.FormValue("l1_chain_id"), 10, 64)
+		if err != nil || l1ChainID == 0 {
+			http.Redirect(w, r, buildErrorRedirect(2, "Invalid L1 chain ID"), http.StatusFound)
+			return
+		}
 	}
 
-	// Validate keys are selected
+	// Validate keys are selected (pop-bundle uses Anvil placeholder keys)
 	deployerKey := r.FormValue("deployer_key")
 	batcherKey := r.FormValue("batcher_key")
 	proposerKey := r.FormValue("proposer_key")
-	if deployerKey == "" || batcherKey == "" || proposerKey == "" {
+	if !isPopBundle && (deployerKey == "" || batcherKey == "" || proposerKey == "") {
 		http.Redirect(w, r, buildErrorRedirect(3, "Please select keys for all roles"), http.StatusFound)
 		return
+	}
+	// For pop-bundle, use Anvil placeholder keys if not provided
+	if isPopBundle {
+		if deployerKey == "" {
+			deployerKey = "anvil-0"
+		}
+		if batcherKey == "" {
+			batcherKey = "anvil-1"
+		}
+		if proposerKey == "" {
+			proposerKey = "anvil-2"
+		}
 	}
 
 	// Build deployment config
@@ -366,8 +400,18 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.deployRepo.CreateDeployment(r.Context(), deployment); err != nil {
-		slog.Error("failed to create deployment", "error", err)
-		http.Redirect(w, r, buildErrorRedirect(4, "Failed to create deployment - please try again"), http.StatusFound)
+		slog.Error("failed to create deployment", "error", err, "chain_id", chainID, "stack", stack)
+		// Provide more specific error messages based on the error
+		errMsg := "Failed to create deployment"
+		errStr := err.Error()
+		if strings.Contains(errStr, "unique") || strings.Contains(errStr, "duplicate") || strings.Contains(errStr, "violates unique constraint") {
+			errMsg = fmt.Sprintf("Chain ID %d already exists - please use a different chain ID", chainID)
+		} else if strings.Contains(errStr, "invalid input value for enum") {
+			errMsg = fmt.Sprintf("Stack type '%s' is not supported - database migration may be needed", stack)
+		} else {
+			errMsg = fmt.Sprintf("Database error: %s", errStr)
+		}
+		http.Redirect(w, r, buildErrorRedirect(4, errMsg), http.StatusFound)
 		return
 	}
 
@@ -787,7 +831,8 @@ func (h *Handler) buildStagesInfo(deployment *repository.Deployment) []component
 		currentStage = *deployment.CurrentStage
 	}
 
-	if deployment.Stack == repository.StackOPStack {
+	switch deployment.Stack {
+	case repository.StackOPStack:
 		// OP Stack stages - these match the orchestrator stage names
 		// The op-deployer runs the full pipeline, so we track high-level phases
 		stages = []components.StageInfo{
@@ -798,7 +843,15 @@ func (h *Handler) buildStagesInfo(deployment *repository.Deployment) []component
 			{Name: "Generate Genesis", Status: "pending", TxCount: 0},
 			{Name: "Create Bundle", Status: "pending", TxCount: 0},
 		}
-	} else {
+	case repository.StackPopBundle:
+		// Pop-bundle stages - local devnet deployment with Anvil
+		stages = []components.StageInfo{
+			{Name: "Start Anvil", Status: "pending", TxCount: 0, Details: "Starting local L1"},
+			{Name: "Deploy Contracts", Status: "pending", TxCount: 0, Details: "OP Stack to Anvil"},
+			{Name: "Capture State", Status: "pending", TxCount: 0, Details: "Dumping Anvil state"},
+			{Name: "Generate Configs", Status: "pending", TxCount: 0, Details: "Creating bundle files"},
+		}
+	default:
 		// Nitro stages - detailed breakdown of actual deployment steps
 		stages = []components.StageInfo{
 			{Name: "Initialize", Status: "pending", TxCount: 0, Details: "Loading configuration"},
@@ -835,13 +888,27 @@ func (h *Handler) buildStagesInfo(deployment *repository.Deployment) []component
 		"completed":          6, // All done
 	}
 
+	// Map orchestrator stage names to UI stage indices for Pop-bundle
+	popBundleStageIndex := map[string]int{
+		"starting_anvil":      0, // Start Anvil
+		"deploying_contracts": 1, // Deploy Contracts
+		"capturing_state":     2, // Capture State
+		"generating_configs":  3, // Generate Configs
+		"complete":            3, // All done
+	}
+
 	// Helper function to get stage index from current stage name
 	getStageIndex := func(stageName string) int {
-		if deployment.Stack == repository.StackOPStack {
+		switch deployment.Stack {
+		case repository.StackOPStack:
 			if idx, ok := opStackStageIndex[stageName]; ok {
 				return idx
 			}
-		} else {
+		case repository.StackPopBundle:
+			if idx, ok := popBundleStageIndex[stageName]; ok {
+				return idx
+			}
+		default:
 			if idx, ok := nitroStageIndex[stageName]; ok {
 				return idx
 			}
@@ -933,23 +1000,96 @@ func extractL1ChainID(d *repository.Deployment) string {
 
 // DeploymentComplete renders the deployment complete page (reuses TASK-032)
 func (h *Handler) DeploymentComplete(w http.ResponseWriter, r *http.Request) {
-	user, org, err := h.getUserAndOrg(r)
+	_, org, err := h.getUserAndOrg(r)
 	if err != nil {
 		h.handleAuthError(w, r)
 		return
 	}
 
-	data := layouts.PopkinsData{
-		UserName:   getUserName(user),
-		UserEmail:  user.Email,
-		AvatarURL:  getAvatarURL(user),
-		OrgName:    org.Name,
-		ActivePath: "/deployments",
+	deploymentID := chi.URLParam(r, "id")
+	if deploymentID == "" {
+		http.Error(w, "Missing deployment ID", http.StatusBadRequest)
+		return
 	}
 
-	// Render layout with placeholder content
+	deployID, err := uuid.Parse(deploymentID)
+	if err != nil {
+		http.Error(w, "Invalid deployment ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get deployment
+	deployment, err := h.deployRepo.GetDeployment(r.Context(), deployID)
+	if err != nil {
+		slog.Error("failed to get deployment", "id", deploymentID, "error", err)
+		http.Error(w, "Deployment not found", http.StatusNotFound)
+		return
+	}
+
+	// Verify deployment belongs to user's organization
+	if deployment.OrgID != org.ID {
+		http.Error(w, "Deployment not found", http.StatusNotFound)
+		return
+	}
+
+	// Extract chain name from config
+	chainName := extractChainName(deployment)
+
+	// Build deployment data for template
+	deploymentData := pages.DeploymentData{
+		DeploymentID: deploymentID,
+		ChainName:    chainName,
+		ChainID:      uint64(deployment.ChainID),
+		Stack:        string(deployment.Stack),
+		Status:       string(deployment.Status),
+		CreatedAt:    deployment.CreatedAt.Format("Jan 2, 2006"),
+	}
+
+	// Get artifacts for the artifact list
+	var artifactInfos []pages.ArtifactInfo
+	artifacts, err := h.deployRepo.GetAllArtifacts(r.Context(), deployID)
+	if err == nil && len(artifacts) > 0 {
+		for _, a := range artifacts {
+			// Skip internal artifacts
+			if a.ArtifactType == "deployment_state" {
+				continue
+			}
+
+			info := pages.ArtifactInfo{
+				Name: a.ArtifactType,
+				Type: a.ArtifactType,
+				Size: formatBytes(len(a.Content)),
+			}
+
+			// Add descriptions based on artifact type
+			switch a.ArtifactType {
+			case "genesis.json":
+				info.Description = "L2 genesis state"
+			case "rollup.json":
+				info.Description = "Rollup configuration"
+			case "addresses.json":
+				info.Description = "Deployed contract addresses"
+			case "docker-compose.yml":
+				info.Description = "Docker Compose configuration"
+			case "jwt.txt":
+				info.Description = "JWT secret for Engine API"
+			case "config.toml":
+				info.Description = "Celestia DA configuration"
+			case ".env.example":
+				info.Description = "Environment variables template"
+			case "README.md":
+				info.Description = "Setup instructions"
+			case "anvil-state.json":
+				info.Description = "Pre-deployed L1 state"
+			}
+
+			artifactInfos = append(artifactInfos, info)
+		}
+	}
+
+	// Render the complete page
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	layouts.PopkinsWithContent("Deployment Complete", data, placeholderDeploymentComplete()).Render(r.Context(), w)
+	pages.DeploymentCompletePage(deploymentData, artifactInfos).Render(r.Context(), w)
 }
 
 // DownloadBundle handles artifact bundle downloads as a ZIP file.
@@ -1047,6 +1187,12 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 			// op-alt-da config for Celestia DA
 			path = bundlePrefix + "config.toml"
 			isPlainText = true
+		case "anvil-state.json":
+			// Pre-deployed L1 state for POPKins Bundle
+			path = bundlePrefix + "anvil-state.json"
+		case "l1-chain-config.json":
+			// L1 chain configuration for op-node (required for Anvil)
+			path = bundlePrefix + "l1-chain-config.json"
 		case "README.md":
 			path = bundlePrefix + "README.md"
 			isPlainText = true
@@ -1423,5 +1569,22 @@ func unwrapJSONString(data []byte) []byte {
 
 	// If it's not a recognized format, return as-is
 	return data
+}
+
+// formatBytes converts bytes to a human-readable string (KB, MB, etc.)
+func formatBytes(bytes int) string {
+	const (
+		KB = 1024
+		MB = KB * 1024
+	)
+
+	switch {
+	case bytes >= MB:
+		return fmt.Sprintf("%.1f MB", float64(bytes)/float64(MB))
+	case bytes >= KB:
+		return fmt.Sprintf("%.1f KB", float64(bytes)/float64(KB))
+	default:
+		return fmt.Sprintf("%d B", bytes)
+	}
 }
 

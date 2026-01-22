@@ -105,6 +105,8 @@ func (b *Bundler) createBundle(cfg *BundleConfig) (*BundleResult, error) {
 		return b.createOPStackBundle(cfg)
 	case StackNitro:
 		return b.createNitroBundle(cfg)
+	case StackPopBundle:
+		return b.createPopBundleBundle(cfg)
 	default:
 		return nil, fmt.Errorf("unsupported stack: %s", cfg.Stack)
 	}

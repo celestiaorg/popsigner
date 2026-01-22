@@ -19,8 +19,8 @@ COPY . .
 # Build the binary WITHOUT cache mounts to ensure fresh module resolution
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /server ./cmd/server
 
-# Runtime stage - now using minimal Alpine (no Node.js needed)
-FROM alpine:3.21
+# Runtime stage - use Debian for glibc compatibility (Foundry binaries need glibc)
+FROM debian:bookworm-slim
 
 LABEL org.opencontainers.image.title="POPSigner Control Plane"
 LABEL org.opencontainers.image.description="POPSigner - Point-of-Presence signing infrastructure"
@@ -29,7 +29,20 @@ LABEL org.opencontainers.image.vendor="POPSigner"
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache ca-certificates wget
+# - ca-certificates, wget: for health checks and HTTPS
+# - curl: for Foundry installation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates wget curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Foundry (anvil) for pop-bundle deployments
+# Foundry provides anvil (local Ethereum node) needed for local devnet bundles
+# Download pre-built binaries directly from GitHub releases
+ENV FOUNDRY_DIR=/usr/local/foundry
+RUN mkdir -p ${FOUNDRY_DIR}/bin && \
+    LATEST=$(curl -sL https://api.github.com/repos/foundry-rs/foundry/releases/latest | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4) && \
+    curl -L "https://github.com/foundry-rs/foundry/releases/download/${LATEST}/foundry_${LATEST}_linux_amd64.tar.gz" | tar -xzC ${FOUNDRY_DIR}/bin
+ENV PATH="${FOUNDRY_DIR}/bin:${PATH}"
 
 # Copy binary from builder
 COPY --from=builder /server /app/server
@@ -38,7 +51,8 @@ COPY --from=builder /server /app/server
 COPY --from=builder /app/static /app/static
 
 # Create non-root user
-RUN adduser -D -g '' appuser
+RUN useradd -r -s /bin/false appuser && \
+    chown -R appuser:appuser /app
 USER appuser
 
 # Expose port

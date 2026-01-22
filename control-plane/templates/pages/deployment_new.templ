@@ -75,6 +75,9 @@ templ DeploymentNewPage(data DeploymentNewData) {
 					@DeploymentStep3Keys(data)
 				case 4:
 					@DeploymentStep4Review(data)
+				case 5:
+					// Step 5 = POPKins Bundle config (simplified step 2)
+					@DeploymentStep2Bundle(data)
 				default:
 					@DeploymentStep1Stack(data)
 				}
@@ -104,13 +107,15 @@ templ DeployWizardStep(step int, label string, currentStep int) {
 
 // DeploymentStep1Stack - Select rollup stack
 templ DeploymentStep1Stack(data DeploymentNewData) {
-	<form action="/deployments/new?step=2" method="POST" class="space-y-6">
+	<form id="stack-form" action="/deployments/new?step=2" method="POST" class="space-y-6"
+		  x-data="{ selected: '' }"
+		  @submit="if(selected === 'pop-bundle') { $el.action = '/deployments/new?step=2-bundle'; }">
 		<div>
 			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Select Rollup Stack</h2>
 			<p class="text-[#666600] text-sm">Choose the technology stack for your chain</p>
 		</div>
-		
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4" x-data="{ selected: '' }">
+
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 			<!-- OP Stack Option -->
 			<div class="cursor-pointer" @click="selected = 'opstack'; $refs.opstack.checked = true">
 				<input type="radio" name="stack" value="opstack" x-ref="opstack"
@@ -159,9 +164,33 @@ templ DeploymentStep1Stack(data DeploymentNewData) {
 				</div>
 			</div>
 
+			<!-- POPKins Devnet Bundle Option -->
+			<div class="cursor-pointer" @click="selected = 'pop-bundle'; $refs.popbundle.checked = true">
+				<input type="radio" name="stack" value="pop-bundle" x-ref="popbundle"
+					   class="hidden"
+					   checked?={ data.FormData.Stack == "pop-bundle" }/>
+				<div class="p-5 border transition-all h-full"
+					 :class="selected === 'pop-bundle' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'">
+					<div class="flex items-center justify-between mb-4">
+						<span class="text-3xl">📦</span>
+						<span class="w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center"
+							  :class="selected === 'pop-bundle' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'">
+							<span x-show="selected === 'pop-bundle'" class="text-black text-xs">✓</span>
+						</span>
+					</div>
+					<div class="text-[#FFB000] font-bold uppercase text-xl mb-2">POPKins Bundle</div>
+					<div class="text-[#AAAAAA] text-sm leading-relaxed mb-4">
+						Complete local devnet with pre-deployed contracts. Perfect for development.
+					</div>
+					<div class="text-[#666600] text-xs">
+						Pre-deployed • Local only • Celestia DA
+					</div>
+				</div>
+			</div>
+
 			<!-- Continue Button - disabled until selection made -->
-			<div class="col-span-1 md:col-span-2 mt-2">
-				<button type="submit" 
+			<div class="col-span-1 md:col-span-3 mt-2">
+				<button type="submit"
 						:disabled="!selected"
 						:class="selected ? 'bg-[#33FF00] text-black hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] cursor-pointer' : 'bg-[#333300] text-[#666600] cursor-not-allowed'"
 						class="w-full py-4 font-bold uppercase transition-all">
@@ -263,6 +292,98 @@ templ DeploymentStep2Config(data DeploymentNewData) {
 					class="flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase 
 						   hover:bg-[#44FF11] transition-colors">
 				CONTINUE →
+			</button>
+		</div>
+	</form>
+}
+
+// DeploymentStep2Bundle - Simplified config for POPKins bundle (no L1 RPC or keys needed)
+templ DeploymentStep2Bundle(data DeploymentNewData) {
+	<form action="/deployments" method="POST" class="space-y-6">
+		<!-- Hidden field from previous step -->
+		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
+		<!-- POPKins bundle uses local Anvil, so hardcode these -->
+		<input type="hidden" name="l1_rpc" value="http://localhost:8545"/>
+		<input type="hidden" name="l1_chain_id" value="31337"/>
+		<input type="hidden" name="da" value="celestia"/>
+		<!-- No keys needed - uses Anvil's deterministic accounts -->
+		<input type="hidden" name="deployer_key" value="anvil-0"/>
+		<input type="hidden" name="batcher_key" value="anvil-1"/>
+		<input type="hidden" name="proposer_key" value="anvil-2"/>
+
+		<div>
+			<h2 class="text-lg text-[#FFB000] uppercase mb-2 font-bold">POPKins Bundle Configuration</h2>
+			<p class="text-[#666600] text-sm">Configure your local devnet bundle</p>
+		</div>
+
+		<!-- Info Box -->
+		<div class="p-4 bg-[#1a1500] border border-[#FFB000]/50 text-sm">
+			<p class="text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2">
+				<span>📦</span>
+				<span>What's in the Bundle?</span>
+			</p>
+			<ul class="text-[#999] space-y-1.5">
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Pre-deployed OP Stack contracts</strong> - No waiting for deployment</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Local Anvil L1</strong> with funded accounts</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Celestia DA</strong> via Localestia (mock)</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Full OP Stack</strong>: op-geth, op-node, op-batcher, op-proposer</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Docker Compose</strong> ready - just run <code class="text-[#33FF00]">docker compose up</code></span>
+				</li>
+			</ul>
+		</div>
+
+		<div class="space-y-4">
+			<div>
+				<label class="block text-sm text-[#666600] uppercase mb-2">Chain Name</label>
+				<input type="text" name="chain_name" required
+					   value={ data.FormData.ChainName }
+					   placeholder="my-local-devnet"
+					   pattern="[a-z0-9-]+"
+					   title="Lowercase letters, numbers, and hyphens only"
+					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]
+							  placeholder-[#333300] focus:border-[#FFB000] focus:outline-none"/>
+				<p class="text-xs text-[#333300] mt-1">Used for bundle directory and docker container names</p>
+			</div>
+
+			<div>
+				<label class="block text-sm text-[#666600] uppercase mb-2">Chain ID</label>
+				<input type="number" name="chain_id" required
+					   value={ getDefaultChainID(data.FormData.ChainID) }
+					   placeholder="42069"
+					   min="1"
+					   max="9999999999"
+					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]
+							  placeholder-[#333300] focus:border-[#FFB000] focus:outline-none"/>
+				<p class="text-xs text-[#333300] mt-1">Your L2 chain ID (any unique number works for local dev)</p>
+			</div>
+		</div>
+
+		<div class="flex gap-4 pt-4">
+			<a href="/deployments/new?step=1"
+			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase
+					  hover:border-[#666600] hover:text-[#999] transition-colors">
+				← BACK
+			</a>
+			<button type="submit"
+					class="flex-1 py-4 bg-[#FFB000] text-black font-bold uppercase text-lg
+						   hover:bg-[#FFCC00] hover:shadow-[0_0_30px_#FFB000] transition-all
+						   flex items-center justify-center gap-2">
+				<span>🚀</span>
+				<span>CREATE BUNDLE</span>
 			</button>
 		</div>
 	</form>
@@ -427,34 +548,66 @@ templ DeploymentStep4Review(data DeploymentNewData) {
 			</div>
 		</div>
 
-		<!-- Warning Box -->
-		<div class="p-4 bg-[#1a1500] border border-[#FFB000]/50">
-			<p class="text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2">
-				<span>⚠</span>
-				<span>Before You Deploy</span>
-			</p>
-			<ul class="text-[#999] text-sm space-y-1.5">
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span>Deployment will take <strong class="text-[#FFB000]">5-15 minutes</strong> depending on network congestion</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span>Deployer key needs <strong class="text-[#FFB000]">~0.5 ETH</strong> { "for" } gas (testnet ETH on Sepolia)</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span>You can <strong>resume</strong> { "if" } deployment is interrupted</span>
-				</li>
-			</ul>
-		</div>
+		<!-- Warning Box - different content for pop-bundle vs other stacks -->
+		if data.FormData.Stack == "pop-bundle" {
+			<div class="p-4 bg-[#0a1a0a] border border-[#33FF00]/50">
+				<p class="text-[#33FF00] font-bold uppercase mb-2 flex items-center gap-2">
+					<span>📦</span>
+					<span>Local Devnet Bundle</span>
+				</p>
+				<ul class="text-[#999] text-sm space-y-1.5">
+					<li class="flex items-start gap-2">
+						<span class="text-[#33FF00]">•</span>
+						<span>Uses <strong class="text-[#33FF00]">local Anvil</strong> with pre-funded accounts</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="text-[#33FF00]">•</span>
+						<span><strong class="text-[#33FF00]">No real ETH</strong> required - all accounts funded automatically</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="text-[#33FF00]">•</span>
+						<span>Download a <strong class="text-[#33FF00]">Docker Compose bundle</strong> ready to run locally</span>
+					</li>
+				</ul>
+			</div>
+		} else {
+			<div class="p-4 bg-[#1a1500] border border-[#FFB000]/50">
+				<p class="text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2">
+					<span>⚠</span>
+					<span>Before You Deploy</span>
+				</p>
+				<ul class="text-[#999] text-sm space-y-1.5">
+					<li class="flex items-start gap-2">
+						<span class="text-[#FFB000]">•</span>
+						<span>Deployment will take <strong class="text-[#FFB000]">5-15 minutes</strong> depending on network congestion</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="text-[#FFB000]">•</span>
+						<span>Deployer key needs <strong class="text-[#FFB000]">~0.5 ETH</strong> { "for" } gas (testnet ETH on Sepolia)</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="text-[#FFB000]">•</span>
+						<span>You can <strong>resume</strong> { "if" } deployment is interrupted</span>
+					</li>
+				</ul>
+			</div>
+		}
 
 		<div class="flex gap-4 pt-4">
-			<a href="/deployments/new?step=3" 
-			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase 
-					  hover:border-[#666600] hover:text-[#999] transition-colors">
-				← BACK
-			</a>
+			<!-- Back button: for pop-bundle go to step 5 (bundle config), otherwise step 3 (keys) -->
+			if data.FormData.Stack == "pop-bundle" {
+				<a href={ templ.SafeURL(buildBackURL(5, data.FormData)) }
+				   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase
+						  hover:border-[#666600] hover:text-[#999] transition-colors">
+					← BACK
+				</a>
+			} else {
+				<a href={ templ.SafeURL(buildBackURL(3, data.FormData)) }
+				   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase
+						  hover:border-[#666600] hover:text-[#999] transition-colors">
+					← BACK
+				</a>
+			}
 			<button type="submit" 
 					class="flex-1 py-4 bg-[#FFB000] text-black font-bold uppercase text-lg
 						   hover:bg-[#FFCC00] hover:shadow-[0_0_30px_#FFB000] transition-all
@@ -497,6 +650,8 @@ func getStackDisplayName(stack string) string {
 		return "OP STACK"
 	case "nitro":
 		return "ARBITRUM NITRO"
+	case "pop-bundle":
+		return "POPKINS DEVNET BUNDLE"
 	default:
 		return strings.ToUpper(stack)
 	}
@@ -532,6 +687,10 @@ func getDADisplayName(da string) string {
 }
 
 func getKeyName(keys []components.KeyOption, keyID string) string {
+	// Handle Anvil placeholder keys for pop-bundle
+	if strings.HasPrefix(keyID, "anvil-") {
+		return "Anvil Account " + keyID[6:]
+	}
 	for _, k := range keys {
 		if k.ID == keyID {
 			return k.Name
@@ -541,5 +700,17 @@ func getKeyName(keys []components.KeyOption, keyID string) string {
 		return "(not selected)"
 	}
 	return keyID[:8] + "..."
+}
+
+func getDefaultChainID(chainID string) string {
+	if chainID == "" {
+		return "42069"
+	}
+	return chainID
+}
+
+func buildBackURL(step int, data DeploymentFormData) string {
+	return fmt.Sprintf("/deployments/new?step=%d&stack=%s&chain_name=%s&chain_id=%s",
+		step, data.Stack, data.ChainName, data.ChainID)
 }
 

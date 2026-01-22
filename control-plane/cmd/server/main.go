@@ -25,6 +25,7 @@ import (
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/nitro"
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/opstack"
 	bootstraporchestrator "github.com/Bidon15/popsigner/control-plane/internal/bootstrap/orchestrator"
+	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/popdeployer"
 	bootstraprepo "github.com/Bidon15/popsigner/control-plane/internal/bootstrap/repository"
 	"github.com/Bidon15/popsigner/control-plane/internal/config"
 	"github.com/Bidon15/popsigner/control-plane/internal/database"
@@ -185,6 +186,17 @@ func main() {
 		slog.Bool("infra_repo_enabled", true),
 	)
 
+	// Initialize POPKins Bundle orchestrator for devnet bundle creation
+	popBundleOrch := popdeployer.NewOrchestrator(
+		bootstrapRepo,
+		popdeployer.OrchestratorConfig{
+			Logger:   logger,
+			CacheDir: "/tmp/popdeployer",
+			WorkDir:  "/tmp/popdeployer/work",
+		},
+	)
+	logger.Info("POPKins Bundle orchestrator initialized")
+
 	// Initialize key resolver and API key manager for orchestrator
 	keyResolver := bootstraporchestrator.NewKeyServiceResolver(keySvc)
 	apiKeyManager := bootstraporchestrator.NewDefaultAPIKeyManager(apiKeySvc, baoClient, logger)
@@ -206,6 +218,7 @@ func main() {
 		bootstrapRepo,
 		opstackOrch,
 		nitroOrch,
+		popBundleOrch,
 		keyResolver,
 		apiKeyManager,
 		bootstraporchestrator.Config{

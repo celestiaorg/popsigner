@@ -48,13 +48,15 @@ templ DeploymentProgressPage(data DeploymentProgressData) {
 templ DeploymentProgressContent(data DeploymentProgressData) {
 	<!-- Auto-redirect script for completed deployments -->
 	if data.Status == "completed" {
-		<script>
-			window.location.href = "/deployments/" + { data.DeploymentID } + "/complete";
-		</script>
+		<meta http-equiv="refresh" content={ "0;url=/deployments/" + data.DeploymentID + "/complete" }/>
 		<div class="text-center py-12">
 			<div class="text-5xl mb-4">✅</div>
 			<h2 class="text-2xl text-[#33FF00] font-bold uppercase mb-2">Deployment Complete!</h2>
 			<p class="text-[#666600]">Redirecting...</p>
+			<a href={ templ.SafeURL("/deployments/" + data.DeploymentID + "/complete") }
+			   class="mt-4 inline-block text-[#33FF00] hover:underline">
+				Click here if not redirected
+			</a>
 		</div>
 	} else {
 		<!-- Header -->
@@ -89,6 +91,8 @@ templ DeploymentProgressContent(data DeploymentProgressData) {
 				<span>
 					if data.Stack == "opstack" {
 						⚡ OP Stack
+					} else if data.Stack == "pop-bundle" {
+						📦 POPKins Bundle
 					} else {
 						🚀 Arbitrum Nitro
 					}

@@ -155,8 +155,8 @@ func (h *DeploymentHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Validate stack type
 	stack := repository.Stack(req.Stack)
-	if stack != repository.StackOPStack && stack != repository.StackNitro {
-		response.Error(w, apierrors.NewValidationError("stack", "stack must be 'opstack' or 'nitro'"))
+	if stack != repository.StackOPStack && stack != repository.StackNitro && stack != repository.StackPopBundle {
+		response.Error(w, apierrors.NewValidationError("stack", "stack must be 'opstack', 'nitro', or 'pop-bundle'"))
 		return
 	}
 

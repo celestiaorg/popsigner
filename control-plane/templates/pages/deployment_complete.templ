@@ -118,8 +118,8 @@ templ DeploymentCompletePage(deployment DeploymentData, artifacts []ArtifactInfo
 									<span class="text-[#444] text-xs">Size: { deployment.BundleSize }</span>
 								}
 							</div>
-							<a 
-								href={ templ.URL("/api/v1/deployments/" + deployment.DeploymentID + "/bundle") }
+							<a
+								href={ templ.URL("/deployments/" + deployment.DeploymentID + "/bundle") }
 								class="px-6 py-3 bg-[#33FF00] text-black font-bold text-sm uppercase hover:bg-[#44FF11] transition-colors whitespace-nowrap"
 							>
 								DOWNLOAD BUNDLE
@@ -159,8 +159,9 @@ templ DeploymentCompletePage(deployment DeploymentData, artifacts []ArtifactInfo
 					<h2 class="text-xl font-bold text-[#33FF00] mb-6 flex items-center gap-3 uppercase">
 						<span class="text-2xl">🔗</span> ENDPOINTS (AFTER_STARTUP)
 					</h2>
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-						if deployment.Stack == "opstack" {
+					if deployment.Stack == "pop-bundle" {
+						<!-- POPKins Bundle endpoints -->
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
 							<div class="p-3 bg-[#0a0a00] border border-[#222]">
 								<span class="text-[#666600] text-xs uppercase block mb-1">L2 JSON-RPC</span>
 								<code class="text-[#33FF00] text-sm">http://localhost:8545</code>
@@ -173,7 +174,39 @@ templ DeploymentCompletePage(deployment DeploymentData, artifacts []ArtifactInfo
 								<span class="text-[#666600] text-xs uppercase block mb-1">OP Node RPC</span>
 								<code class="text-[#33FF00] text-sm">http://localhost:9545</code>
 							</div>
-						} else {
+						</div>
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+							<div class="p-3 bg-[#0a0a00] border border-[#222]">
+								<span class="text-[#666600] text-xs uppercase block mb-1">L1 (Anvil)</span>
+								<code class="text-[#33FF00] text-sm">http://localhost:9546</code>
+							</div>
+							<div class="p-3 bg-[#0a0a00] border border-[#222]">
+								<span class="text-[#666600] text-xs uppercase block mb-1">POPSigner-Lite</span>
+								<code class="text-[#33FF00] text-sm">http://localhost:3000</code>
+							</div>
+							<div class="p-3 bg-[#0a0a00] border border-[#222]">
+								<span class="text-[#666600] text-xs uppercase block mb-1">Localestia</span>
+								<code class="text-[#33FF00] text-sm">http://localhost:26658</code>
+							</div>
+						</div>
+					} else if deployment.Stack == "opstack" {
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+							<div class="p-3 bg-[#0a0a00] border border-[#222]">
+								<span class="text-[#666600] text-xs uppercase block mb-1">L2 JSON-RPC</span>
+								<code class="text-[#33FF00] text-sm">http://localhost:8545</code>
+							</div>
+							<div class="p-3 bg-[#0a0a00] border border-[#222]">
+								<span class="text-[#666600] text-xs uppercase block mb-1">L2 WebSocket</span>
+								<code class="text-[#33FF00] text-sm">ws://localhost:8546</code>
+							</div>
+							<div class="p-3 bg-[#0a0a00] border border-[#222]">
+								<span class="text-[#666600] text-xs uppercase block mb-1">OP Node RPC</span>
+								<code class="text-[#33FF00] text-sm">http://localhost:9545</code>
+							</div>
+						</div>
+					} else {
+						<!-- Nitro endpoints -->
+						<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 							<div class="p-3 bg-[#0a0a00] border border-[#222]">
 								<span class="text-[#666600] text-xs uppercase block mb-1">L2 JSON-RPC</span>
 								<code class="text-[#33FF00] text-sm">http://localhost:8547</code>
@@ -186,8 +219,8 @@ templ DeploymentCompletePage(deployment DeploymentData, artifacts []ArtifactInfo
 								<span class="text-[#666600] text-xs uppercase block mb-1">Metrics</span>
 								<code class="text-[#33FF00] text-sm">http://localhost:9642</code>
 							</div>
-						}
-					</div>
+						</div>
+					}
 				</div>
 
 				<!-- Help Links -->
