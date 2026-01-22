@@ -20,6 +20,17 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	// deploymentTimeout is the maximum time allowed for OP Stack deployment.
+	// Typical deployments take 5-15 minutes; 30 minutes provides adequate buffer
+	// for slow networks or resource-constrained environments.
+	deploymentTimeout = 30 * time.Minute
+
+	// anvilShutdownTimeout is how long to wait for Anvil to gracefully shut down
+	// before forcing a kill signal.
+	anvilShutdownTimeout = 5 * time.Second
+)
+
 // Stage represents the deployment stage for progress tracking.
 type Stage string
 
@@ -353,7 +364,7 @@ func (o *Orchestrator) deployOPStack(ctx context.Context, dc *DeploymentContext,
 	}
 
 	// Deploy with timeout
-	deployCtx, deployCancel := context.WithTimeout(ctx, 30*time.Minute)
+	deployCtx, deployCancel := context.WithTimeout(ctx, deploymentTimeout)
 	defer deployCancel()
 
 	result, err := deployer.Deploy(deployCtx, opstackCfg, adapter, progressCallback)
@@ -425,10 +436,19 @@ func (o *Orchestrator) captureAnvilState(ctx context.Context, dc *DeploymentCont
 
 	select {
 	case err := <-anvilDone:
-		if err != nil && err.Error() != "signal: terminated" {
+		// SIGTERM exit is expected, other errors are warnings
+		if err != nil {
+			// Check if it's a signal termination (expected)
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				if status, ok := exitErr.Sys().(syscall.WaitStatus); ok && status.Signaled() {
+					// Normal SIGTERM exit - no warning needed
+					break
+				}
+			}
+			// Unexpected error
 			o.logger.Warn("Anvil exited with error", slog.String("error", err.Error()))
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(anvilShutdownTimeout):
 		o.logger.Warn("Anvil shutdown timeout, forcing kill")
 		dc.AnvilCmd.Process.Kill()
 	}

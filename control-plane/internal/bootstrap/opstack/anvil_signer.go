@@ -18,7 +18,12 @@ import (
 // These are derived from the default mnemonic:
 // "test test test test test test test test test test test junk"
 //
-// WARNING: These keys are publicly known. Use only for local development.
+// ⚠️  SECURITY WARNING - DO NOT USE IN PRODUCTION ⚠️
+// These keys are PUBLICLY KNOWN and included in Foundry's Anvil tool.
+// Any funds sent to these addresses on real networks WILL BE STOLEN.
+// Use ONLY for local development and testing with Anvil.
+//
+// NewAnvilSigner enforces protection by refusing to sign for production networks.
 var AnvilPrivateKeys = []string{
 	"ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", // anvil-0: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 	"59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", // anvil-1: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
@@ -33,15 +38,34 @@ var AnvilPrivateKeys = []string{
 }
 
 // AnvilSigner signs transactions using Anvil's well-known private keys.
-// Use this for local Anvil deployments only - NOT for production.
+//
+// ⚠️  WARNING: Use ONLY for local Anvil deployments on test networks.
+// These keys are publicly known and must never be used in production.
+//
+// Safe for concurrent use after construction.
 type AnvilSigner struct {
 	keys    map[common.Address]*ecdsa.PrivateKey
 	chainID *big.Int
 }
 
 // NewAnvilSigner creates a signer pre-loaded with all Anvil deterministic keys.
+//
+// Returns error if chainID corresponds to a production network (mainnet or major L2s).
 func NewAnvilSigner(chainID *big.Int) (*AnvilSigner, error) {
-	keys := make(map[common.Address]*ecdsa.PrivateKey)
+	// Prevent accidental use on production networks
+	productionChainIDs := map[int64]string{
+		1:     "Ethereum Mainnet",
+		10:    "Optimism",
+		42161: "Arbitrum One",
+		137:   "Polygon",
+		8453:  "Base",
+	}
+
+	if chainName, isProduction := productionChainIDs[chainID.Int64()]; isProduction {
+		return nil, fmt.Errorf("anvil signer cannot be used on %s (chain_id=%s): keys are publicly known", chainName, chainID)
+	}
+
+	keys := make(map[common.Address]*ecdsa.PrivateKey, len(AnvilPrivateKeys))
 
 	for _, hexKey := range AnvilPrivateKeys {
 		privateKey, err := crypto.HexToECDSA(hexKey)

@@ -12,7 +12,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// ConfigWriter handles generating all bundle configuration files.
+// ConfigWriter generates POPKins bundle configuration files.
+// It transforms deployment results into docker-compose, genesis,
+// rollup config, and other artifacts needed for local devnet.
+//
+// Not safe for concurrent use. Create one writer per deployment.
 type ConfigWriter struct {
 	logger        *slog.Logger
 	result        *opstack.DeployResult
@@ -22,8 +26,10 @@ type ConfigWriter struct {
 
 // GenerateAll generates all configuration files and returns them as a map.
 // Keys are artifact types (filenames), values are the file contents as bytes.
+//
+// Returns error on first generation failure. Partial results are discarded.
 func (w *ConfigWriter) GenerateAll() (map[string][]byte, error) {
-	artifacts := make(map[string][]byte)
+	artifacts := make(map[string][]byte, 9) // 9 known artifacts
 
 	// Generate each config file
 	generators := []struct {
