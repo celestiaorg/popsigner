@@ -11,7 +11,7 @@
 **Request Format:**
 ```json
 {
-  "data": "0x48656c6c6f",     // Hex-encoded data to sign
+  "data": "SGVsbG8=",         // Base64-encoded data to sign
   "prehashed": false          // Optional: true if data is already hashed
 }
 ```
@@ -19,7 +19,35 @@
 **Response Format:**
 ```json
 {
-  "signature": "0x..."  // Hex-encoded 65-byte signature [R || S || V]
+  "signature": "MEUCIQDh..."  // Base64-encoded signature
+}
+```
+
+### REST API: `POST /v1/sign/batch`
+
+**Request Format:**
+```json
+{
+  "requests": [
+    {
+      "key_id": "anvil-9",
+      "data": "SGVsbG8=",     // Base64-encoded data to sign
+      "prehashed": false
+    }
+  ]
+}
+```
+
+**Response Format:**
+```json
+{
+  "results": [
+    {
+      "key_id": "anvil-9",
+      "signature": "MEUCIQDh...",  // Base64-encoded signature
+      "error": null
+    }
+  ]
 }
 ```
 
@@ -78,11 +106,25 @@ We considered creating a shared signing package, but decided against it because:
 
 The current approach duplicates minimal glue code (~30 lines) while reusing the core ECDSA signing (`signer.EthereumSigner`).
 
+## Encoding Formats
+
+### REST API (Port 3000)
+- **Input data**: Base64-encoded
+- **Output signatures**: Base64-encoded
+- **Use case**: Celestia/Cosmos SDK signing via POPSigner SDK
+
+### JSON-RPC API (Port 8555)
+- **Input data**: Hex-encoded (0x-prefixed)
+- **Output signatures**: Hex-encoded (0x-prefixed)
+- **Use case**: Ethereum/OP Stack signing via op-batcher, op-proposer
+
 ## Key Insight
 
-The **API contract** (request/response format with `prehashed` parameter) is the critical compatibility layer. The **implementation** can differ as long as the behavior matches:
+The **API contract** (request/response format with `prehashed` parameter and base64 encoding) is the critical compatibility layer. The **implementation** can differ as long as the behavior matches:
 
-- **POPSigner Cloud**: Always hashes with SHA-256, sends to OpenBao
-- **POPSigner-Lite**: Conditionally hashes with SHA-256, signs locally
+- **POPSigner Cloud**: Always hashes with SHA-256, sends to OpenBao, uses base64
+- **POPSigner-Lite**: Conditionally hashes with SHA-256, signs locally, uses base64
 
 Both produce the same signatures for Celestia/Cosmos SDK usage.
+
+The base64 encoding for REST API matches the POPSigner SDK expectations (see `sdk-go/sign.go`) and is required for integration with op-alt-da.

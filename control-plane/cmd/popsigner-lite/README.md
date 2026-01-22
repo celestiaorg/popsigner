@@ -118,10 +118,12 @@ POST /v1/keys/:id/sign
 Content-Type: application/json
 
 {
-  "data": "0x1234...",
-  "prehashed": false  # Optional: true if data is already hashed (default: false)
+  "data": "SGVsbG8=",      # Base64-encoded data to sign
+  "prehashed": false       # Optional: true if data is already hashed (default: false)
 }
 ```
+
+**Note**: The REST API uses **base64 encoding** for data and signatures to match POPSigner Cloud and the POPSigner SDK. The JSON-RPC API uses hex encoding (0x-prefixed) for Ethereum compatibility.
 
 **Ethereum signing** (Keccak256, default for JSON-RPC):
 ```bash
@@ -134,9 +136,10 @@ curl -X POST http://localhost:8545 \
 **Celestia/Cosmos SDK signing** (SHA-256, via REST API):
 ```bash
 # Data will be hashed with SHA-256 (prehashed=false)
+# Note: REST API uses base64 encoding, not hex
 curl -X POST http://localhost:3000/v1/keys/anvil-9/sign \
   -H "Content-Type: application/json" \
-  -d '{"data":"0x48656c6c6f","prehashed":false}'
+  -d '{"data":"SGVsbG8=","prehashed":false}'
 ```
 
 See [SIGNING-COMPATIBILITY.md](./SIGNING-COMPATIBILITY.md) for details on maintaining compatibility with POPSigner Cloud.
@@ -147,14 +150,34 @@ POST /v1/sign/batch
 Content-Type: application/json
 
 {
-  "items": [
+  "requests": [
     {
       "key_id": "anvil-0",
-      "data": "0x1234..."
+      "data": "SGVsbG8=",    # Base64-encoded
+      "prehashed": false
     },
     {
       "key_id": "anvil-1",
-      "data": "0x5678..."
+      "data": "V29ybGQ=",    # Base64-encoded
+      "prehashed": false
+    }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "key_id": "anvil-0",
+      "signature": "MEUCIQDh...",  # Base64-encoded signature
+      "error": null
+    },
+    {
+      "key_id": "anvil-1",
+      "signature": "MEYCIQC8...",
+      "error": null
     }
   ]
 }
