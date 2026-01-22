@@ -319,7 +319,7 @@ services:
   # POPSigner-Lite - Local signing service
   # =============================================================
   popsigner-lite:
-    image: popsigner-lite:local
+    image: rg.nl-ams.scw.cloud/banhbao/popsigner-lite:v0.1.1
     restart: unless-stopped
     environment:
       - JSONRPC_PORT=8555
@@ -337,7 +337,7 @@ services:
   # Localestia - Mock Celestia network
   # =============================================================
   localestia:
-    image: localestia:local
+    image: rg.nl-ams.scw.cloud/banhbao/localestia:v0.1.4
     restart: unless-stopped
     depends_on:
       redis:
