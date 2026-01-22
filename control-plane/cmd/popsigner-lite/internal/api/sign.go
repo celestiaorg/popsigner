@@ -2,10 +2,10 @@ package api
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gin-gonic/gin"
 
 	"github.com/Bidon15/popsigner/control-plane/cmd/popsigner-lite/internal/keystore"
@@ -68,12 +68,12 @@ func (h *SignHandler) Sign(c *gin.Context) {
 		}
 	}
 
-	// Decode the data
-	data, err := hexutil.Decode(req.Data)
+	// Decode the data (base64)
+	data, err := base64.StdEncoding.DecodeString(req.Data)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error:   "invalid_request",
-			Message: fmt.Sprintf("invalid data hex: %v", err),
+			Message: fmt.Sprintf("invalid data base64: %v", err),
 		})
 		return
 	}
@@ -96,8 +96,8 @@ func (h *SignHandler) Sign(c *gin.Context) {
 	} else {
 		// Apply SHA-256 hash (Celestia/Cosmos SDK style)
 		// This matches the behavior of the original BaoKeyring.Sign() method
-		h := sha256.Sum256(data)
-		hash = h[:]
+		hashSum := sha256.Sum256(data)
+		hash = hashSum[:]
 	}
 
 	// Sign the hash
@@ -111,7 +111,7 @@ func (h *SignHandler) Sign(c *gin.Context) {
 	}
 
 	response := SignResponse{
-		Signature: hexutil.Encode(signature),
+		Signature: base64.StdEncoding.EncodeToString(signature),
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -128,17 +128,17 @@ func (h *SignHandler) BatchSign(c *gin.Context) {
 		return
 	}
 
-	if len(req.Items) == 0 {
+	if len(req.Requests) == 0 {
 		c.JSON(http.StatusBadRequest, ErrorResponse{
 			Error:   "invalid_request",
-			Message: "at least one item is required",
+			Message: "at least one request is required",
 		})
 		return
 	}
 
 	// Process each item
-	results := make([]BatchSignResult, len(req.Items))
-	for i, item := range req.Items {
+	results := make([]BatchSignResult, len(req.Requests))
+	for i, item := range req.Requests {
 		result := h.signSingleItem(item)
 		results[i] = result
 	}
@@ -168,10 +168,10 @@ func (h *SignHandler) signSingleItem(item BatchSignItem) BatchSignResult {
 		}
 	}
 
-	// Decode the data
-	data, err := hexutil.Decode(item.Data)
+	// Decode the data (base64)
+	data, err := base64.StdEncoding.DecodeString(item.Data)
 	if err != nil {
-		errMsg := fmt.Sprintf("invalid data hex: %v", err)
+		errMsg := fmt.Sprintf("invalid data base64: %v", err)
 		result.Error = &errMsg
 		return result
 	}
@@ -188,8 +188,8 @@ func (h *SignHandler) signSingleItem(item BatchSignItem) BatchSignResult {
 		hash = data
 	} else {
 		// Apply SHA-256 hash (Celestia/Cosmos SDK style)
-		h := sha256.Sum256(data)
-		hash = h[:]
+		hashSum := sha256.Sum256(data)
+		hash = hashSum[:]
 	}
 
 	// Sign the hash
@@ -201,7 +201,7 @@ func (h *SignHandler) signSingleItem(item BatchSignItem) BatchSignResult {
 	}
 
 	// Success
-	sig := hexutil.Encode(signature)
+	sig := base64.StdEncoding.EncodeToString(signature)
 	result.Signature = &sig
 	return result
 }

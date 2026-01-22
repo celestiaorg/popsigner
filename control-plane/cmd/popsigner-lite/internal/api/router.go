@@ -1,3 +1,5 @@
+// Package api provides a REST API for key management and Celestia/Cosmos SDK-style signing.
+// It supports SHA-256 hashing for compatibility with Cosmos-based chains.
 package api
 
 import (

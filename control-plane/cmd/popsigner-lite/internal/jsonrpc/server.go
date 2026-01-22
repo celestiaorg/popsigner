@@ -1,3 +1,5 @@
+// Package jsonrpc implements a JSON-RPC 2.0 server for Ethereum-compatible signing methods.
+// It supports eth_accounts, eth_signTransaction, eth_sign, personal_sign, and OP Stack block signing.
 package jsonrpc
 
 import (

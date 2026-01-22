@@ -36,11 +36,11 @@ const (
 
 // Application-specific error codes (from -32000 to -32099)
 const (
-	ErrCodeUnauthorized      = -32001
-	ErrCodeResourceNotFound  = -32002
-	ErrCodeSigningFailed     = -32003
-	ErrCodeInvalidAddress    = -32004
-	ErrCodeKeyNotFound       = -32005
+	ErrCodeUnauthorized     = -32001
+	ErrCodeResourceNotFound = -32002
+	ErrCodeSigningFailed    = -32003
+	ErrCodeInvalidAddress   = -32004
+	ErrCodeKeyNotFound      = -32005
 )
 
 // Helper functions to create standard errors

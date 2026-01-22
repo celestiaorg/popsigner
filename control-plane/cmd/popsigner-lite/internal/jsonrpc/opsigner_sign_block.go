@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 
@@ -162,31 +161,13 @@ func (h *SignBlockPayloadHandler) HandleV2(ctx context.Context, params json.RawM
 
 // getKey retrieves a key from the keystore by address (case-insensitive).
 func (h *SignBlockPayloadHandler) getKey(address string) (*keystore.Key, *Error) {
-	// Ensure address has 0x prefix
-	if !strings.HasPrefix(address, "0x") {
-		address = "0x" + address
-	}
-
-	// Normalize to lowercase
-	address = strings.ToLower(address)
-
-	// Validate address format
-	if !common.IsHexAddress(address) {
-		return nil, ErrInvalidAddress(fmt.Sprintf("invalid Ethereum address: %s", address))
-	}
-
-	// Try to get key directly
-	key, err := h.keystore.GetKey(address)
+	key, err := h.keystore.GetKeyInsensitive(address)
 	if err != nil {
-		// Try case-insensitive search
-		keys := h.keystore.ListKeys()
-		for _, k := range keys {
-			if strings.EqualFold(k.Address, address) {
-				return k, nil
-			}
+		// Check if it's a validation error or not found error
+		if strings.Contains(err.Error(), "invalid Ethereum address") {
+			return nil, ErrInvalidAddress(err.Error())
 		}
-		return nil, ErrKeyNotFound(fmt.Sprintf("no key found for address %s", address))
+		return nil, ErrKeyNotFound(err.Error())
 	}
-
 	return key, nil
 }

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"crypto/rand"
 	"fmt"
 	"net/http"
 	"time"
@@ -172,14 +171,4 @@ func (h *KeysHandler) DeleteKey(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": fmt.Sprintf("key %s deleted successfully", keyID),
 	})
-}
-
-// generateRandomBytes generates cryptographically secure random bytes.
-func generateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
 }

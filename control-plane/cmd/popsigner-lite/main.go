@@ -20,150 +20,189 @@ const (
 	defaultJSONRPCPort = "8545"
 	defaultRESTAPIPort = "3000"
 	version            = "1.0.0"
+
+	// HTTP server timeouts
+	httpReadTimeout  = 30 * time.Second
+	httpWriteTimeout = 30 * time.Second
+	httpIdleTimeout  = 60 * time.Second
+	shutdownTimeout  = 10 * time.Second
 )
 
+// serverManager manages the lifecycle of both HTTP servers.
+type serverManager struct {
+	logger       *slog.Logger
+	keystore     *keystore.Keystore
+	rpcServer    *http.Server
+	restServer   *http.Server
+	jsonrpcPort  string
+	restAPIPort  string
+	serverErrors chan error
+}
+
 func main() {
-	// Setup logger
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	logger := setupLogger()
 
-	logger.Info("Starting popsigner-lite",
-		slog.String("version", version),
-	)
+	logger.Info("Starting popsigner-lite", slog.String("version", version))
 
-	// Create keystore
-	ks := keystore.NewKeystore()
-
-	// Load Anvil's deterministic keys
-	logger.Info("Loading Anvil deterministic keys...")
-	anvilKeys, err := keystore.LoadAnvilKeys()
-	if err != nil {
-		logger.Error("Failed to load Anvil keys", slog.String("error", err.Error()))
-		os.Exit(1)
+	sm := &serverManager{
+		logger:       logger,
+		serverErrors: make(chan error, 2),
 	}
 
-	// Add all Anvil keys to keystore
+	if err := sm.run(); err != nil {
+		logger.Error("popsigner-lite failed", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
+}
+
+// run executes the main service lifecycle.
+func (sm *serverManager) run() error {
+	if err := sm.initializeKeystore(); err != nil {
+		return fmt.Errorf("initialize keystore: %w", err)
+	}
+
+	sm.setupServers()
+	sm.startServers()
+
+	sm.logger.Info("popsigner-lite is ready",
+		slog.String("jsonrpc_url", fmt.Sprintf("http://localhost:%s", sm.jsonrpcPort)),
+		slog.String("rest_api_url", fmt.Sprintf("http://localhost:%s", sm.restAPIPort)),
+	)
+
+	return sm.waitForShutdown()
+}
+
+// setupLogger creates and configures the structured logger.
+func setupLogger() *slog.Logger {
+	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+}
+
+// initializeKeystore creates the keystore and loads Anvil keys.
+func (sm *serverManager) initializeKeystore() error {
+	sm.keystore = keystore.NewKeystore()
+
+	sm.logger.Info("Loading Anvil deterministic keys...")
+	anvilKeys, err := keystore.LoadAnvilKeys()
+	if err != nil {
+		return fmt.Errorf("load Anvil keys: %w", err)
+	}
+
 	for _, key := range anvilKeys {
-		if err := ks.AddKey(key); err != nil {
-			logger.Error("Failed to add key to keystore",
-				slog.String("key_id", key.ID),
-				slog.String("error", err.Error()),
-			)
-			os.Exit(1)
+		if err := sm.keystore.AddKey(key); err != nil {
+			return fmt.Errorf("add key %s: %w", key.ID, err)
 		}
 	}
 
-	logger.Info("Loaded Anvil keys",
-		slog.Int("count", len(anvilKeys)),
-	)
+	sm.logger.Info("Loaded Anvil keys", slog.Int("count", len(anvilKeys)))
 
-	// List all loaded addresses
-	keys := ks.ListKeys()
+	keys := sm.keystore.ListKeys()
 	addresses := make([]string, len(keys))
 	for i, key := range keys {
 		addresses[i] = key.Address
 	}
-	logger.Info("Available addresses",
-		slog.Any("addresses", addresses),
-	)
+	sm.logger.Info("Available addresses", slog.Any("addresses", addresses))
 
-	// Get ports from environment or use defaults
-	jsonrpcPort := getEnv("JSONRPC_PORT", defaultJSONRPCPort)
-	restAPIPort := getEnv("REST_API_PORT", defaultRESTAPIPort)
+	return nil
+}
 
-	// Create signer
+// setupServers creates both HTTP servers with their handlers.
+func (sm *serverManager) setupServers() {
+	sm.jsonrpcPort = getEnv("JSONRPC_PORT", defaultJSONRPCPort)
+	sm.restAPIPort = getEnv("REST_API_PORT", defaultRESTAPIPort)
+
 	txSigner := signer.NewTransactionSigner()
 
-	// Setup JSON-RPC server
-	logger.Info("Setting up JSON-RPC server", slog.String("port", jsonrpcPort))
-	rpcServer := jsonrpc.NewServer(jsonrpc.ServerConfig{
-		Keystore: ks,
+	sm.logger.Info("Setting up JSON-RPC server", slog.String("port", sm.jsonrpcPort))
+	rpcHandler := jsonrpc.NewServer(jsonrpc.ServerConfig{
+		Keystore: sm.keystore,
 		Signer:   txSigner,
-		Logger:   logger,
+		Logger:   sm.logger,
 	})
 
-	// Setup REST API server
-	logger.Info("Setting up REST API server", slog.String("port", restAPIPort))
-	apiRouter := api.SetupRouter(ks)
-
-	// Create HTTP servers
-	rpcHTTPServer := &http.Server{
-		Addr:         ":" + jsonrpcPort,
-		Handler:      rpcServer,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  60 * time.Second,
+	sm.rpcServer = &http.Server{
+		Addr:         ":" + sm.jsonrpcPort,
+		Handler:      rpcHandler,
+		ReadTimeout:  httpReadTimeout,
+		WriteTimeout: httpWriteTimeout,
+		IdleTimeout:  httpIdleTimeout,
 	}
 
-	restHTTPServer := &http.Server{
-		Addr:         ":" + restAPIPort,
+	sm.logger.Info("Setting up REST API server", slog.String("port", sm.restAPIPort))
+	apiRouter := api.SetupRouter(sm.keystore)
+
+	sm.restServer = &http.Server{
+		Addr:         ":" + sm.restAPIPort,
 		Handler:      apiRouter,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		ReadTimeout:  httpReadTimeout,
+		WriteTimeout: httpWriteTimeout,
+		IdleTimeout:  httpIdleTimeout,
 	}
+}
 
-	// Start servers in goroutines
+// startServers starts both HTTP servers in separate goroutines with error propagation.
+func (sm *serverManager) startServers() {
 	go func() {
-		logger.Info("Starting JSON-RPC server",
-			slog.String("address", rpcHTTPServer.Addr),
-		)
-		if err := rpcHTTPServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error("JSON-RPC server failed",
-				slog.String("error", err.Error()),
-			)
-			os.Exit(1)
+		sm.logger.Info("Starting JSON-RPC server", slog.String("address", sm.rpcServer.Addr))
+		if err := sm.rpcServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			sm.serverErrors <- fmt.Errorf("JSON-RPC server: %w", err)
 		}
 	}()
 
 	go func() {
-		logger.Info("Starting REST API server",
-			slog.String("address", restHTTPServer.Addr),
-		)
-		if err := restHTTPServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error("REST API server failed",
-				slog.String("error", err.Error()),
-			)
-			os.Exit(1)
+		sm.logger.Info("Starting REST API server", slog.String("address", sm.restServer.Addr))
+		if err := sm.restServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			sm.serverErrors <- fmt.Errorf("REST API server: %w", err)
 		}
 	}()
+}
 
-	logger.Info("popsigner-lite is ready",
-		slog.String("jsonrpc_url", fmt.Sprintf("http://localhost:%s", jsonrpcPort)),
-		slog.String("rest_api_url", fmt.Sprintf("http://localhost:%s", restAPIPort)),
-	)
-
-	// Wait for interrupt signal
+// waitForShutdown waits for either a signal or server error, then performs graceful shutdown.
+func (sm *serverManager) waitForShutdown() error {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
 
-	logger.Info("Shutting down servers...")
+	select {
+	case <-quit:
+		sm.logger.Info("Received shutdown signal")
+	case err := <-sm.serverErrors:
+		sm.logger.Error("Server error", slog.String("error", err.Error()))
+		return err
+	}
 
-	// Graceful shutdown with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	return sm.shutdown()
+}
+
+// shutdown performs graceful shutdown of both servers.
+func (sm *serverManager) shutdown() error {
+	sm.logger.Info("Shutting down servers...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
-	// Shutdown JSON-RPC server
-	if err := rpcHTTPServer.Shutdown(ctx); err != nil {
-		logger.Error("JSON-RPC server shutdown failed",
-			slog.String("error", err.Error()),
-		)
+	var shutdownErr error
+
+	if err := sm.rpcServer.Shutdown(ctx); err != nil {
+		sm.logger.Error("JSON-RPC server shutdown failed", slog.String("error", err.Error()))
+		shutdownErr = fmt.Errorf("RPC shutdown: %w", err)
 	} else {
-		logger.Info("JSON-RPC server stopped")
+		sm.logger.Info("JSON-RPC server stopped")
 	}
 
-	// Shutdown REST API server
-	if err := restHTTPServer.Shutdown(ctx); err != nil {
-		logger.Error("REST API server shutdown failed",
-			slog.String("error", err.Error()),
-		)
+	if err := sm.restServer.Shutdown(ctx); err != nil {
+		sm.logger.Error("REST API server shutdown failed", slog.String("error", err.Error()))
+		if shutdownErr != nil {
+			shutdownErr = fmt.Errorf("%w; REST shutdown: %w", shutdownErr, err)
+		} else {
+			shutdownErr = fmt.Errorf("REST shutdown: %w", err)
+		}
 	} else {
-		logger.Info("REST API server stopped")
+		sm.logger.Info("REST API server stopped")
 	}
 
-	logger.Info("popsigner-lite stopped")
+	sm.logger.Info("popsigner-lite stopped")
+	return shutdownErr
 }
 
 // getEnv gets an environment variable or returns a default value.

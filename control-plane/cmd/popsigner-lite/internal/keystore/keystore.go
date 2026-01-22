@@ -1,16 +1,21 @@
+// Package keystore provides thread-safe in-memory key storage for popsigner-lite.
+// It manages cryptographic key pairs with support for case-insensitive address lookup.
 package keystore
 
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // Keystore is an in-memory key storage for popsigner-lite.
 // Thread-safe for concurrent access.
 type Keystore struct {
-	keys    map[string]*Key  // address -> key
+	keys    map[string]*Key // address -> key
 	apiKeys map[string]*APIKey
 	mu      sync.RWMutex
 }
@@ -26,6 +31,7 @@ type Key struct {
 }
 
 // APIKey represents an API key for authentication.
+// Currently unused but reserved for future authentication support.
 type APIKey struct {
 	ID        string
 	Name      string
@@ -106,4 +112,39 @@ func (k *Keystore) DeleteKey(address string) error {
 
 	delete(k.keys, address)
 	return nil
+}
+
+// GetKeyInsensitive retrieves a key by address with case-insensitive lookup.
+// Ensures address has 0x prefix and validates format.
+func (k *Keystore) GetKeyInsensitive(address string) (*Key, error) {
+	// Ensure address has 0x prefix
+	if !strings.HasPrefix(address, "0x") {
+		address = "0x" + address
+	}
+
+	// Normalize to lowercase
+	address = strings.ToLower(address)
+
+	// Validate address format
+	if !common.IsHexAddress(address) {
+		return nil, fmt.Errorf("invalid Ethereum address: %s", address)
+	}
+
+	// Try direct lookup first
+	key, err := k.GetKey(address)
+	if err == nil {
+		return key, nil
+	}
+
+	// Fall back to case-insensitive scan
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	for _, key := range k.keys {
+		if strings.EqualFold(key.Address, address) {
+			return key, nil
+		}
+	}
+
+	return nil, fmt.Errorf("key with address %s not found", address)
 }

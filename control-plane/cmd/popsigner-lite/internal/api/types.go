@@ -18,24 +18,24 @@ type CreateKeyRequest struct {
 
 // SignRequest represents a request to sign data.
 type SignRequest struct {
-	Data      string `json:"data"`                // Hex-encoded data to sign
+	Data      string `json:"data"`                // Base64-encoded data to sign
 	Prehashed bool   `json:"prehashed,omitempty"` // true if data is already hashed (skip SHA-256)
 }
 
 // SignResponse represents a signing response.
 type SignResponse struct {
-	Signature string `json:"signature"` // Hex-encoded signature
+	Signature string `json:"signature"` // Base64-encoded signature
 }
 
 // BatchSignRequest represents a batch signing request.
 type BatchSignRequest struct {
-	Items []BatchSignItem `json:"items"`
+	Requests []BatchSignItem `json:"requests"`
 }
 
 // BatchSignItem represents a single item in a batch sign request.
 type BatchSignItem struct {
 	KeyID     string `json:"key_id"`
-	Data      string `json:"data"`                // Hex-encoded data to sign
+	Data      string `json:"data"`                // Base64-encoded data to sign
 	Prehashed bool   `json:"prehashed,omitempty"` // true if data is already hashed (skip SHA-256)
 }
 
@@ -47,7 +47,7 @@ type BatchSignResponse struct {
 // BatchSignResult represents a single result in a batch sign response.
 type BatchSignResult struct {
 	KeyID     string  `json:"key_id"`
-	Signature *string `json:"signature,omitempty"` // Hex-encoded signature (null if error)
+	Signature *string `json:"signature,omitempty"` // Base64-encoded signature (null if error)
 	Error     *string `json:"error,omitempty"`     // Error message (null if success)
 }
 

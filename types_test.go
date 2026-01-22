@@ -180,4 +180,3 @@ func TestStoreData_Init(t *testing.T) {
 	}
 	assert.Len(t, store.Keys, 1)
 }
-

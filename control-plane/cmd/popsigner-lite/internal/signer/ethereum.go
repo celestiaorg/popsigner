@@ -1,3 +1,5 @@
+// Package signer provides ECDSA signing functionality for Ethereum transactions and messages.
+// It supports both legacy and EIP-1559 transactions with proper signature formatting.
 package signer
 
 import (
@@ -8,6 +10,7 @@ import (
 )
 
 // EthereumSigner provides ECDSA signing functionality for Ethereum.
+// Safe for concurrent use.
 type EthereumSigner struct{}
 
 // NewEthereumSigner creates a new Ethereum signer.

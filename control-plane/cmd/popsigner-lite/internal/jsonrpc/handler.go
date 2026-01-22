@@ -3,7 +3,6 @@ package jsonrpc
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -224,14 +223,5 @@ func (h *Handler) writeError(w http.ResponseWriter, id interface{}, rpcErr *Erro
 	w.WriteHeader(statusCode)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Error("failed to encode error response", slog.String("error", err.Error()))
-	}
-}
-
-// HealthHandler returns a simple health check handler.
-func (h *Handler) HealthHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"status":"ok","methods":%d}`, len(h.methods))
 	}
 }
