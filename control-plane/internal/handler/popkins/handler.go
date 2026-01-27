@@ -1235,7 +1235,8 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 	// Map artifact types to file paths in the ZIP
 	for _, artifact := range artifacts {
 		var path string
-		var isPlainText bool // Non-JSON files need to be unwrapped from JSON string encoding
+		var isPlainText bool  // Non-JSON files need to be unwrapped from JSON string encoding
+		var isExecutable bool // Script files need executable permission
 
 		switch artifact.ArtifactType {
 		case "genesis.json", "genesis":
@@ -1302,18 +1303,22 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 			// Two-phase startup script (handles Issue #4208)
 			path = bundlePrefix + "scripts/start.sh"
 			isPlainText = true
+			isExecutable = true
 		case "scripts/stop.sh":
 			// Stop devnet script
 			path = bundlePrefix + "scripts/stop.sh"
 			isPlainText = true
+			isExecutable = true
 		case "scripts/reset.sh":
 			// Reset all state script
 			path = bundlePrefix + "scripts/reset.sh"
 			isPlainText = true
+			isExecutable = true
 		case "scripts/test.sh":
 			// Health check script
 			path = bundlePrefix + "scripts/test.sh"
 			isPlainText = true
+			isExecutable = true
 
 		// ========================================
 		// Legacy Nitro artifacts (underscore naming)
@@ -1367,11 +1372,28 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 			content = unwrapJSONString(content)
 		}
 
-		// Add file to ZIP
-		fw, err := zw.Create(path)
-		if err != nil {
-			slog.Error("failed to create zip entry", "path", path, "error", err)
-			continue
+		// Add file to ZIP with proper permissions
+		var fw io.Writer
+		if isExecutable {
+			// Use CreateHeader for executable files to set permissions
+			header := &zip.FileHeader{
+				Name:   path,
+				Method: zip.Deflate,
+			}
+			header.SetMode(0755) // rwxr-xr-x
+			var err error
+			fw, err = zw.CreateHeader(header)
+			if err != nil {
+				slog.Error("failed to create zip entry", "path", path, "error", err)
+				continue
+			}
+		} else {
+			var err error
+			fw, err = zw.Create(path)
+			if err != nil {
+				slog.Error("failed to create zip entry", "path", path, "error", err)
+				continue
+			}
 		}
 		if _, err := fw.Write(content); err != nil {
 			slog.Error("failed to write zip entry", "path", path, "error", err)
