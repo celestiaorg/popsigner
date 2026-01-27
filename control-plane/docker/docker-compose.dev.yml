@@ -1,0 +1,212 @@
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: popsigner-postgres
+    environment:
+      POSTGRES_USER: popsigner
+      POSTGRES_PASSWORD: popsigner
+      POSTGRES_DB: popsigner
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U popsigner -d popsigner"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - popsigner
+
+  # Redis for sessions and caching
+  redis:
+    image: redis:7-alpine
+    container_name: popsigner-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - popsigner
+
+  # OpenBao - Vault fork for secure key storage
+  openbao:
+    image: quay.io/openbao/openbao:2.1.0
+    container_name: popsigner-openbao
+    ports:
+      - "8200:8200"
+    environment:
+      OPENBAO_DEV_ROOT_TOKEN_ID: dev-root-token
+      OPENBAO_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      OPENBAO_ADDR: http://0.0.0.0:8200
+      OPENBAO_LOG_LEVEL: debug
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - openbao_data:/openbao/data
+      - openbao_plugins:/openbao/plugins
+    command: server -dev -dev-root-token-id=dev-root-token
+    healthcheck:
+      test: ["CMD", "sh", "-c", "bao status || exit 0"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - popsigner
+
+  # secp256k1 Plugin Builder - builds and installs plugin
+  plugin-setup:
+    build:
+      context: ../../plugin
+      dockerfile: Dockerfile
+    container_name: popsigner-plugin-setup
+    volumes:
+      - openbao_plugins:/plugins
+    entrypoint: /bin/sh
+    command: |
+      -c "cp /usr/local/bin/popsigner-secp256k1 /plugins/popsigner-secp256k1 && \
+          chmod +x /plugins/popsigner-secp256k1 && \
+          echo 'Plugin installed to /plugins/popsigner-secp256k1'"
+    networks:
+      - popsigner
+
+  # OpenBao Initialization - registers plugin and enables secrets engines
+  openbao-init:
+    image: quay.io/openbao/openbao:2.1.0
+    container_name: popsigner-openbao-init
+    environment:
+      VAULT_ADDR: http://openbao:8200
+      VAULT_TOKEN: dev-root-token
+    volumes:
+      - openbao_plugins:/openbao/plugins
+    depends_on:
+      openbao:
+        condition: service_healthy
+      plugin-setup:
+        condition: service_completed_successfully
+    entrypoint: /bin/sh
+    command: |
+      -c "
+      echo 'Waiting for OpenBao to be ready...'
+      sleep 5
+
+      echo 'Calculating plugin SHA256...'
+      PLUGIN_SHA256=$$(sha256sum /openbao/plugins/popsigner-secp256k1 | cut -d' ' -f1)
+      echo \"Plugin SHA256: $$PLUGIN_SHA256\"
+
+      echo 'Registering secp256k1 plugin...'
+      bao write sys/plugins/catalog/secret/banhbaoring-secp256k1 \
+        command=popsigner-secp256k1 \
+        sha256=$$PLUGIN_SHA256
+
+      echo 'Enabling secp256k1 secrets engine...'
+      bao secrets enable -path=secp256k1 -plugin-name=banhbaoring-secp256k1 plugin || true
+
+      echo 'Enabling KV v2 secrets engine for API keys...'
+      bao secrets enable -path=secret -version=2 kv || true
+
+      echo 'Enabling PKI secrets engine for mTLS certificates...'
+      bao secrets enable pki || true
+      bao secrets tune -max-lease-ttl=87600h pki || true
+
+      echo 'OpenBao initialization complete!'
+      "
+    networks:
+      - popsigner
+    restart: "no"
+
+  # Caddy reverse proxy for subdomain routing
+  caddy:
+    image: caddy:2-alpine
+    container_name: popsigner-caddy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - popsigner
+    networks:
+      - popsigner
+
+  # Control Plane Web Server
+  popsigner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: popsigner-control-plane:dev
+    container_name: popsigner-api
+    # No port mapping - only accessible internally via Caddy
+    environment:
+      # Use BANHBAO prefix (internal naming, see config.go for details)
+      BANHBAO_SERVER_PORT: 8080
+      BANHBAO_SERVER_HOST: 0.0.0.0
+      BANHBAO_SERVER_ENVIRONMENT: dev
+
+      # Database
+      BANHBAO_DATABASE_HOST: postgres
+      BANHBAO_DATABASE_PORT: 5432
+      BANHBAO_DATABASE_USER: popsigner
+      BANHBAO_DATABASE_PASSWORD: popsigner
+      BANHBAO_DATABASE_DATABASE: popsigner
+      BANHBAO_DATABASE_SSL_MODE: disable
+
+      # Redis
+      BANHBAO_REDIS_HOST: redis
+      BANHBAO_REDIS_PORT: 6379
+
+      # OpenBao
+      BANHBAO_OPENBAO_ADDRESS: http://openbao:8200
+      BANHBAO_OPENBAO_TOKEN: dev-root-token
+      BANHBAO_OPENBAO_SECP256K1_PATH: secp256k1
+
+      # Auth (OAuth disabled in dev mode - set these for OAuth login)
+      BANHBAO_AUTH_JWT_SECRET: dev-jwt-secret-change-in-production
+      BANHBAO_AUTH_OAUTH_CALLBACK_URL: http://localhost:8080
+      # BANHBAO_AUTH_OAUTH_GITHUB_ID: your-github-client-id
+      # BANHBAO_AUTH_OAUTH_GITHUB_SECRET: your-github-client-secret
+      # BANHBAO_AUTH_OAUTH_GOOGLE_ID: your-google-client-id
+      # BANHBAO_AUTH_OAUTH_GOOGLE_SECRET: your-google-client-secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      openbao:
+        condition: service_healthy
+      openbao-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - popsigner
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  openbao_data:
+    driver: local
+  openbao_plugins:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  popsigner:
+    driver: bridge
+    name: popsigner-network

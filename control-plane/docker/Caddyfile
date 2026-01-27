@@ -1,0 +1,16 @@
+# Caddyfile for local development routing
+# Handles subdomain routing for POPKins
+
+# Main dashboard (localhost:8080)
+http://localhost:8080 {
+	reverse_proxy popsigner:8080
+}
+
+# POPKins subdomain (popkins.localhost:8080)
+# Forward directly - the Go router detects subdomain via Host header
+http://popkins.localhost:8080 {
+	reverse_proxy popsigner:8080 {
+		# Preserve the original Host header so Go code knows it's subdomain access
+		header_up Host {host}
+	}
+}
