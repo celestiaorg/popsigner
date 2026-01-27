@@ -160,6 +160,20 @@ func extractChainName(d *repository.Deployment) string {
 	return fmt.Sprintf("Chain %d", d.ChainID)
 }
 
+// extractBundleStack extracts the bundle_stack from deployment config (for pop-bundle)
+func extractBundleStack(config json.RawMessage) string {
+	if config == nil {
+		return "opstack" // Default to OP Stack
+	}
+	var cfg struct {
+		BundleStack string `json:"bundle_stack"`
+	}
+	if err := json.Unmarshal(config, &cfg); err == nil && cfg.BundleStack != "" {
+		return cfg.BundleStack
+	}
+	return "opstack" // Default to OP Stack
+}
+
 // DeploymentsNew renders the new deployment wizard form
 func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 	user, org, err := h.getUserAndOrg(r)
@@ -186,6 +200,7 @@ func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err == nil {
 			formData = pages.DeploymentFormData{
 				Stack:       r.FormValue("stack"),
+				BundleStack: r.FormValue("bundle_stack"),
 				ChainName:   r.FormValue("chain_name"),
 				ChainID:     r.FormValue("chain_id"),
 				L1RPC:       r.FormValue("l1_rpc"),
@@ -212,6 +227,7 @@ func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		formData = pages.DeploymentFormData{
 			Stack:       q.Get("stack"),
+			BundleStack: q.Get("bundle_stack"),
 			ChainName:   q.Get("chain_name"),
 			ChainID:     q.Get("chain_id"),
 			L1RPC:       q.Get("l1_rpc"),
@@ -369,6 +385,12 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Get bundle_stack for pop-bundle (defaults to opstack)
+	bundleStack := r.FormValue("bundle_stack")
+	if bundleStack == "" && isPopBundle {
+		bundleStack = "opstack" // Default to OP Stack for bundles
+	}
+
 	// Build deployment config
 	config := map[string]interface{}{
 		"chain_name":   chainName,
@@ -380,6 +402,11 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 		"batcher_key":  batcherKey,
 		"proposer_key": proposerKey,
 		"org_id":       org.ID.String(),
+	}
+
+	// Add bundle_stack for pop-bundle deployments
+	if isPopBundle {
+		config["bundle_stack"] = bundleStack
 	}
 
 	configJSON, err := json.Marshal(config)
@@ -844,12 +871,27 @@ func (h *Handler) buildStagesInfo(deployment *repository.Deployment) []component
 			{Name: "Create Bundle", Status: "pending", TxCount: 0},
 		}
 	case repository.StackPopBundle:
-		// Pop-bundle stages - local devnet deployment with Anvil
-		stages = []components.StageInfo{
-			{Name: "Start Anvil", Status: "pending", TxCount: 0, Details: "Starting local L1"},
-			{Name: "Deploy Contracts", Status: "pending", TxCount: 0, Details: "OP Stack to Anvil"},
-			{Name: "Capture State", Status: "pending", TxCount: 0, Details: "Dumping Anvil state"},
-			{Name: "Generate Configs", Status: "pending", TxCount: 0, Details: "Creating bundle files"},
+		// Pop-bundle stages - check bundle_stack to determine OP vs Nitro
+		bundleStack := extractBundleStack(deployment.Config)
+		if bundleStack == "nitro" {
+			// Nitro bundle stages - match orchestrator stages
+			stages = []components.StageInfo{
+				{Name: "Start Anvil", Status: "pending", TxCount: 0, Details: "Starting local L1"},
+				{Name: "Download Artifacts", Status: "pending", TxCount: 0, Details: "Fetching Nitro contracts"},
+				{Name: "Deploy Infrastructure", Status: "pending", TxCount: 22, Details: "RollupCreator + templates"},
+				{Name: "Deploy WETH", Status: "pending", TxCount: 1, Details: "Stake token for BOLD"},
+				{Name: "Create Rollup", Status: "pending", TxCount: 1, Details: "RollupCreator.createRollup()"},
+				{Name: "Capture State", Status: "pending", TxCount: 0, Details: "Dumping Anvil state"},
+				{Name: "Generate Configs", Status: "pending", TxCount: 0, Details: "Creating bundle files"},
+			}
+		} else {
+			// OP Stack bundle stages (default)
+			stages = []components.StageInfo{
+				{Name: "Start Anvil", Status: "pending", TxCount: 0, Details: "Starting local L1"},
+				{Name: "Deploy Contracts", Status: "pending", TxCount: 0, Details: "OP Stack to Anvil"},
+				{Name: "Capture State", Status: "pending", TxCount: 0, Details: "Dumping Anvil state"},
+				{Name: "Generate Configs", Status: "pending", TxCount: 0, Details: "Creating bundle files"},
+			}
 		}
 	default:
 		// Nitro stages - detailed breakdown of actual deployment steps
@@ -888,13 +930,25 @@ func (h *Handler) buildStagesInfo(deployment *repository.Deployment) []component
 		"completed":          6, // All done
 	}
 
-	// Map orchestrator stage names to UI stage indices for Pop-bundle
+	// Map orchestrator stage names to UI stage indices for Pop-bundle (OP Stack)
 	popBundleStageIndex := map[string]int{
 		"starting_anvil":      0, // Start Anvil
 		"deploying_contracts": 1, // Deploy Contracts
 		"capturing_state":     2, // Capture State
 		"generating_configs":  3, // Generate Configs
 		"complete":            3, // All done
+	}
+
+	// Map orchestrator stage names to UI stage indices for Pop-bundle (Nitro)
+	popBundleNitroStageIndex := map[string]int{
+		"starting_anvil":            0, // Start Anvil
+		"downloading_artifacts":     1, // Download Artifacts
+		"deploying_infrastructure":  2, // Deploy Infrastructure
+		"deploying_weth":            3, // Deploy WETH
+		"creating_rollup":           4, // Create Rollup
+		"capturing_state":           5, // Capture State
+		"generating_configs":        6, // Generate Configs
+		"complete":                  6, // All done
 	}
 
 	// Helper function to get stage index from current stage name
@@ -905,8 +959,16 @@ func (h *Handler) buildStagesInfo(deployment *repository.Deployment) []component
 				return idx
 			}
 		case repository.StackPopBundle:
-			if idx, ok := popBundleStageIndex[stageName]; ok {
-				return idx
+			// Check if it's a Nitro bundle
+			bundleStack := extractBundleStack(deployment.Config)
+			if bundleStack == "nitro" {
+				if idx, ok := popBundleNitroStageIndex[stageName]; ok {
+					return idx
+				}
+			} else {
+				if idx, ok := popBundleStageIndex[stageName]; ok {
+					return idx
+				}
 			}
 		default:
 			if idx, ok := nitroStageIndex[stageName]; ok {
@@ -1148,9 +1210,11 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract chain name from config
+	// Extract chain name and bundle stack from config
 	chainName := extractChainName(deployment)
 	safeName := opstack.SanitizeChainNameForFilename(chainName)
+	bundleStack := extractBundleStack(deployment.Config) // "opstack" or "nitro"
+	isNitroBundle := bundleStack == "nitro"
 
 	// Create ZIP bundle
 	var buf bytes.Buffer
@@ -1159,6 +1223,14 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 	// Bundle directory prefix - use stack-specific naming
 	stackName := string(deployment.Stack)
 	bundlePrefix := fmt.Sprintf("%s-%s-bundle/", safeName, stackName)
+
+	slog.Info("DownloadBundle: creating bundle",
+		slog.String("deployment_id", deploymentID),
+		slog.String("stack", stackName),
+		slog.String("bundle_stack", bundleStack),
+		slog.Bool("is_nitro", isNitroBundle),
+		slog.Int("artifact_count", len(artifacts)),
+	)
 
 	// Map artifact types to file paths in the ZIP
 	for _, artifact := range artifacts {
@@ -1171,7 +1243,12 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 		case "rollup.json", "rollup_config":
 			path = bundlePrefix + "rollup.json"
 		case "addresses.json":
-			path = bundlePrefix + "addresses.json"
+			// For Nitro bundles, put in config/ directory
+			if isNitroBundle {
+				path = bundlePrefix + "config/addresses.json"
+			} else {
+				path = bundlePrefix + "addresses.json"
+			}
 		case "deploy-config.json":
 			path = bundlePrefix + "deploy-config.json"
 		case "docker-compose.yml":
@@ -1181,22 +1258,66 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 			path = bundlePrefix + ".env.example"
 			isPlainText = true
 		case "jwt.txt":
-			path = bundlePrefix + "jwt.txt"
+			// For Nitro bundles, put in config/ directory
+			if isNitroBundle {
+				path = bundlePrefix + "config/jwt.txt"
+			} else {
+				path = bundlePrefix + "jwt.txt"
+			}
 			isPlainText = true
 		case "config.toml":
 			// op-alt-da config for Celestia DA
 			path = bundlePrefix + "config.toml"
 			isPlainText = true
 		case "anvil-state.json":
-			// Pre-deployed L1 state for POPKins Bundle
-			path = bundlePrefix + "anvil-state.json"
+			// For Nitro bundles, put in state/ directory
+			if isNitroBundle {
+				path = bundlePrefix + "state/anvil-state.json"
+			} else {
+				path = bundlePrefix + "anvil-state.json"
+			}
 		case "l1-chain-config.json":
 			// L1 chain configuration for op-node (required for Anvil)
 			path = bundlePrefix + "l1-chain-config.json"
 		case "README.md":
 			path = bundlePrefix + "README.md"
 			isPlainText = true
-		// Nitro-specific artifacts
+
+		// ========================================
+		// Nitro POPKins Bundle artifacts
+		// (from NitroConfigWriter.GenerateAll)
+		// ========================================
+		case "chain-info.json":
+			// Nitro chain configuration
+			path = bundlePrefix + "config/chain-info.json"
+		case "celestia-config.toml":
+			// Celestia DA server configuration
+			path = bundlePrefix + "config/celestia-config.toml"
+			isPlainText = true
+		case ".env":
+			// Ready-to-use .env file for Nitro
+			path = bundlePrefix + ".env"
+			isPlainText = true
+		case "scripts/start.sh":
+			// Two-phase startup script (handles Issue #4208)
+			path = bundlePrefix + "scripts/start.sh"
+			isPlainText = true
+		case "scripts/stop.sh":
+			// Stop devnet script
+			path = bundlePrefix + "scripts/stop.sh"
+			isPlainText = true
+		case "scripts/reset.sh":
+			// Reset all state script
+			path = bundlePrefix + "scripts/reset.sh"
+			isPlainText = true
+		case "scripts/test.sh":
+			// Health check script
+			path = bundlePrefix + "scripts/test.sh"
+			isPlainText = true
+
+		// ========================================
+		// Legacy Nitro artifacts (underscore naming)
+		// ========================================
 		case "chain_info":
 			path = bundlePrefix + "config/chain-info.json"
 		case "node_config":
@@ -1226,8 +1347,19 @@ func (h *Handler) DownloadBundle(w http.ResponseWriter, r *http.Request) {
 			isPlainText = true
 		default:
 			// Skip internal artifacts like deployment_state
+			slog.Debug("DownloadBundle: skipping artifact",
+				slog.String("type", artifact.ArtifactType),
+			)
 			continue
 		}
+
+		// Log artifact being added
+		slog.Info("DownloadBundle: adding artifact",
+			slog.String("type", artifact.ArtifactType),
+			slog.String("path", path),
+			slog.Bool("is_plain_text", isPlainText),
+			slog.Int("size_bytes", len(artifact.Content)),
+		)
 
 		// Get content - unwrap JSON string encoding for plain text files
 		content := artifact.Content

@@ -3,8 +3,9 @@ package popdeployer
 // DeploymentConfig holds configuration for a POPKins devnet bundle deployment.
 type DeploymentConfig struct {
 	// User-configurable parameters
-	ChainID   uint64 `json:"chain_id"`
-	ChainName string `json:"chain_name"`
+	ChainID     uint64 `json:"chain_id"`
+	ChainName   string `json:"chain_name"`
+	BundleStack string `json:"bundle_stack"` // "opstack" or "nitro" (defaults to "opstack")
 
 	// Hardcoded parameters (populated by orchestrator)
 	L1ChainID       uint64 `json:"l1_chain_id"`       // 31337 (Anvil)

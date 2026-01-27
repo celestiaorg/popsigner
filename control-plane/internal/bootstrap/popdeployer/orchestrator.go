@@ -13,9 +13,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/nitro"
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/opstack"
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/repository"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/state"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/google/uuid"
 )
@@ -35,11 +38,20 @@ const (
 type Stage string
 
 const (
-	StageStartingAnvil      Stage = "starting_anvil"
+	// Common stages
+	StageStartingAnvil     Stage = "starting_anvil"
+	StageCapturingState    Stage = "capturing_state"
+	StageGeneratingConfigs Stage = "generating_configs"
+	StageComplete          Stage = "complete"
+
+	// OP Stack stages
 	StageDeployingContracts Stage = "deploying_contracts"
-	StageCapturingState     Stage = "capturing_state"
-	StageGeneratingConfigs  Stage = "generating_configs"
-	StageComplete           Stage = "complete"
+
+	// Nitro stages
+	StageDownloadingArtifacts     Stage = "downloading_artifacts"
+	StageDeployingInfrastructure  Stage = "deploying_infrastructure"
+	StageDeployingWETH            Stage = "deploying_weth"
+	StageCreatingRollup           Stage = "creating_rollup"
 )
 
 // String returns the string representation of the stage.
@@ -95,7 +107,7 @@ func NewOrchestrator(
 }
 
 // Deploy executes a POPKins devnet bundle deployment.
-// It runs ephemeral Anvil and popsigner-lite, deploys OP Stack contracts,
+// It runs ephemeral Anvil, deploys contracts (OP Stack or Nitro based on bundle_stack),
 // and saves all artifacts for bundle generation.
 func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onProgress ProgressCallback) error {
 	o.logger.Info("starting POPKins devnet bundle deployment",
@@ -135,9 +147,56 @@ func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onPro
 		OnProgress:   onProgress,
 	}
 
-	// 6. Execute deployment stages
+	// 6. Dispatch based on bundle_stack
 	stageWriter := &StageWriter{repo: o.repo, deploymentID: deploymentID}
 
+	// Default to "opstack" if bundle_stack is empty
+	bundleStack := cfg.BundleStack
+	if bundleStack == "" {
+		bundleStack = "opstack"
+	}
+
+	o.logger.Info("deploying bundle",
+		slog.String("bundle_stack", bundleStack),
+		slog.String("deployment_id", deploymentID.String()),
+	)
+
+	var deployErr error
+	switch bundleStack {
+	case "nitro":
+		deployErr = o.deployNitroBundle(ctx, deployCtx, stageWriter)
+	default:
+		// OP Stack (default)
+		deployErr = o.deployOPStackBundle(ctx, deployCtx, stageWriter)
+	}
+
+	if deployErr != nil {
+		return deployErr
+	}
+
+	// Mark as complete
+	if onProgress != nil {
+		onProgress(StageComplete, 1.0, "Bundle deployment complete")
+	}
+
+	// Update deployment status to completed (not just the stage)
+	stageStr := StageComplete.String()
+	if err := o.repo.UpdateDeploymentStatus(ctx, deploymentID, repository.StatusCompleted, &stageStr); err != nil {
+		o.logger.Warn("failed to mark deployment as completed",
+			slog.String("error", err.Error()),
+		)
+	}
+
+	o.logger.Info("POPKins devnet bundle deployment completed successfully",
+		slog.String("deployment_id", deploymentID.String()),
+		slog.String("bundle_stack", bundleStack),
+	)
+
+	return nil
+}
+
+// deployOPStackBundle deploys an OP Stack devnet bundle.
+func (o *Orchestrator) deployOPStackBundle(ctx context.Context, deployCtx *DeploymentContext, stageWriter *StageWriter) error {
 	// Stage 1: Start Anvil
 	if err := o.startAnvil(ctx, deployCtx, stageWriter); err != nil {
 		return fmt.Errorf("start anvil: %w", err)
@@ -159,21 +218,374 @@ func (o *Orchestrator) Deploy(ctx context.Context, deploymentID uuid.UUID, onPro
 		return fmt.Errorf("generate configs: %w", err)
 	}
 
-	// Stage 5: Mark as complete
-	if onProgress != nil {
-		onProgress(StageComplete, 1.0, "Bundle deployment complete")
+	return nil
+}
+
+// nitroDeployResult holds the results of Nitro deployment for config generation.
+type nitroDeployResult struct {
+	contracts       *nitro.RollupContracts
+	chainConfig     map[string]interface{}
+	deploymentBlock uint64
+	stakeToken      common.Address
+}
+
+// deployNitroBundle deploys a Nitro devnet bundle.
+// Pipeline: Anvil → Download Artifacts → Infrastructure → WETH → Rollup → Capture State → Generate Configs
+func (o *Orchestrator) deployNitroBundle(ctx context.Context, deployCtx *DeploymentContext, stageWriter *StageWriter) error {
+	o.logger.Info("deploying Nitro bundle",
+		slog.String("deployment_id", deployCtx.DeploymentID.String()),
+		slog.Uint64("chain_id", deployCtx.Config.ChainID),
+		slog.String("chain_name", deployCtx.Config.ChainName),
+	)
+
+	// Stage 1: Start Anvil
+	if err := o.startAnvil(ctx, deployCtx, stageWriter); err != nil {
+		return fmt.Errorf("start anvil: %w", err)
 	}
 
-	// Update deployment status to completed (not just the stage)
-	stageStr := StageComplete.String()
-	if err := o.repo.UpdateDeploymentStatus(ctx, deploymentID, repository.StatusCompleted, &stageStr); err != nil {
-		o.logger.Warn("failed to mark deployment as completed",
-			slog.String("error", err.Error()),
+	// Stage 2: Download Nitro contract artifacts
+	artifacts, err := o.downloadNitroArtifacts(ctx, deployCtx, stageWriter)
+	if err != nil {
+		return fmt.Errorf("download nitro artifacts: %w", err)
+	}
+
+	// Stage 3: Create LocalSigner using Anvil's deployer key
+	signer, err := o.createNitroLocalSigner(deployCtx)
+	if err != nil {
+		return fmt.Errorf("create local signer: %w", err)
+	}
+
+	// Stage 4: Deploy infrastructure (RollupCreator + templates)
+	infraResult, err := o.deployNitroInfrastructure(ctx, deployCtx, stageWriter, artifacts, signer)
+	if err != nil {
+		return fmt.Errorf("deploy infrastructure: %w", err)
+	}
+
+	// Stage 5: Deploy WETH for BOLD staking
+	stakeToken, err := o.deployWETH(ctx, deployCtx, stageWriter, signer)
+	if err != nil {
+		return fmt.Errorf("deploy WETH: %w", err)
+	}
+
+	// Stage 6: Create Rollup
+	rollupResult, err := o.deployNitroRollup(ctx, deployCtx, stageWriter, artifacts, signer, infraResult.RollupCreatorAddress, stakeToken)
+	if err != nil {
+		return fmt.Errorf("deploy rollup: %w", err)
+	}
+
+	// Stage 7: Capture Anvil state
+	if err := o.captureAnvilState(ctx, deployCtx, stageWriter); err != nil {
+		return fmt.Errorf("capture anvil state: %w", err)
+	}
+
+	// Stage 8: Generate and save all config artifacts
+	nitroResult := &nitroDeployResult{
+		contracts:       rollupResult.Contracts,
+		chainConfig:     rollupResult.ChainConfig,
+		deploymentBlock: rollupResult.BlockNumber,
+		stakeToken:      stakeToken,
+	}
+	if err := o.generateNitroConfigs(ctx, deployCtx, nitroResult, stageWriter); err != nil {
+		return fmt.Errorf("generate nitro configs: %w", err)
+	}
+
+	return nil
+}
+
+// downloadNitroArtifacts downloads Nitro contract artifacts from S3.
+func (o *Orchestrator) downloadNitroArtifacts(ctx context.Context, deployCtx *DeploymentContext, sw *StageWriter) (*nitro.NitroArtifacts, error) {
+	if deployCtx.OnProgress != nil {
+		deployCtx.OnProgress(StageDownloadingArtifacts, 0.15, "Downloading Nitro contract artifacts...")
+	}
+	if err := sw.UpdateStage(ctx, StageDownloadingArtifacts); err != nil {
+		o.logger.Warn("failed to update stage", slog.String("error", err.Error()))
+	}
+
+	cacheDir := filepath.Join(o.config.CacheDir, "nitro-artifacts")
+	downloader := nitro.NewContractArtifactDownloader(cacheDir)
+
+	artifacts, err := downloader.DownloadDefault(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("download artifacts: %w", err)
+	}
+
+	o.logger.Info("Nitro artifacts downloaded",
+		slog.String("version", artifacts.Version),
+		slog.String("source", artifacts.SourceURL),
+	)
+
+	return artifacts, nil
+}
+
+// createNitroLocalSigner creates a LocalSigner using Anvil's deterministic deployer key.
+func (o *Orchestrator) createNitroLocalSigner(deployCtx *DeploymentContext) (*nitro.LocalSigner, error) {
+	// Anvil's deterministic deployer private key (anvil-0)
+	const anvilDeployerKey = "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+
+	signer, err := nitro.NewLocalSigner(anvilDeployerKey, int64(deployCtx.Config.L1ChainID))
+	if err != nil {
+		return nil, fmt.Errorf("create local signer: %w", err)
+	}
+
+	o.logger.Info("Created local signer",
+		slog.String("address", signer.Address().Hex()),
+	)
+
+	return signer, nil
+}
+
+// deployNitroInfrastructure deploys RollupCreator and template contracts.
+func (o *Orchestrator) deployNitroInfrastructure(
+	ctx context.Context,
+	deployCtx *DeploymentContext,
+	sw *StageWriter,
+	artifacts *nitro.NitroArtifacts,
+	signer *nitro.LocalSigner,
+) (*nitro.InfrastructureResult, error) {
+	if deployCtx.OnProgress != nil {
+		deployCtx.OnProgress(StageDeployingInfrastructure, 0.25, "Deploying Nitro infrastructure...")
+	}
+	if err := sw.UpdateStage(ctx, StageDeployingInfrastructure); err != nil {
+		o.logger.Warn("failed to update stage", slog.String("error", err.Error()))
+	}
+
+	infraDeployer := nitro.NewInfrastructureDeployer(artifacts, signer, nil, o.logger)
+
+	cfg := &nitro.InfrastructureConfig{
+		ParentChainID: int64(deployCtx.Config.L1ChainID),
+		ParentRPC:     deployCtx.Config.L1RPC,
+	}
+
+	result, err := infraDeployer.EnsureInfrastructure(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("ensure infrastructure: %w", err)
+	}
+
+	o.logger.Info("Nitro infrastructure deployed",
+		slog.String("rollup_creator", result.RollupCreatorAddress.Hex()),
+		slog.Int("contracts_deployed", len(result.DeployedContracts)),
+	)
+
+	return result, nil
+}
+
+// WETH9 bytecode (standard Wrapped Ether contract)
+const weth9Bytecode = "0x60606040526040805190810160405280600d81526020017f57726170706564204574686572000000000000000000000000000000000000008152506000908051906020019061004f9291906100c8565b506040805190810160405280600481526020017f57455448000000000000000000000000000000000000000000000000000000008152506001908051906020019061009b9291906100c8565b506012600260006101000a81548160ff021916908360ff16021790555034156100c357600080fd5b61016d565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f1061010957805160ff1916838001178555610137565b82800160010185558215610137579182015b8281111561013657825182559160200191906001019061011b565b5b5090506101449190610148565b5090565b61016a91905b8082111561016657600081600090555060010161014e565b5090565b90565b6106598061017c6000396000f30060606040526004361061008e576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063095ea7b31461009357806318160ddd146100ed57806323b872dd14610116578063313ce5671461018f5780636361c39d146101be57806370a0823114610205578063a9059cbb14610252578063dd62ed3e146102ac575b600080fd5b341561009e57600080fd5b6100d3600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091908035906020019091905050610318565b604051808215151515815260200191505060405180910390f35b34156100f857600080fd5b61010061040a565b6040518082815260200191505060405180910390f35b341561012157600080fd5b610175600480803573ffffffffffffffffffffffffffffffffffffffff1690602001909190803573ffffffffffffffffffffffffffffffffffffffff16906020019091908035906020019091905050610410565b604051808215151515815260200191505060405180910390f35b341561019a57600080fd5b6101a261062e565b604051808260ff1660ff16815260200191505060405180910390f35b6101eb600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610641565b604051808215151515815260200191505060405180910390f35b341561021057600080fd5b61023c600480803573ffffffffffffffffffffffffffffffffffffffff1690602001909190505061069b565b6040518082815260200191505060405180910390f35b341561025d57600080fd5b610292600480803573ffffffffffffffffffffffffffffffffffffffff169060200190919080359060200190919050506106b3565b604051808215151515815260200191505060405180910390f35b34156102b757600080fd5b610302600480803573ffffffffffffffffffffffffffffffffffffffff1690602001909190803573ffffffffffffffffffffffffffffffffffffffff169060200190919050506106c8565b6040518082815260200191505060405180910390f35b600081600460003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055508273ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925846040518082815260200191505060405180910390a36001905092915050565b60035481565b600081600360008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002054101580156104fd575081600460008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205410155b801561050a575060008210155b151561051557600080fd5b81600360008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828254039250508190555081600360008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828254019250508190555081600460008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825403925050819055506001905093915050565b600260009054906101000a900460ff1681565b60003073ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561067d57600080fd5b81600360008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600082825401925050819055506001905092915050565b60036020528060005260406000206000915090505481565b60006106c0338484610410565b905092915050565b60046020528160005260406000206020528060005260406000206000915091505054815600a165627a7a72305820e7e9c87b51c5bb35f82f2f1f7bb1823c41cfcd8f3ab8c2a5b58baf35e9cbdd4f0029"
+
+// deployWETH deploys a WETH contract for BOLD staking.
+func (o *Orchestrator) deployWETH(
+	ctx context.Context,
+	deployCtx *DeploymentContext,
+	sw *StageWriter,
+	signer *nitro.LocalSigner,
+) (common.Address, error) {
+	if deployCtx.OnProgress != nil {
+		deployCtx.OnProgress(StageDeployingWETH, 0.35, "Deploying WETH for BOLD staking...")
+	}
+	if err := sw.UpdateStage(ctx, StageDeployingWETH); err != nil {
+		o.logger.Warn("failed to update stage", slog.String("error", err.Error()))
+	}
+
+	client, err := ethclient.DialContext(ctx, deployCtx.Config.L1RPC)
+	if err != nil {
+		return common.Address{}, fmt.Errorf("connect to L1: %w", err)
+	}
+	defer client.Close()
+
+	wethBytecode := common.FromHex(weth9Bytecode)
+
+	nonce, err := client.PendingNonceAt(ctx, signer.Address())
+	if err != nil {
+		return common.Address{}, fmt.Errorf("get nonce: %w", err)
+	}
+
+	gasPrice, err := client.SuggestGasPrice(ctx)
+	if err != nil {
+		return common.Address{}, fmt.Errorf("get gas price: %w", err)
+	}
+
+	// Create contract creation transaction
+	tx := types.NewContractCreation(nonce, big.NewInt(0), 1_000_000, gasPrice, wethBytecode)
+
+	signedTx, err := signer.SignTransaction(ctx, tx)
+	if err != nil {
+		return common.Address{}, fmt.Errorf("sign transaction: %w", err)
+	}
+
+	if err := client.SendTransaction(ctx, signedTx); err != nil {
+		return common.Address{}, fmt.Errorf("send transaction: %w", err)
+	}
+
+	// Wait for receipt
+	receipt, err := waitForReceipt(ctx, client, signedTx.Hash())
+	if err != nil {
+		return common.Address{}, fmt.Errorf("wait for receipt: %w", err)
+	}
+
+	if receipt.Status == 0 {
+		return common.Address{}, fmt.Errorf("WETH deployment reverted")
+	}
+
+	o.logger.Info("WETH deployed",
+		slog.String("address", receipt.ContractAddress.Hex()),
+	)
+
+	return receipt.ContractAddress, nil
+}
+
+// waitForReceipt waits for a transaction receipt.
+func waitForReceipt(ctx context.Context, client *ethclient.Client, txHash common.Hash) (*types.Receipt, error) {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			receipt, err := client.TransactionReceipt(ctx, txHash)
+			if err == nil {
+				return receipt, nil
+			}
+			// Continue polling if receipt not found
+		}
+	}
+}
+
+// deployNitroRollup deploys the Nitro rollup using RollupCreator.
+func (o *Orchestrator) deployNitroRollup(
+	ctx context.Context,
+	deployCtx *DeploymentContext,
+	sw *StageWriter,
+	artifacts *nitro.NitroArtifacts,
+	signer *nitro.LocalSigner,
+	rollupCreatorAddr common.Address,
+	stakeToken common.Address,
+) (*nitro.RollupDeployResult, error) {
+	if deployCtx.OnProgress != nil {
+		deployCtx.OnProgress(StageCreatingRollup, 0.45, "Creating Nitro rollup...")
+	}
+	if err := sw.UpdateStage(ctx, StageCreatingRollup); err != nil {
+		o.logger.Warn("failed to update stage", slog.String("error", err.Error()))
+	}
+
+	deployer, err := nitro.NewRollupDeployer(artifacts, signer, o.logger)
+	if err != nil {
+		return nil, fmt.Errorf("create rollup deployer: %w", err)
+	}
+
+	// Use hardcoded Anvil addresses for batch poster and validator
+	batchPosterAddr := common.HexToAddress(deployCtx.Config.BatcherAddress)
+	validatorAddr := common.HexToAddress(deployCtx.Config.ProposerAddress)
+
+	cfg := &nitro.RollupConfig{
+		ChainID:          int64(deployCtx.Config.ChainID),
+		ChainName:        deployCtx.Config.ChainName,
+		ParentChainID:    int64(deployCtx.Config.L1ChainID),
+		ParentChainRPC:   deployCtx.Config.L1RPC,
+		Owner:            signer.Address(),
+		BatchPosters:     []common.Address{batchPosterAddr},
+		Validators:       []common.Address{validatorAddr},
+		StakeToken:       stakeToken,
+		BaseStake:        big.NewInt(100000000000000000), // 0.1 ETH
+		DataAvailability: nitro.DAModeCelestia,
+	}
+
+	result, err := deployer.Deploy(ctx, cfg, rollupCreatorAddr)
+	if err != nil {
+		return nil, fmt.Errorf("deploy rollup: %w", err)
+	}
+
+	if !result.Success {
+		return nil, fmt.Errorf("rollup deployment failed: %s", result.Error)
+	}
+
+	o.logger.Info("Nitro rollup deployed",
+		slog.String("rollup", result.Contracts.Rollup.Hex()),
+		slog.String("inbox", result.Contracts.Inbox.Hex()),
+		slog.String("bridge", result.Contracts.Bridge.Hex()),
+		slog.Uint64("block", result.BlockNumber),
+	)
+
+	return result, nil
+}
+
+// generateNitroConfigs generates all Nitro configuration files and saves them as artifacts.
+func (o *Orchestrator) generateNitroConfigs(ctx context.Context, deployCtx *DeploymentContext, result *nitroDeployResult, sw *StageWriter) error {
+	if deployCtx.OnProgress != nil {
+		deployCtx.OnProgress(StageGeneratingConfigs, 0.8, "Generating Nitro configuration files...")
+	}
+	if err := sw.UpdateStage(ctx, StageGeneratingConfigs); err != nil {
+		o.logger.Warn("failed to update stage", slog.String("error", err.Error()))
+	}
+
+	// Celestia key ID is hardcoded - popsigner-lite uses deterministic IDs for Anvil accounts
+	celestiaKeyID := "anvil-9"
+
+	o.logger.Info("Using Celestia key",
+		slog.String("key_id", celestiaKeyID),
+	)
+
+	// Create Nitro config writer
+	writer := &NitroConfigWriter{
+		logger:        o.logger,
+		result:        result,
+		config:        deployCtx.Config,
+		celestiaKeyID: celestiaKeyID,
+	}
+
+	// Generate all configs
+	artifacts, err := writer.GenerateAll()
+	if err != nil {
+		return fmt.Errorf("generate configs: %w", err)
+	}
+
+	// Save all artifacts to database
+	for artifactType, content := range artifacts {
+		jsonContent, err := wrapContentForStorage([]byte(content))
+		if err != nil {
+			return fmt.Errorf("wrap artifact %s: %w", artifactType, err)
+		}
+
+		artifact := &repository.Artifact{
+			ID:           uuid.New(),
+			DeploymentID: deployCtx.DeploymentID,
+			ArtifactType: artifactType,
+			Content:      jsonContent,
+			CreatedAt:    time.Now(),
+		}
+
+		if err := o.repo.SaveArtifact(ctx, artifact); err != nil {
+			return fmt.Errorf("save artifact %s: %w", artifactType, err)
+		}
+
+		o.logger.Info("Saved artifact",
+			slog.String("type", artifactType),
+			slog.Int("size_bytes", len(content)),
 		)
 	}
 
-	o.logger.Info("POPKins devnet bundle deployment completed successfully",
-		slog.String("deployment_id", deploymentID.String()),
+	// Also save anvil-state.json
+	stateFile := filepath.Join(deployCtx.WorkDir, "anvil-state.json")
+	stateData, err := os.ReadFile(stateFile)
+	if err != nil {
+		return fmt.Errorf("read anvil state: %w", err)
+	}
+
+	stateArtifact := &repository.Artifact{
+		ID:           uuid.New(),
+		DeploymentID: deployCtx.DeploymentID,
+		ArtifactType: "anvil-state.json",
+		Content:      json.RawMessage(stateData),
+		CreatedAt:    time.Now(),
+	}
+
+	if err := o.repo.SaveArtifact(ctx, stateArtifact); err != nil {
+		return fmt.Errorf("save anvil state: %w", err)
+	}
+
+	o.logger.Info("All Nitro artifacts saved to database",
+		slog.Int("count", len(artifacts)+1),
 	)
 
 	return nil
