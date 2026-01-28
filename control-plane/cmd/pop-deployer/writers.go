@@ -401,7 +401,7 @@ services:
   # Posts blobs to Celestia (localestia), serves commitments to op-node/op-batcher
   # =============================================================
   op-alt-da:
-    image: ghcr.io/celestiaorg/op-alt-da:v0.10.0
+    image: ghcr.io/celestiaorg/usr/bin/op-alt-da:0.12.0
     restart: unless-stopped
     depends_on:
       localestia:
@@ -413,10 +413,11 @@ services:
     ports:
       - "3100:3100"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3100/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 60
+      test: ["CMD", "/usr/bin/op-alt-da", "--help"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 
   # =============================================================
   # OP GETH INIT - Initialize genesis (runs once, then exits)
@@ -517,7 +518,7 @@ services:
       # Celestia Alt-DA
       - --altda.enabled=true
       - --altda.verify-on-read=true
-      - --altda.da-server=http://op-alt-da:3100
+      - --altda.da-server=http://usr/bin/op-alt-da:3100
       - --metrics.enabled
       - --metrics.port=7300
     volumes:
@@ -567,7 +568,7 @@ services:
       # Celestia Alt-DA
       - --altda.da-service=true
       - --altda.enabled=true
-      - --altda.da-server=http://op-alt-da:3100
+      - --altda.da-server=http://usr/bin/op-alt-da:3100
       - --metrics.enabled
       - --metrics.port=7301
     ports:

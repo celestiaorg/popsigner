@@ -12,7 +12,7 @@ const (
 	OpBatcherVersion  = "v1.16.3" // Use release tag, not commit hash
 	OpProposerVersion = "v1.10.0"
 	OpGethVersion     = "v1.101602.3"
-	OpAltDAVersion    = "v0.10.0"
+	OpAltDAVersion    = "0.12.0"
 )
 
 // dockerComposeTemplate is the template for generating OP Stack docker-compose.yml with Celestia DA.
@@ -44,10 +44,11 @@ services:
     ports:
       - "3100:3100"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3100/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 60
+      test: ["CMD", "/usr/bin/op-alt-da", "--help"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 {{- end }}
 
   # =============================================================
@@ -259,7 +260,7 @@ networks:
     driver: bridge
 `
 
-// opAltDAConfigTemplate is the config.toml template for op-alt-da v0.10.0
+// opAltDAConfigTemplate is the config.toml template for op-alt-da 0.12.0
 // 
 // Uses POPSigner for Celestia transaction signing.
 // No local keyring needed - POPSigner manages Celestia keys.

@@ -371,10 +371,11 @@ services:
     ports:
       - "3100:3100"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3100/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 60
+      test: ["CMD", "/usr/bin/op-alt-da", "--help"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
 
   # =============================================================
   # OP GETH INIT - Initialize genesis (runs once, then exits)

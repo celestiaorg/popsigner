@@ -177,7 +177,7 @@ curl -s http://localhost:9545 -X POST \
 		readme += `
 ## Celestia DA
 
-Your chain uses **Celestia** as the Data Availability layer via op-alt-da v0.10.0.
+Your chain uses **Celestia** as the Data Availability layer via op-alt-da 0.12.0.
 
 POPSigner manages your Celestia signing keys - no local keyring setup required!
 
