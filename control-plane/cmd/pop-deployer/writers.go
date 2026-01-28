@@ -331,6 +331,7 @@ services:
   # =============================================================
   anvil:
     image: ghcr.io/foundry-rs/foundry:v1.5.1
+    platform: linux/amd64
     restart: unless-stopped
     entrypoint: ["anvil"]
     command:
@@ -401,7 +402,7 @@ services:
   # Posts blobs to Celestia (localestia), serves commitments to op-node/op-batcher
   # =============================================================
   op-alt-da:
-    image: ghcr.io/celestiaorg/op-alt-da:v0.10.0
+    image: rg.nl-ams.scw.cloud/banhbao/op-alt-da:v0.10.1
     restart: unless-stopped
     depends_on:
       localestia:

@@ -290,6 +290,7 @@ services:
   # =============================================================
   anvil:
     image: ghcr.io/foundry-rs/foundry:v1.5.1
+    platform: linux/amd64
     restart: unless-stopped
     entrypoint: ["anvil"]
     command:
