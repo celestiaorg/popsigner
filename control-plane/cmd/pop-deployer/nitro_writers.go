@@ -302,6 +302,7 @@ services:
   # =============================================================
   anvil:
     image: ghcr.io/foundry-rs/foundry:v1.5.1
+    platform: linux/amd64
     container_name: nitro-anvil
     restart: unless-stopped
     environment:
@@ -340,7 +341,7 @@ services:
   # POPSigner-Lite - Local signing service
   # =============================================================
   popsigner-lite:
-    image: rg.nl-ams.scw.cloud/banhbao/popsigner-lite:v0.1.1
+    image: rg.nl-ams.scw.cloud/banhbao/popsigner-lite:v0.1.2
     container_name: nitro-popsigner
     restart: unless-stopped
     environment:
@@ -362,7 +363,7 @@ services:
   # Localestia - Mock Celestia network
   # =============================================================
   localestia:
-    image: rg.nl-ams.scw.cloud/banhbao/localestia:v0.1.4
+    image: rg.nl-ams.scw.cloud/banhbao/localestia:v0.1.5
     container_name: nitro-localestia
     restart: unless-stopped
     depends_on:
@@ -536,8 +537,8 @@ BATCH_POSTER_ADDRESS=%s
 STAKER_ADDRESS=%s
 
 # Docker Images
-NITRO_IMAGE=rg.nl-ams.scw.cloud/banhbao/nitro-node-dev:v3.10.0-amd64
-NITRO_DAS_IMAGE=nitro-das-celestia:v0.8.2-local-amd64
+NITRO_IMAGE=rg.nl-ams.scw.cloud/banhbao/nitro-node-dev:v3.10.0
+NITRO_DAS_IMAGE=rg.nl-ams.scw.cloud/banhbao/nitro-das-server:v0.8.2
 
 # Startup Phase Control
 BATCH_POSTER_ENABLE=true
@@ -626,34 +627,58 @@ echo -e "${BLUE}  Nitro Local Devnet - Starting${NC}"
 echo -e "${BLUE}============================================${NC}"
 echo ""
 
-# Phase 1: Start WITHOUT batch-poster
-log_info "Phase 1: Starting infrastructure (batch-poster disabled)..."
-BATCH_POSTER_ENABLE=false docker compose up -d
+# Check if this is a restart (nitro-data volume exists and has content)
+VOLUME_NAME="${PWD##*/}_nitro-data"
+IS_RESTART=false
 
-log_info "Waiting for services to be healthy..."
-sleep 5
-
-# Wait for Nitro to initialize (can take up to 120 seconds)
-log_info "Waiting for Nitro to initialize..."
-for i in {1..120}; do
-    if docker logs nitro-sequencer 2>&1 | grep -q "HTTP server started.*8547"; then
-        log_success "Nitro HTTP server started"
-        break
+if docker volume inspect "$VOLUME_NAME" >/dev/null 2>&1; then
+    # Volume exists, check if it has Nitro database (any /data/*/nitro directory)
+    if docker run --rm -v "$VOLUME_NAME:/data" alpine sh -c 'find /data -type d -name nitro | grep -q .' >/dev/null 2>&1; then
+        IS_RESTART=true
+        log_info "Detected existing Nitro data - performing restart..."
     fi
-    if [ $((i % 10)) -eq 0 ]; then
-        echo "  Still initializing... ($i seconds)"
-    fi
-    sleep 1
-done
+fi
 
-sleep 5
+if [ "$IS_RESTART" = true ]; then
+    # Simple restart - chain already initialized
+    log_info "Starting all services with batch-poster enabled..."
+    BATCH_POSTER_ENABLE=true docker compose up -d
 
-# Phase 2: Restart WITH batch-poster
-log_info "Phase 2: Enabling batch-poster..."
-BATCH_POSTER_ENABLE=true docker compose up -d nitro-sequencer
+    log_info "Waiting for services to be healthy..."
+    sleep 10
+else
+    # Fresh start - need two-phase initialization
+    log_info "Fresh deployment detected - using two-phase startup..."
 
-log_info "Waiting for batch-poster to start..."
-sleep 10
+    # Phase 1: Start WITHOUT batch-poster
+    log_info "Phase 1: Starting infrastructure (batch-poster disabled)..."
+    BATCH_POSTER_ENABLE=false docker compose up -d
+
+    log_info "Waiting for services to be healthy..."
+    sleep 5
+
+    # Wait for Nitro to initialize (can take up to 120 seconds)
+    log_info "Waiting for Nitro to initialize..."
+    for i in {1..120}; do
+        if docker logs nitro-sequencer 2>&1 | grep -q "HTTP server started.*8547"; then
+            log_success "Nitro HTTP server started"
+            break
+        fi
+        if [ $((i % 10)) -eq 0 ]; then
+            echo "  Still initializing... ($i seconds)"
+        fi
+        sleep 1
+    done
+
+    sleep 5
+
+    # Phase 2: Restart WITH batch-poster
+    log_info "Phase 2: Enabling batch-poster..."
+    BATCH_POSTER_ENABLE=true docker compose up -d nitro-sequencer
+
+    log_info "Waiting for batch-poster to start..."
+    sleep 10
+fi
 
 # Verify using RPC endpoint
 if curl -sf http://localhost:8547 -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' >/dev/null 2>&1; then
