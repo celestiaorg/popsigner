@@ -296,13 +296,32 @@ func (o *Orchestrator) startAnvil(ctx context.Context, dc *DeploymentContext, sw
 	return nil
 }
 
-// waitForIPC polls for an IPC socket file to exist.
+// waitForIPC polls for an IPC socket to be ready by attempting actual RPC connections.
+// Simply checking file existence is insufficient - the socket file can exist before
+// anvil is ready to accept connections (especially on macOS).
 func waitForIPC(path string, timeout time.Duration) bool {
 	start := time.Now()
 	for time.Since(start) < timeout {
-		if _, err := os.Stat(path); err == nil {
-			// Socket exists, give it a moment to be ready
+		// First check if file exists
+		if _, err := os.Stat(path); err != nil {
 			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+
+		// Try to actually connect and make an RPC call
+		client, err := ethclient.Dial(path)
+		if err != nil {
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+
+		// Try a simple RPC call to verify the connection works
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		_, err = client.ChainID(ctx)
+		cancel()
+		client.Close()
+
+		if err == nil {
 			return true
 		}
 		time.Sleep(500 * time.Millisecond)

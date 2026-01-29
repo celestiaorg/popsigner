@@ -38,10 +38,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Foundry (anvil) for pop-bundle deployments
 # Foundry provides anvil (local Ethereum node) needed for local devnet bundles
 # Download pre-built binaries directly from GitHub releases
+# Auto-detect architecture for Apple Silicon (arm64) vs Intel (amd64)
+# IMPORTANT: Version must match bundle template (writer.go) to ensure state file compatibility
 ENV FOUNDRY_DIR=/usr/local/foundry
+ENV FOUNDRY_VERSION=v1.5.1
 RUN mkdir -p ${FOUNDRY_DIR}/bin && \
-    LATEST=$(curl -sL https://api.github.com/repos/foundry-rs/foundry/releases/latest | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4) && \
-    curl -L "https://github.com/foundry-rs/foundry/releases/download/${LATEST}/foundry_${LATEST}_linux_amd64.tar.gz" | tar -xzC ${FOUNDRY_DIR}/bin
+    ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+        FOUNDRY_ARCH="linux_arm64"; \
+    elif [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then \
+        FOUNDRY_ARCH="linux_amd64"; \
+    else \
+        echo "Unsupported architecture: ${ARCH} for Foundry ${FOUNDRY_VERSION}" >&2; \
+        exit 1; \
+    fi && \
+    echo "Downloading Foundry ${FOUNDRY_VERSION} for ${FOUNDRY_ARCH}" && \
+    curl -L "https://github.com/foundry-rs/foundry/releases/download/${FOUNDRY_VERSION}/foundry_${FOUNDRY_VERSION}_${FOUNDRY_ARCH}.tar.gz" | tar -xzC ${FOUNDRY_DIR}/bin
 ENV PATH="${FOUNDRY_DIR}/bin:${PATH}"
 
 # Copy binary from builder
