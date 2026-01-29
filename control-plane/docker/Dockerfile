@@ -46,8 +46,11 @@ RUN mkdir -p ${FOUNDRY_DIR}/bin && \
     ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
         FOUNDRY_ARCH="linux_arm64"; \
-    else \
+    elif [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then \
         FOUNDRY_ARCH="linux_amd64"; \
+    else \
+        echo "Unsupported architecture: ${ARCH} for Foundry ${FOUNDRY_VERSION}" >&2; \
+        exit 1; \
     fi && \
     echo "Downloading Foundry ${FOUNDRY_VERSION} for ${FOUNDRY_ARCH}" && \
     curl -L "https://github.com/foundry-rs/foundry/releases/download/${FOUNDRY_VERSION}/foundry_${FOUNDRY_VERSION}_${FOUNDRY_ARCH}.tar.gz" | tar -xzC ${FOUNDRY_DIR}/bin
