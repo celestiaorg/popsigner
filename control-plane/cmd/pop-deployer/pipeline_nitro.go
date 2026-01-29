@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/nitro"
 	"github.com/ethereum/go-ethereum/common"
@@ -362,20 +363,18 @@ func createContractCreation(nonce uint64, data []byte, gasLimit uint64, gasPrice
 
 // waitForReceipt waits for a transaction receipt.
 func waitForReceipt(ctx context.Context, client *ethclient.Client, txHash common.Hash) (*types.Receipt, error) {
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
 	for {
-		receipt, err := client.TransactionReceipt(ctx, txHash)
-		if err == nil {
-			return receipt, nil
-		}
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-		// Small sleep to avoid hammering the RPC
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
-		default:
-			// Continue polling
+		case <-ticker.C:
+			receipt, err := client.TransactionReceipt(ctx, txHash)
+			if err == nil {
+				return receipt, nil
+			}
 		}
 	}
 }
