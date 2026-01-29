@@ -18,7 +18,8 @@ type DeploymentNewData struct {
 
 // DeploymentFormData holds form values across wizard steps
 type DeploymentFormData struct {
-	Stack       string // "opstack" or "nitro"
+	Stack       string // "opstack", "nitro", or "pop-bundle"
+	BundleStack string // "opstack" or "nitro" (only for pop-bundle)
 	ChainName   string
 	ChainID     string
 	L1RPC       string
@@ -299,7 +300,8 @@ templ DeploymentStep2Config(data DeploymentNewData) {
 
 // DeploymentStep2Bundle - Simplified config for POPKins bundle (no L1 RPC or keys needed)
 templ DeploymentStep2Bundle(data DeploymentNewData) {
-	<form action="/deployments" method="POST" class="space-y-6">
+	<form action="/deployments" method="POST" class="space-y-6"
+		  x-data={ fmt.Sprintf("{ bundleStack: '%s' }", getDefaultBundleStack(data.FormData.BundleStack)) }>
 		<!-- Hidden field from previous step -->
 		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
 		<!-- POPKins bundle uses local Anvil, so hardcode these -->
@@ -316,11 +318,55 @@ templ DeploymentStep2Bundle(data DeploymentNewData) {
 			<p class="text-[#666600] text-sm">Configure your local devnet bundle</p>
 		</div>
 
-		<!-- Info Box -->
-		<div class="p-4 bg-[#1a1500] border border-[#FFB000]/50 text-sm">
+		<!-- Bundle Stack Selection -->
+		<div class="space-y-4">
+			<label class="block text-sm text-[#666600] uppercase mb-2">Bundle Stack</label>
+			<div class="grid grid-cols-2 gap-4">
+				<!-- OP Stack Option -->
+				<div class="cursor-pointer" @click="bundleStack = 'opstack'; $refs.opstackBundle.checked = true">
+					<input type="radio" name="bundle_stack" value="opstack" x-ref="opstackBundle"
+						   class="hidden"
+						   checked?={ data.FormData.BundleStack == "opstack" || data.FormData.BundleStack == "" }/>
+					<div class="p-4 border transition-all"
+						 :class="bundleStack === 'opstack' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-xl">⚡</span>
+							<span class="w-4 h-4 border-2 rounded-full transition-all flex items-center justify-center"
+								  :class="bundleStack === 'opstack' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'">
+								<span x-show="bundleStack === 'opstack'" class="text-black text-[10px]">✓</span>
+							</span>
+						</div>
+						<div class="text-[#FFB000] font-bold uppercase mb-1">OP Stack</div>
+						<div class="text-[#999] text-xs">op-geth + op-node + Celestia DA</div>
+					</div>
+				</div>
+				<!-- Nitro Option -->
+				<div class="cursor-pointer" @click="bundleStack = 'nitro'; $refs.nitroBundle.checked = true">
+					<input type="radio" name="bundle_stack" value="nitro" x-ref="nitroBundle"
+						   class="hidden"
+						   checked?={ data.FormData.BundleStack == "nitro" }/>
+					<div class="p-4 border transition-all"
+						 :class="bundleStack === 'nitro' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-xl">🚀</span>
+							<span class="w-4 h-4 border-2 rounded-full transition-all flex items-center justify-center"
+								  :class="bundleStack === 'nitro' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'">
+								<span x-show="bundleStack === 'nitro'" class="text-black text-[10px]">✓</span>
+							</span>
+						</div>
+						<div class="text-[#FFB000] font-bold uppercase mb-1">Arbitrum Nitro</div>
+						<div class="text-[#999] text-xs">nitro-node + Celestia DA</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Dynamic Info Boxes -->
+		<!-- OP Stack Info Box -->
+		<div x-show="bundleStack === 'opstack'" class="p-4 bg-[#1a1500] border border-[#FFB000]/50 text-sm">
 			<p class="text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2">
 				<span>📦</span>
-				<span>What's in the Bundle?</span>
+				<span>What's in the OP Stack Bundle?</span>
 			</p>
 			<ul class="text-[#999] space-y-1.5">
 				<li class="flex items-start gap-2">
@@ -342,6 +388,36 @@ templ DeploymentStep2Bundle(data DeploymentNewData) {
 				<li class="flex items-start gap-2">
 					<span class="text-[#FFB000]">•</span>
 					<span><strong class="text-[#FFB000]">Docker Compose</strong> ready - just run <code class="text-[#33FF00]">docker compose up</code></span>
+				</li>
+			</ul>
+		</div>
+
+		<!-- Nitro Info Box -->
+		<div x-show="bundleStack === 'nitro'" class="p-4 bg-[#1a1500] border border-[#FFB000]/50 text-sm">
+			<p class="text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2">
+				<span>📦</span>
+				<span>What's in the Nitro Bundle?</span>
+			</p>
+			<ul class="text-[#999] space-y-1.5">
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Pre-deployed Nitro contracts</strong> - No waiting for deployment</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Local Anvil L1</strong> with funded accounts</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Celestia DA</strong> via Localestia (mock)</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Nitro sequencer</strong> + batch-poster</span>
+				</li>
+				<li class="flex items-start gap-2">
+					<span class="text-[#FFB000]">•</span>
+					<span><strong class="text-[#FFB000]">Docker Compose</strong> ready - just run <code class="text-[#33FF00]">./scripts/start.sh</code></span>
 				</li>
 			</ul>
 		</div>
@@ -707,6 +783,13 @@ func getDefaultChainID(chainID string) string {
 		return "42069"
 	}
 	return chainID
+}
+
+func getDefaultBundleStack(bundleStack string) string {
+	if bundleStack == "" {
+		return "opstack"
+	}
+	return bundleStack
 }
 
 func buildBackURL(step int, data DeploymentFormData) string {

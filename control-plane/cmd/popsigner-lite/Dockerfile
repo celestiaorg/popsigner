@@ -5,6 +5,9 @@ FROM golang:1.25-alpine AS builder
 # Install build dependencies
 RUN apk add --no-cache git make gcc musl-dev
 
+# Build arguments for multi-arch support
+ARG TARGETARCH
+
 WORKDIR /build
 
 # Copy entire popsigner repo (popsigner-lite is part of it)
@@ -12,7 +15,7 @@ COPY . .
 
 # Build popsigner-lite
 WORKDIR /build/control-plane/cmd/popsigner-lite
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="-w -s" -o popsigner-lite .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -a -installsuffix cgo -ldflags="-w -s" -o popsigner-lite .
 
 # Stage 2: Runtime
 FROM alpine:3.19

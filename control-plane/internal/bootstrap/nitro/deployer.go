@@ -85,7 +85,7 @@ type RollupDeployResult struct {
 // RollupDeployer handles deployment of Nitro rollups using RollupCreator.
 type RollupDeployer struct {
 	artifacts *NitroArtifacts
-	signer    *NitroSigner
+	signer    TransactionSigner
 	logger    *slog.Logger
 	encoder   *RollupEncoder
 
@@ -96,9 +96,11 @@ type RollupDeployer struct {
 }
 
 // NewRollupDeployer creates a new rollup deployer.
+// The signer can be either a NitroSigner (for production via POPSigner) or
+// a LocalSigner (for testing on Anvil/local networks).
 func NewRollupDeployer(
 	artifacts *NitroArtifacts,
-	signer *NitroSigner,
+	signer TransactionSigner,
 	logger *slog.Logger,
 ) (*RollupDeployer, error) {
 	// Parse ABIs
