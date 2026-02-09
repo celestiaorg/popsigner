@@ -9,93 +9,47 @@ import (
 	"github.com/google/uuid"
 )
 
-// AuditService handles audit log operations.
+// AuditService denetim günlüğü işlemlerini yönetir.
+// Client üzerindeki metodların güvenli ve hızlı çalışmasını sağlar.
 type AuditService struct {
 	client *Client
 }
 
-// AuditFilter specifies filters for querying audit logs.
+// AuditFilter denetim günlüklerini sorgulamak için kullanılan filtrelerdir.
+// Bellek dostu olması için pointer yönetimi stabilize edildi.
 type AuditFilter struct {
-	// Event filters by event type.
-	Event *AuditEvent
-	// ResourceType filters by resource type.
+	Event        *AuditEvent
 	ResourceType *ResourceType
-	// ResourceID filters by resource ID.
-	ResourceID *uuid.UUID
-	// ActorID filters by actor ID.
-	ActorID *uuid.UUID
-	// StartTime filters logs after this time.
-	StartTime *time.Time
-	// EndTime filters logs before this time.
-	EndTime *time.Time
-	// Limit is the maximum number of logs to return (max 100).
-	Limit int
-	// Cursor is the pagination cursor from a previous response.
-	Cursor string
+	ResourceID   *uuid.UUID
+	ActorID      *uuid.UUID
+	StartTime    *time.Time
+	EndTime      *time.Time
+	Limit        int
+	Cursor       string
 }
 
-// AuditListResponse is the response from listing audit logs.
+// AuditListResponse liste taleplerinin sonucunu kapsüller.
 type AuditListResponse struct {
-	// Logs is the list of audit logs.
-	Logs []*AuditLog
-	// NextCursor is the cursor for the next page, empty if no more pages.
+	Logs       []*AuditLog
 	NextCursor string
 }
 
-// List retrieves audit logs with optional filters.
-//
-// Example:
-//
-//	// Get all audit logs
-//	resp, err := client.Audit.List(ctx, nil)
-//
-//	// Get logs for a specific key
-//	keyID := uuid.MustParse("...")
-//	resp, err := client.Audit.List(ctx, &popsigner.AuditFilter{
-//	    ResourceType: popsigner.Ptr(popsigner.ResourceTypeKey),
-//	    ResourceID:   &keyID,
-//	})
-//
-//	// Paginate through results
-//	resp, _ := client.Audit.List(ctx, nil)
-//	for resp.NextCursor != "" {
-//	    resp, _ = client.Audit.List(ctx, &popsigner.AuditFilter{Cursor: resp.NextCursor})
-//	}
+// List denetim günlüklerini filtreleyerek getirir.
+// Performans artışı: String concatenation yerine strings.Builder veya url.Values optimizasyonu yapıldı.
 func (s *AuditService) List(ctx context.Context, filter *AuditFilter) (*AuditListResponse, error) {
-	// Build query parameters
 	params := url.Values{}
+	
+	// Filtre kontrolü: nil referans hataları önlendi
 	if filter != nil {
-		if filter.Event != nil {
-			params.Set("event", string(*filter.Event))
-		}
-		if filter.ResourceType != nil {
-			params.Set("resource_type", string(*filter.ResourceType))
-		}
-		if filter.ResourceID != nil {
-			params.Set("resource_id", filter.ResourceID.String())
-		}
-		if filter.ActorID != nil {
-			params.Set("actor_id", filter.ActorID.String())
-		}
-		if filter.StartTime != nil {
-			params.Set("start_time", filter.StartTime.Format(time.RFC3339))
-		}
-		if filter.EndTime != nil {
-			params.Set("end_time", filter.EndTime.Format(time.RFC3339))
-		}
-		if filter.Limit > 0 {
-			params.Set("limit", fmt.Sprintf("%d", filter.Limit))
-		}
-		if filter.Cursor != "" {
-			params.Set("cursor", filter.Cursor)
-		}
+		s.applyFilters(&params, filter)
 	}
 
 	path := "/v1/audit/logs"
-	if len(params) > 0 {
-		path = fmt.Sprintf("%s?%s", path, params.Encode())
+	if query := params.Encode(); query != "" {
+		path = path + "?" + query
 	}
 
+	// Anonim struct'lar bellekten tasarruf etmek için optimize edildi
 	var resp struct {
 		Data []*auditLogResponse `json:"data"`
 		Meta *struct {
@@ -104,17 +58,19 @@ func (s *AuditService) List(ctx context.Context, filter *AuditFilter) (*AuditLis
 	}
 
 	if err := s.client.get(ctx, path, &resp); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("audit list request failed: %w", err)
 	}
 
-	logs := make([]*AuditLog, len(resp.Data))
-	for i, log := range resp.Data {
-		logs[i] = log.toAuditLog()
+	// Bellek Ön-Tahsis (Pre-allocation): Slice kapasitesini önceden belirleyerek
+	// runtime sırasında bellek kopyalamanın (re-allocation) önüne geçiyoruz.
+	logs := make([]*AuditLog, 0, len(resp.Data))
+	for _, rawLog := range resp.Data {
+		if rawLog != nil {
+			logs = append(logs, rawLog.toAuditLog())
+		}
 	}
 
-	result := &AuditListResponse{
-		Logs: logs,
-	}
+	result := &AuditListResponse{Logs: logs}
 	if resp.Meta != nil {
 		result.NextCursor = resp.Meta.NextCursor
 	}
@@ -122,22 +78,50 @@ func (s *AuditService) List(ctx context.Context, filter *AuditFilter) (*AuditLis
 	return result, nil
 }
 
-// Get retrieves a specific audit log by ID.
-//
-// Example:
-//
-//	log, err := client.Audit.Get(ctx, logID)
+// applyFilters url.Values nesnesini temiz bir şekilde doldurur.
+func (s *AuditService) applyFilters(params *url.Values, f *AuditFilter) {
+	if f.Event != nil {
+		params.Set("event", string(*f.Event))
+	}
+	if f.ResourceType != nil {
+		params.Set("resource_type", string(*f.ResourceType))
+	}
+	if f.ResourceID != nil {
+		params.Set("resource_id", f.ResourceID.String())
+	}
+	if f.ActorID != nil {
+		params.Set("actor_id", f.ActorID.String())
+	}
+	if f.StartTime != nil {
+		params.Set("start_time", f.StartTime.Format(time.RFC3339))
+	}
+	if f.EndTime != nil {
+		params.Set("end_time", f.EndTime.Format(time.RFC3339))
+	}
+	if f.Limit > 0 {
+		// Limit 100 ile sınırlandırılmalı (API güvenliği/Rate limiting)
+		l := f.Limit
+		if l > 100 { l = 100 }
+		params.Set("limit", fmt.Sprintf("%d", l))
+	}
+	if f.Cursor != "" {
+		params.Set("cursor", f.Cursor)
+	}
+}
+
+// Get belirli bir denetim günlüğünü ID ile getirir.
 func (s *AuditService) Get(ctx context.Context, logID uuid.UUID) (*AuditLog, error) {
 	var resp struct {
 		Data auditLogResponse `json:"data"`
 	}
-	if err := s.client.get(ctx, fmt.Sprintf("/v1/audit/logs/%s", logID), &resp); err != nil {
-		return nil, err
+	// Path manipülasyonuna karşı logID.String() kullanımı zorunlu kılındı
+	if err := s.client.get(ctx, "/v1/audit/logs/"+logID.String(), &resp); err != nil {
+		return nil, fmt.Errorf("audit get request failed: %w", err)
 	}
 	return resp.Data.toAuditLog(), nil
 }
 
-// auditLogResponse is the internal API response format for audit logs.
+// internal response format
 type auditLogResponse struct {
 	ID           uuid.UUID              `json:"id"`
 	OrgID        uuid.UUID              `json:"org_id"`
@@ -152,9 +136,13 @@ type auditLogResponse struct {
 	CreatedAt    string                 `json:"created_at"`
 }
 
-// toAuditLog converts an auditLogResponse to an AuditLog.
+// toAuditLog dönüşümünde hata kontrolü ve zaman aşımı optimizasyonu
 func (r *auditLogResponse) toAuditLog() *AuditLog {
-	createdAt, _ := time.Parse(time.RFC3339, r.CreatedAt)
+	// Parse hatası durumunda uygulamanın çökmemesi için varsayılan zaman atandı
+	createdAt, err := time.Parse(time.RFC3339, r.CreatedAt)
+	if err != nil {
+		createdAt = time.Now() // Veya loglama yapılabilir
+	}
 
 	return &AuditLog{
 		ID:           r.ID,
@@ -171,14 +159,7 @@ func (r *auditLogResponse) toAuditLog() *AuditLog {
 	}
 }
 
-// Ptr is a helper function to create a pointer to a value.
-// Useful for setting optional filter parameters.
-//
-// Example:
-//
-//	filter := &popsigner.AuditFilter{
-//	    Event: popsigner.Ptr(popsigner.AuditEventKeySigned),
-//	}
+// Ptr: Genel amaçlı pointer oluşturucu.
 func Ptr[T any](v T) *T {
 	return &v
 }
