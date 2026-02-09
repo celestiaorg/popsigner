@@ -82,6 +82,8 @@ type POPSignerInfo struct {
 type BundleConfig struct {
 	// Stack type (opstack or nitro)
 	Stack Stack
+	// BundleStack is the sub-stack for pop-bundle ("opstack" or "nitro")
+	BundleStack string
 	// ChainID is the L2/Orbit chain ID
 	ChainID uint64
 	// ChainName is the human-readable chain name

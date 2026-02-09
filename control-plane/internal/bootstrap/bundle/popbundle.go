@@ -4,12 +4,43 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 )
 
 // createPopBundleBundle creates the POPKins Devnet Bundle structure.
+// It dispatches to either OP Stack or Nitro bundle creation based on BundleStack.
+func (b *Bundler) createPopBundleBundle(cfg *BundleConfig) (*BundleResult, error) {
+	slog.Info("createPopBundleBundle: dispatching based on bundle_stack",
+		slog.String("bundle_stack", cfg.BundleStack),
+		slog.String("chain_name", cfg.ChainName),
+		slog.Int("artifact_count", len(cfg.Artifacts)),
+	)
+
+	// Log all artifact types
+	artifactTypes := make([]string, 0, len(cfg.Artifacts))
+	for k := range cfg.Artifacts {
+		artifactTypes = append(artifactTypes, k)
+	}
+	slog.Info("createPopBundleBundle: available artifacts",
+		slog.Any("types", artifactTypes),
+	)
+
+	// Check if this is a Nitro bundle
+	if cfg.BundleStack == "nitro" {
+		slog.Info("createPopBundleBundle: creating NITRO bundle")
+		return b.createNitroPopBundle(cfg)
+	}
+
+	// Default: OP Stack bundle
+	slog.Info("createPopBundleBundle: creating OP STACK bundle (default)")
+	return b.createOPStackPopBundle(cfg)
+}
+
+// createOPStackPopBundle creates an OP Stack POPKins Devnet Bundle.
 //
 // Bundle structure:
 //
@@ -24,7 +55,7 @@ import (
 //	├── config.toml                # Celestia DA configuration
 //	├── jwt.txt                    # JWT secret for authentication
 //	└── anvil-state.json           # Pre-deployed L1 state (~4MB)
-func (b *Bundler) createPopBundleBundle(cfg *BundleConfig) (*BundleResult, error) {
+func (b *Bundler) createOPStackPopBundle(cfg *BundleConfig) (*BundleResult, error) {
 	var buf bytes.Buffer
 	gw := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gw)
@@ -414,4 +445,350 @@ For questions or issues:
 		codeStart, codeEnd,
 		codeStart, codeEnd,
 	)
+}
+
+// createNitroPopBundle creates a Nitro POPKins Devnet Bundle.
+//
+// Bundle structure:
+//
+//	{chain-name}-nitro-bundle/
+//	├── README.md
+//	├── manifest.json
+//	├── docker-compose.yml
+//	├── .env
+//	├── config/
+//	│   ├── chain-info.json       # Nitro chain configuration
+//	│   ├── celestia-config.toml  # Celestia DA configuration
+//	│   ├── addresses.json        # Deployed contract addresses
+//	│   └── jwt.txt               # JWT secret for authentication
+//	├── state/
+//	│   └── anvil-state.json      # Pre-deployed L1 state
+//	└── scripts/
+//	    ├── start.sh              # Two-phase startup script
+//	    ├── stop.sh               # Stop script
+//	    ├── reset.sh              # Reset script
+//	    └── test.sh               # Health check script
+func (b *Bundler) createNitroPopBundle(cfg *BundleConfig) (*BundleResult, error) {
+	var buf bytes.Buffer
+	gw := gzip.NewWriter(&buf)
+	tw := tar.NewWriter(gw)
+	tarW := newTarWriter(tw)
+
+	baseDir := fmt.Sprintf("%s-nitro-bundle", sanitizeName(cfg.ChainName))
+
+	// Track files for manifest
+	var files []FileEntry
+
+	// ===========================================
+	// ROOT FILES
+	// ===========================================
+
+	// docker-compose.yml
+	if dockerCompose, ok := cfg.Artifacts["docker-compose.yml"]; ok {
+		content := unwrapArtifactContent(dockerCompose)
+		if err := tarW.addFile(baseDir+"/docker-compose.yml", content); err != nil {
+			return nil, fmt.Errorf("add docker-compose.yml: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "docker-compose.yml",
+			Description: "Docker Compose configuration for Nitro devnet",
+			Required:    true,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// .env
+	if envFile, ok := cfg.Artifacts[".env"]; ok {
+		content := unwrapArtifactContent(envFile)
+		if err := tarW.addFile(baseDir+"/.env", content); err != nil {
+			return nil, fmt.Errorf("add .env: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        ".env",
+			Description: "Environment variables (ready to use)",
+			Required:    true,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// ===========================================
+	// CONFIG DIRECTORY
+	// ===========================================
+
+	// config/chain-info.json
+	if chainInfo, ok := cfg.Artifacts["chain-info.json"]; ok {
+		content := unwrapArtifactContent(chainInfo)
+		if err := tarW.addFile(baseDir+"/config/chain-info.json", content); err != nil {
+			return nil, fmt.Errorf("add chain-info.json: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "config/chain-info.json",
+			Description: "Nitro chain configuration",
+			Required:    true,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// config/celestia-config.toml
+	if celestiaConfig, ok := cfg.Artifacts["celestia-config.toml"]; ok {
+		content := unwrapArtifactContent(celestiaConfig)
+		if err := tarW.addFile(baseDir+"/config/celestia-config.toml", content); err != nil {
+			return nil, fmt.Errorf("add celestia-config.toml: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "config/celestia-config.toml",
+			Description: "Celestia DA server configuration",
+			Required:    true,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// config/addresses.json
+	if addresses, ok := cfg.Artifacts["addresses.json"]; ok {
+		content := unwrapArtifactContent(addresses)
+		if err := tarW.addFile(baseDir+"/config/addresses.json", content); err != nil {
+			return nil, fmt.Errorf("add addresses.json: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "config/addresses.json",
+			Description: "All deployed contract addresses",
+			Required:    true,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// config/jwt.txt
+	if jwt, ok := cfg.Artifacts["jwt.txt"]; ok {
+		content := unwrapArtifactContent(jwt)
+		if err := tarW.addFileWithMode(baseDir+"/config/jwt.txt", content, 0600); err != nil {
+			return nil, fmt.Errorf("add jwt.txt: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "config/jwt.txt",
+			Description: "JWT secret for authentication",
+			Required:    true,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// ===========================================
+	// STATE DIRECTORY
+	// ===========================================
+
+	// state/anvil-state.json
+	if anvilState, ok := cfg.Artifacts["anvil-state.json"]; ok {
+		content := unwrapArtifactContent(anvilState)
+		if err := tarW.addFile(baseDir+"/state/anvil-state.json", content); err != nil {
+			return nil, fmt.Errorf("add anvil-state.json: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "state/anvil-state.json",
+			Description: "Pre-deployed L1 Anvil state",
+			Required:    true,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// ===========================================
+	// SCRIPTS DIRECTORY
+	// ===========================================
+
+	// scripts/start.sh
+	if startScript, ok := cfg.Artifacts["scripts/start.sh"]; ok {
+		content := unwrapArtifactContent(startScript)
+		if err := tarW.addExecutable(baseDir+"/scripts/start.sh", content); err != nil {
+			return nil, fmt.Errorf("add start.sh: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "scripts/start.sh",
+			Description: "Two-phase startup script (handles Issue #4208)",
+			Required:    true,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// scripts/stop.sh
+	if stopScript, ok := cfg.Artifacts["scripts/stop.sh"]; ok {
+		content := unwrapArtifactContent(stopScript)
+		if err := tarW.addExecutable(baseDir+"/scripts/stop.sh", content); err != nil {
+			return nil, fmt.Errorf("add stop.sh: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "scripts/stop.sh",
+			Description: "Stop devnet script",
+			Required:    false,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// scripts/reset.sh
+	if resetScript, ok := cfg.Artifacts["scripts/reset.sh"]; ok {
+		content := unwrapArtifactContent(resetScript)
+		if err := tarW.addExecutable(baseDir+"/scripts/reset.sh", content); err != nil {
+			return nil, fmt.Errorf("add reset.sh: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "scripts/reset.sh",
+			Description: "Reset all state and restart",
+			Required:    false,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// scripts/test.sh
+	if testScript, ok := cfg.Artifacts["scripts/test.sh"]; ok {
+		content := unwrapArtifactContent(testScript)
+		if err := tarW.addExecutable(baseDir+"/scripts/test.sh", content); err != nil {
+			return nil, fmt.Errorf("add test.sh: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        "scripts/test.sh",
+			Description: "Health check script",
+			Required:    false,
+			SizeBytes:   int64(len(content)),
+		})
+	}
+
+	// ===========================================
+	// README
+	// ===========================================
+
+	// Use README.md from artifacts if provided, otherwise generate one
+	var readme string
+	if readmeArtifact, ok := cfg.Artifacts["README.md"]; ok {
+		readme = string(unwrapArtifactContent(readmeArtifact))
+	} else {
+		readme = generateNitroPopBundleReadme(cfg)
+	}
+	if err := tarW.addFile(baseDir+"/README.md", []byte(readme)); err != nil {
+		return nil, fmt.Errorf("add README.md: %w", err)
+	}
+	files = append(files, FileEntry{
+		Path:        "README.md",
+		Description: "Quick start guide and documentation",
+		Required:    false,
+	})
+
+	// ===========================================
+	// MANIFEST
+	// ===========================================
+
+	manifest := &BundleManifest{
+		Version:     "1.0",
+		Stack:       StackPopBundle,
+		ChainID:     cfg.ChainID,
+		ChainName:   cfg.ChainName,
+		GeneratedAt: time.Now().UTC(),
+		Files:       files,
+		POPSignerInfo: POPSignerInfo{
+			Endpoint:         "http://localhost:8555",
+			APIKeyConfigured: true,
+			BatchPosterAddr:  cfg.BatcherAddress,
+			ValidatorAddr:    cfg.ValidatorAddress,
+		},
+		Checksums: tarW.checksums,
+	}
+
+	manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal manifest: %w", err)
+	}
+	if err := tarW.addFile(baseDir+"/manifest.json", manifestBytes); err != nil {
+		return nil, fmt.Errorf("add manifest.json: %w", err)
+	}
+
+	// Finalize
+	data, err := finalizeTarGz(tw, gw, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BundleResult{
+		Data:      data,
+		Filename:  fmt.Sprintf("%s-nitro-bundle.tar.gz", sanitizeName(cfg.ChainName)),
+		Manifest:  manifest,
+		SizeBytes: int64(len(data)),
+		Checksum:  calculateBundleChecksum(data),
+	}, nil
+}
+
+// unwrapArtifactContent unwraps base64-encoded content from JSONB storage.
+// Artifacts stored as {"_type": "base64", "data": "..."} need to be decoded.
+func unwrapArtifactContent(content []byte) []byte {
+	// Check if this is a wrapped base64 content
+	var wrapper struct {
+		Type string `json:"_type"`
+		Data string `json:"data"`
+	}
+	if err := json.Unmarshal(content, &wrapper); err == nil && wrapper.Type == "base64" {
+		// Decode base64
+		decoded := make([]byte, len(wrapper.Data))
+		n, err := base64.StdEncoding.Decode(decoded, []byte(wrapper.Data))
+		if err == nil {
+			return decoded[:n]
+		}
+	}
+	// Return as-is if not wrapped or decoding failed
+	return content
+}
+
+// generateNitroPopBundleReadme creates the README.md documentation for Nitro POPKins Devnet Bundle.
+func generateNitroPopBundleReadme(cfg *BundleConfig) string {
+	return fmt.Sprintf(`# %s - Nitro POPKins Devnet Bundle
+
+Pre-deployed development environment for Arbitrum Nitro rollups with Celestia DA.
+
+## Quick Start
+
+1. Ensure Docker is running
+
+2. Start the devnet:
+`+"```bash"+`
+./scripts/start.sh
+`+"```"+`
+
+3. Verify services:
+`+"```bash"+`
+./scripts/test.sh
+`+"```"+`
+
+## Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| Anvil (L1) | 8545 | Pre-deployed L1 chain |
+| Nitro (L2) | 8547 | L2 sequencer RPC |
+| POPSigner-Lite | 3000/8555 | Local signing service |
+| Celestia DAS | 9876 | Celestia DA adapter |
+| Localestia | 26658 | Mock Celestia network |
+
+## Chain Info
+
+- **L1 Chain ID**: 31337
+- **L2 Chain ID**: %d
+- **L2 Chain Name**: %s
+
+## Two-Phase Startup
+
+Due to [Nitro Issue #4208](https://github.com/OffchainLabs/nitro/issues/4208), the sequencer must start without the batch-poster enabled, initialize, then restart with batch-poster enabled. The start.sh script handles this automatically.
+
+## Scripts
+
+- ` + "`./scripts/start.sh`" + ` - Start devnet (two-phase for Issue #4208)
+- ` + "`./scripts/stop.sh`" + ` - Stop devnet
+- ` + "`./scripts/reset.sh`" + ` - Reset all state
+- ` + "`./scripts/test.sh`" + ` - Health check
+
+## Security Notice
+
+**FOR DEVELOPMENT USE ONLY**
+
+This bundle uses Anvil's well-known deterministic keys. Never use with real funds.
+
+For production, migrate to [POPSigner Cloud](https://popsigner.com).
+
+---
+
+**Powered by POPSigner** - Secure key management for blockchain infrastructure
+`, cfg.ChainName, cfg.ChainID, cfg.ChainName)
 }

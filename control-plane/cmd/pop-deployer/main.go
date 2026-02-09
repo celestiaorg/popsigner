@@ -56,12 +56,21 @@ const (
 	httpPollInterval     = 1 * time.Second
 )
 
-// bundleBuilder orchestrates the creation of a pre-deployed OP Stack devnet bundle.
+// StackType represents the type of rollup stack to deploy.
+type StackType string
+
+const (
+	StackOPStack StackType = "opstack"
+	StackNitro   StackType = "nitro"
+)
+
+// bundleBuilder orchestrates the creation of a pre-deployed devnet bundle.
 type bundleBuilder struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
 	logger    *slog.Logger
 	bundleDir string
+	stackType StackType
 
 	// Managed processes
 	anvilCmd     *exec.Cmd
@@ -69,9 +78,9 @@ type bundleBuilder struct {
 }
 
 func main() {
-	bundleDir := parseFlags()
+	bundleDir, stackType := parseFlags()
 
-	builder := newBundleBuilder(bundleDir)
+	builder := newBundleBuilder(bundleDir, stackType)
 	defer builder.cleanup()
 	builder.setupSignalHandler()
 
@@ -81,14 +90,21 @@ func main() {
 	}
 }
 
-func parseFlags() string {
+func parseFlags() (string, StackType) {
 	bundleDirFlag := flag.String("bundle-dir", filepath.Join(os.TempDir(), "pop-deployer-bundle"),
 		"Directory to write bundle files (default: /tmp/pop-deployer-bundle)")
+	stackFlag := flag.String("stack", "opstack", "Stack type: opstack or nitro")
 	flag.Parse()
-	return *bundleDirFlag
+
+	stackType := StackType(*stackFlag)
+	if stackType != StackOPStack && stackType != StackNitro {
+		log.Fatalf("unknown stack type: %s (valid: opstack, nitro)", *stackFlag)
+	}
+
+	return *bundleDirFlag, stackType
 }
 
-func newBundleBuilder(bundleDir string) *bundleBuilder {
+func newBundleBuilder(bundleDir string, stackType StackType) *bundleBuilder {
 	ctx, cancel := context.WithCancel(context.Background())
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
@@ -99,6 +115,7 @@ func newBundleBuilder(bundleDir string) *bundleBuilder {
 		cancel:    cancel,
 		logger:    logger,
 		bundleDir: bundleDir,
+		stackType: stackType,
 	}
 }
 
@@ -124,9 +141,21 @@ func (b *bundleBuilder) setupSignalHandler() {
 	}()
 }
 
-// run executes the 7-step bundle creation pipeline.
+// run dispatches to the appropriate stack-specific pipeline.
 func (b *bundleBuilder) run() error {
-	b.printBanner()
+	switch b.stackType {
+	case StackOPStack:
+		return b.runOPStack()
+	case StackNitro:
+		return b.runNitro()
+	default:
+		return fmt.Errorf("unknown stack type: %s", b.stackType)
+	}
+}
+
+// runOPStack executes the 7-step OP Stack bundle creation pipeline.
+func (b *bundleBuilder) runOPStack() error {
+	b.printBanner("OP Stack")
 
 	if err := b.prepareBundleDirectory(); err != nil {
 		return fmt.Errorf("prepare bundle directory: %w", err)
@@ -163,7 +192,7 @@ func (b *bundleBuilder) run() error {
 		return fmt.Errorf("write configs: %w", err)
 	}
 
-	archivePath, err := b.createArchive()
+	archivePath, err := b.createOPStackArchive()
 	if err != nil {
 		return fmt.Errorf("create archive: %w", err)
 	}
@@ -172,9 +201,9 @@ func (b *bundleBuilder) run() error {
 	return nil
 }
 
-func (b *bundleBuilder) printBanner() {
+func (b *bundleBuilder) printBanner(stackName string) {
 	log.Println()
-	log.Println("🚀 POPKins Bundle Builder")
+	log.Printf("🚀 POPKins Bundle Builder (%s)\n", stackName)
 	log.Println("Creating pre-deployed local devnet bundle...")
 	log.Printf("Bundle directory: %s\n", b.bundleDir)
 	log.Println()
@@ -413,10 +442,10 @@ func (b *bundleBuilder) writeConfigs(result *opstack.DeployResult, cfg *opstack.
 	return nil
 }
 
-func (b *bundleBuilder) createArchive() (string, error) {
-	b.logger.Info("7️⃣  Creating bundle archive...")
+// createArchive creates a tar.gz archive with the given name.
+func (b *bundleBuilder) createArchive(archiveName string) (string, error) {
+	b.logger.Info("Creating bundle archive...")
 
-	archiveName := "opstack-local-devnet-bundle.tar.gz"
 	tarCmd := exec.Command("tar", "czf", archiveName, "-C", b.bundleDir, ".")
 	if err := tarCmd.Run(); err != nil {
 		return "", fmt.Errorf("tar: %w", err)
@@ -432,6 +461,12 @@ func (b *bundleBuilder) createArchive() (string, error) {
 	}
 
 	return archiveName, nil
+}
+
+// createOPStackArchive creates the OP Stack bundle archive.
+func (b *bundleBuilder) createOPStackArchive() (string, error) {
+	b.logger.Info("7️⃣  Creating bundle archive...")
+	return b.createArchive("opstack-local-devnet-bundle.tar.gz")
 }
 
 func (b *bundleBuilder) printSuccess(archivePath string) {
