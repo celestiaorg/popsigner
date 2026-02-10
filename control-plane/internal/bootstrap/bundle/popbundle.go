@@ -90,6 +90,18 @@ func (b *Bundler) createOPStackPopBundle(cfg *BundleConfig) (*BundleResult, erro
 		}
 		files = append(files, FileEntry{
 			Path:        ".env.example",
+			Description: "Environment variables template",
+			Required:    true,
+			SizeBytes:   int64(len(envExample)),
+		})
+
+		// For local bundles, also create a ready-to-use .env file
+		// This prevents users from having to manually copy .env.example to .env
+		if err := tarW.addFile(baseDir+"/.env", envExample); err != nil {
+			return nil, fmt.Errorf("add .env: %w", err)
+		}
+		files = append(files, FileEntry{
+			Path:        ".env",
 			Description: "Environment variables (ready to use - no changes needed)",
 			Required:    true,
 			SizeBytes:   int64(len(envExample)),
@@ -270,7 +282,7 @@ All contracts are pre-deployed to save you 10-15 minutes of setup time!
 
 %sdocker compose up -d%s
 
-That's it! No configuration needed - everything is pre-configured for local development.
+That's it! No configuration needed - the .env file is already created and ready to use.
 
 ### 3. Verify Services
 
@@ -324,7 +336,8 @@ Use any Ethereum tool (cast, ethers.js, web3.py) with RPC http://localhost:9545
 | File | Description | Size |
 |------|-------------|------|
 | docker-compose.yml | All 9 services | ~5KB |
-| .env.example | Ready-to-use config | ~1KB |
+| .env | Ready-to-use config | ~1KB |
+| .env.example | Environment template | ~1KB |
 | genesis.json | L2 genesis state | ~9MB |
 | rollup.json | Rollup config | ~2KB |
 | addresses.json | Contract addresses | ~3KB |
