@@ -9,7 +9,11 @@ templ DockerQuickstart(deploymentID, chainName, stack string) {
 				STEP 1: DOWNLOAD
 			</div>
 			<p class="text-[#33FF00] text-sm mb-2">Click the "DOWNLOAD BUNDLE" button below</p>
-			<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">unzip { chainName }-pop-bundle.zip</code></p>
+			if stack == "pop-bundle" {
+				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">tar -xzf { chainName }-popdeployer-bundle.tar.gz</code></p>
+			} else {
+				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">tar -xzf { chainName }-{ stack }-artifacts.tar.gz</code></p>
+			}
 		</div>
 
 		<!-- Step 2: Configure (only for opstack/nitro, not pop-bundle) -->
@@ -27,7 +31,7 @@ templ DockerQuickstart(deploymentID, chainName, stack string) {
 					x-data="{ justCopied: false }"
 					@click="navigator.clipboard.writeText($refs.code.textContent); justCopied = true; setTimeout(() => justCopied = false, 2000)"
 				>
-					<code x-ref="code" class="block pr-8 break-all">cd { chainName }-pop-bundle && docker compose up -d</code>
+					<code x-ref="code" class="block pr-8 break-all">cd { chainName }-popdeployer-bundle && docker compose up -d</code>
 					<button
 						class="absolute right-2 top-2 text-[#444] hover:text-[#33FF00] opacity-0 group-hover:opacity-100 transition-all"
 						:class="{ 'text-[#33FF00]': justCopied }"

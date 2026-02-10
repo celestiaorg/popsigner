@@ -135,158 +135,186 @@ func DeploymentCompletePage(deployment DeploymentData, artifacts []ArtifactInfo)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><!-- Artifact Downloads --><div class=\"bg-black border border-[#333300] p-6 mb-10\"><h2 class=\"text-xl font-bold text-[#33FF00] mb-6 flex items-center gap-3 uppercase\"><span class=\"text-2xl\">📦</span> DOWNLOAD_ARTIFACTS</h2><!-- Bundle Download (Primary) --><div class=\"mb-6 p-4 bg-[#0a0a00] border border-[#333300] hover:border-[#33FF00] transition-colors\"><div class=\"flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4\"><div><span class=\"text-[#33FF00] font-bold text-lg\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><!-- Artifact Downloads --><div class=\"bg-black border border-[#333300] p-6 mb-10\"><h2 class=\"text-xl font-bold text-[#33FF00] mb-6 flex items-center gap-3 uppercase\"><span class=\"text-2xl\">📦</span> DOWNLOAD_ARTIFACTS</h2><!-- Bundle Download (Primary) --><div class=\"mb-6 p-4 bg-[#0a0a00] border border-[#333300] hover:border-[#33FF00] transition-colors\"><div class=\"flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4\"><div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.ChainName)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 115, Col: 77}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "-")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.Stack)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 115, Col: 98}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "-artifacts.tar.gz</span><p class=\"text-[#666600] text-sm mt-1\">Complete bundle with Docker Compose, configs, and scripts</p>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if deployment.BundleSize != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span class=\"text-[#444] text-xs\">Size: ")
+			if deployment.Stack == "pop-bundle" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span class=\"text-[#33FF00] font-bold text-lg\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.ChainName)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 116, Col: 78}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "-popdeployer-bundle.tar.gz</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span class=\"text-[#33FF00] font-bold text-lg\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var8 string
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.ChainName)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 118, Col: 78}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "-")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.BundleSize)
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.Stack)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 118, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 118, Col: 99}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "-artifacts.tar.gz</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<p class=\"text-[#666600] text-sm mt-1\">Complete bundle with Docker Compose, configs, and scripts</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var10 templ.SafeURL
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/deployments/" + deployment.DeploymentID + "/bundle"))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 122, Col: 79}
+			if deployment.BundleSize != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span class=\"text-[#444] text-xs\">Size: ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var10 string
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(deployment.BundleSize)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 122, Col: 72}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" class=\"px-6 py-3 bg-[#33FF00] text-black font-bold text-sm uppercase hover:bg-[#44FF11] transition-colors whitespace-nowrap\">DOWNLOAD BUNDLE</a></div></div><!-- Individual Artifacts -->")
+			var templ_7745c5c3_Var11 templ.SafeURL
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/deployments/" + deployment.DeploymentID + "/bundle"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 126, Col: 79}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"px-6 py-3 bg-[#33FF00] text-black font-bold text-sm uppercase hover:bg-[#44FF11] transition-colors whitespace-nowrap\">DOWNLOAD BUNDLE</a></div></div><!-- Individual Artifacts -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if len(artifacts) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"text-sm text-[#666600] uppercase mb-3\">Individual files:</div><div class=\"space-y-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<div class=\"text-sm text-[#666600] uppercase mb-3\">Individual files:</div><div class=\"space-y-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				for _, artifact := range artifacts {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"flex items-center justify-between p-3 bg-[#111] border border-[#222] hover:border-[#333300] transition-colors\"><div class=\"flex items-center gap-3\"><span class=\"text-[#33FF00]\">▸</span><div><span class=\"text-white\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"flex items-center justify-between p-3 bg-[#111] border border-[#222] hover:border-[#333300] transition-colors\"><div class=\"flex items-center gap-3\"><span class=\"text-[#33FF00]\">▸</span><div><span class=\"text-white\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var11 string
-					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(artifact.Name)
+					var templ_7745c5c3_Var12 string
+					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(artifact.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 139, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 143, Col: 51}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</span> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</span> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					if artifact.Size != "" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<span class=\"text-[#444] text-sm ml-2\">(")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span class=\"text-[#444] text-sm ml-2\">(")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						var templ_7745c5c3_Var12 string
-						templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(artifact.Size)
+						var templ_7745c5c3_Var13 string
+						templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(artifact.Size)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 141, Col: 67}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 145, Col: 67}
 						}
-						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, ")</span>")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, ")</span>")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div></div><a href=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></div><a href=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var13 templ.SafeURL
-					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/api/v1/deployments/" + deployment.DeploymentID + "/artifacts/" + artifact.Type))
+					var templ_7745c5c3_Var14 templ.SafeURL
+					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/api/v1/deployments/" + deployment.DeploymentID + "/artifacts/" + artifact.Type))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 146, Col: 108}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_complete.templ`, Line: 150, Col: 108}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" class=\"px-4 py-2 border border-[#33FF00] text-[#33FF00] font-bold text-xs uppercase hover:bg-[#33FF00]/10 transition-colors\">DOWNLOAD</a></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" class=\"px-4 py-2 border border-[#33FF00] text-[#33FF00] font-bold text-xs uppercase hover:bg-[#33FF00]/10 transition-colors\">DOWNLOAD</a></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div><!-- Endpoints Preview --><div class=\"bg-black border border-[#333300] p-6 mb-10\"><h2 class=\"text-xl font-bold text-[#33FF00] mb-6 flex items-center gap-3 uppercase\"><span class=\"text-2xl\">🔗</span> ENDPOINTS (AFTER_STARTUP)</h2>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div><!-- Endpoints Preview --><div class=\"bg-black border border-[#333300] p-6 mb-10\"><h2 class=\"text-xl font-bold text-[#33FF00] mb-6 flex items-center gap-3 uppercase\"><span class=\"text-2xl\">🔗</span> ENDPOINTS (AFTER_STARTUP)</h2>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if deployment.Stack == "pop-bundle" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<!-- POPKins Bundle endpoints --> <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4 mb-4\"><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 JSON-RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:8545</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 WebSocket</span> <code class=\"text-[#33FF00] text-sm\">ws://localhost:8546</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">OP Node RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:9545</code></div></div><div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L1 (Anvil)</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:9546</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">POPSigner-Lite</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:3000</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">Localestia</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:26658</code></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<!-- POPKins Bundle endpoints --> <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4 mb-4\"><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 JSON-RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:8545</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 WebSocket</span> <code class=\"text-[#33FF00] text-sm\">ws://localhost:8546</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">OP Node RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:9545</code></div></div><div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L1 (Anvil)</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:9546</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">POPSigner-Lite</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:3000</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">Localestia</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:26658</code></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else if deployment.Stack == "opstack" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 JSON-RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:8545</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 WebSocket</span> <code class=\"text-[#33FF00] text-sm\">ws://localhost:8546</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">OP Node RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:9545</code></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 JSON-RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:8545</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 WebSocket</span> <code class=\"text-[#33FF00] text-sm\">ws://localhost:8546</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">OP Node RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:9545</code></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<!-- Nitro endpoints --> <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 JSON-RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:8547</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 WebSocket</span> <code class=\"text-[#33FF00] text-sm\">ws://localhost:8548</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">Metrics</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:9642</code></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<!-- Nitro endpoints --> <div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 JSON-RPC</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:8547</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">L2 WebSocket</span> <code class=\"text-[#33FF00] text-sm\">ws://localhost:8548</code></div><div class=\"p-3 bg-[#0a0a00] border border-[#222]\"><span class=\"text-[#666600] text-xs uppercase block mb-1\">Metrics</span> <code class=\"text-[#33FF00] text-sm\">http://localhost:9642</code></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div><!-- Help Links --><div class=\"text-center text-sm text-[#666600] border-t border-[#222] pt-8\"><p>Need help? Check our  <a href=\"https://docs.popsigner.com/rollups\" target=\"_blank\" class=\"text-[#33FF00] hover:underline hover:drop-shadow-[0_0_8px_#33FF00]\">documentation</a> or  <a href=\"https://discord.gg/popsigner\" target=\"_blank\" class=\"text-[#33FF00] hover:underline hover:drop-shadow-[0_0_8px_#33FF00]\">join Discord</a></p></div></main></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div><!-- Help Links --><div class=\"text-center text-sm text-[#666600] border-t border-[#222] pt-8\"><p>Need help? Check our  <a href=\"https://docs.popsigner.com/rollups\" target=\"_blank\" class=\"text-[#33FF00] hover:underline hover:drop-shadow-[0_0_8px_#33FF00]\">documentation</a> or  <a href=\"https://discord.gg/popsigner\" target=\"_blank\" class=\"text-[#33FF00] hover:underline hover:drop-shadow-[0_0_8px_#33FF00]\">join Discord</a></p></div></main></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
