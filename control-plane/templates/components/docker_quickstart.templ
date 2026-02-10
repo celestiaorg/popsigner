@@ -10,9 +10,9 @@ templ DockerQuickstart(deploymentID, chainName, stack string) {
 			</div>
 			<p class="text-[#33FF00] text-sm mb-2">Click the "DOWNLOAD BUNDLE" button below</p>
 			if stack == "pop-bundle" {
-				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">tar -xzf { chainName }-popdeployer-bundle.tar.gz</code></p>
+				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">unzip { chainName }-popdeployer-bundle.tar.gz</code></p>
 			} else {
-				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">tar -xzf { chainName }-{ stack }-artifacts.tar.gz</code></p>
+				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">unzip { chainName }-{ stack }-artifacts.tar.gz</code></p>
 			}
 		</div>
 

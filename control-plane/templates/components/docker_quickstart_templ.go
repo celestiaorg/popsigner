@@ -35,14 +35,14 @@ func DockerQuickstart(deploymentID, chainName, stack string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if stack == "pop-bundle" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<p class=\"text-[#444] text-xs\">Then extract: <code class=\"text-[#33FF00]\">tar -xzf ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<p class=\"text-[#444] text-xs\">Then extract: <code class=\"text-[#33FF00]\">unzip ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(chainName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 13, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 13, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -53,14 +53,14 @@ func DockerQuickstart(deploymentID, chainName, stack string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<p class=\"text-[#444] text-xs\">Then extract: <code class=\"text-[#33FF00]\">tar -xzf ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<p class=\"text-[#444] text-xs\">Then extract: <code class=\"text-[#33FF00]\">unzip ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(chainName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 15, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 15, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -73,7 +73,7 @@ func DockerQuickstart(deploymentID, chainName, stack string) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(stack)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 15, Col: 108}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/components/docker_quickstart.templ`, Line: 15, Col: 105}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
