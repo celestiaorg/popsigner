@@ -112,7 +112,11 @@ templ DeploymentCompletePage(deployment DeploymentData, artifacts []ArtifactInfo
 					<div class="mb-6 p-4 bg-[#0a0a00] border border-[#333300] hover:border-[#33FF00] transition-colors">
 						<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 							<div>
-								<span class="text-[#33FF00] font-bold text-lg">{ deployment.ChainName }-{ deployment.Stack }-artifacts.tar.gz</span>
+								if deployment.Stack == "pop-bundle" {
+									<span class="text-[#33FF00] font-bold text-lg">{ deployment.ChainName }-popdeployer-bundle.tar.gz</span>
+								} else {
+									<span class="text-[#33FF00] font-bold text-lg">{ deployment.ChainName }-{ deployment.Stack }-artifacts.tar.gz</span>
+								}
 								<p class="text-[#666600] text-sm mt-1">Complete bundle with Docker Compose, configs, and scripts</p>
 								if deployment.BundleSize != "" {
 									<span class="text-[#444] text-xs">Size: { deployment.BundleSize }</span>

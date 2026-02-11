@@ -18,8 +18,9 @@ type DeploymentNewData struct {
 
 // DeploymentFormData holds form values across wizard steps
 type DeploymentFormData struct {
-	Stack       string // "opstack", "nitro", or "pop-bundle"
-	BundleStack string // "opstack" or "nitro" (only for pop-bundle)
+	Stack       string // "opstack" or "nitro"
+	Environment string // "local" or "testnet"
+	BundleStack string // deprecated - kept for compatibility
 	ChainName   string
 	ChainID     string
 	L1RPC       string
@@ -50,11 +51,18 @@ templ DeploymentNewPage(data DeploymentNewData) {
 			<div class="flex items-center mb-8 text-sm">
 				@DeployWizardStep(1, "STACK", data.Step)
 				<div class={ "flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 1), templ.KV("bg-[#333300]", data.Step <= 1) }></div>
-				@DeployWizardStep(2, "CONFIG", data.Step)
+				@DeployWizardStep(2, "ENVIRONMENT", data.Step)
 				<div class={ "flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 2), templ.KV("bg-[#333300]", data.Step <= 2) }></div>
-				@DeployWizardStep(3, "KEYS", data.Step)
-				<div class={ "flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 3), templ.KV("bg-[#333300]", data.Step <= 3) }></div>
-				@DeployWizardStep(4, "DEPLOY", data.Step)
+				@DeployWizardStep(3, "CONFIG", data.Step)
+				if data.FormData.Environment != "local" {
+					<div class={ "flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 3), templ.KV("bg-[#333300]", data.Step <= 3) }></div>
+					@DeployWizardStep(4, "KEYS", data.Step)
+					<div class={ "flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 4), templ.KV("bg-[#333300]", data.Step <= 4) }></div>
+					@DeployWizardStep(5, "DEPLOY", data.Step)
+				} else {
+					<div class={ "flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 3), templ.KV("bg-[#333300]", data.Step <= 3) }></div>
+					@DeployWizardStep(4, "DEPLOY", data.Step)
+				}
 			</div>
 
 			<!-- Error Message -->
@@ -71,14 +79,18 @@ templ DeploymentNewPage(data DeploymentNewData) {
 				case 1:
 					@DeploymentStep1Stack(data)
 				case 2:
-					@DeploymentStep2Config(data)
+					@DeploymentStep2Environment(data)
 				case 3:
-					@DeploymentStep3Keys(data)
+					@DeploymentStep3Config(data)
 				case 4:
-					@DeploymentStep4Review(data)
+					if data.FormData.Environment == "local" {
+						// Skip keys for local, go to review
+						@DeploymentStep5Review(data)
+					} else {
+						@DeploymentStep4Keys(data)
+					}
 				case 5:
-					// Step 5 = POPKins Bundle config (simplified step 2)
-					@DeploymentStep2Bundle(data)
+					@DeploymentStep5Review(data)
 				default:
 					@DeploymentStep1Stack(data)
 				}
@@ -106,17 +118,16 @@ templ DeployWizardStep(step int, label string, currentStep int) {
 	</div>
 }
 
-// DeploymentStep1Stack - Select rollup stack
+// DeploymentStep1Stack - Select rollup stack (OP or Nitro only)
 templ DeploymentStep1Stack(data DeploymentNewData) {
 	<form id="stack-form" action="/deployments/new?step=2" method="POST" class="space-y-6"
-		  x-data="{ selected: '' }"
-		  @submit="if(selected === 'pop-bundle') { $el.action = '/deployments/new?step=2-bundle'; }">
+		  x-data="{ selected: '' }">
 		<div>
 			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Select Rollup Stack</h2>
 			<p class="text-[#666600] text-sm">Choose the technology stack for your chain</p>
 		</div>
 
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<!-- OP Stack Option -->
 			<div class="cursor-pointer" @click="selected = 'opstack'; $refs.opstack.checked = true">
 				<input type="radio" name="stack" value="opstack" x-ref="opstack"
@@ -165,32 +176,8 @@ templ DeploymentStep1Stack(data DeploymentNewData) {
 				</div>
 			</div>
 
-			<!-- POPKins Devnet Bundle Option -->
-			<div class="cursor-pointer" @click="selected = 'pop-bundle'; $refs.popbundle.checked = true">
-				<input type="radio" name="stack" value="pop-bundle" x-ref="popbundle"
-					   class="hidden"
-					   checked?={ data.FormData.Stack == "pop-bundle" }/>
-				<div class="p-5 border transition-all h-full"
-					 :class="selected === 'pop-bundle' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'">
-					<div class="flex items-center justify-between mb-4">
-						<span class="text-3xl">📦</span>
-						<span class="w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center"
-							  :class="selected === 'pop-bundle' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'">
-							<span x-show="selected === 'pop-bundle'" class="text-black text-xs">✓</span>
-						</span>
-					</div>
-					<div class="text-[#FFB000] font-bold uppercase text-xl mb-2">POPKins Bundle</div>
-					<div class="text-[#AAAAAA] text-sm leading-relaxed mb-4">
-						Complete local devnet with pre-deployed contracts. Perfect for development.
-					</div>
-					<div class="text-[#666600] text-xs">
-						Pre-deployed • Local only • Celestia DA
-					</div>
-				</div>
-			</div>
-
 			<!-- Continue Button - disabled until selection made -->
-			<div class="col-span-1 md:col-span-3 mt-2">
+			<div class="col-span-1 md:col-span-2 mt-2">
 				<button type="submit"
 						:disabled="!selected"
 						:class="selected ? 'bg-[#33FF00] text-black hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] cursor-pointer' : 'bg-[#333300] text-[#666600] cursor-not-allowed'"
@@ -202,12 +189,101 @@ templ DeploymentStep1Stack(data DeploymentNewData) {
 	</form>
 }
 
-// DeploymentStep2Config - Chain configuration
-templ DeploymentStep2Config(data DeploymentNewData) {
-	<form action="/deployments/new?step=3" method="POST" class="space-y-6">
+// DeploymentStep2Environment - Select deployment environment (Local or Testnet)
+templ DeploymentStep2Environment(data DeploymentNewData) {
+	<form action="/deployments/new?step=3" method="POST" class="space-y-6"
+		  x-data="{ selected: '' }">
 		<!-- Hidden field from previous step -->
 		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
-		
+
+		<div>
+			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Select Environment</h2>
+			<p class="text-[#666600] text-sm">Choose where to deploy your chain</p>
+		</div>
+
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<!-- Local Environment Option -->
+			<div class="cursor-pointer" @click="selected = 'local'; $refs.local.checked = true">
+				<input type="radio" name="environment" value="local" x-ref="local"
+					   class="hidden"
+					   checked?={ data.FormData.Environment == "local" }/>
+				<div class="p-5 border transition-all h-full"
+					 :class="selected === 'local' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'">
+					<div class="flex items-center justify-between mb-4">
+						<span class="text-3xl">📦</span>
+						<span class="w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center"
+							  :class="selected === 'local' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'">
+							<span x-show="selected === 'local'" class="text-black text-xs">✓</span>
+						</span>
+					</div>
+					<div class="text-[#FFB000] font-bold uppercase text-xl mb-2">Local Development</div>
+					<div class="text-[#AAAAAA] text-sm leading-relaxed mb-4">
+						Complete local devnet bundle with pre-deployed contracts. Perfect for development and testing.
+					</div>
+					<div class="text-[#666600] text-xs">
+						• Pre-deployed contracts<br/>
+						• Local Anvil L1<br/>
+						• No real ETH required<br/>
+						• Docker Compose ready
+					</div>
+				</div>
+			</div>
+
+			<!-- Testnet Environment Option -->
+			<div class="cursor-pointer" @click="selected = 'testnet'; $refs.testnet.checked = true">
+				<input type="radio" name="environment" value="testnet" x-ref="testnet"
+					   class="hidden"
+					   checked?={ data.FormData.Environment == "testnet" }/>
+				<div class="p-5 border transition-all h-full"
+					 :class="selected === 'testnet' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'">
+					<div class="flex items-center justify-between mb-4">
+						<span class="text-3xl">🌐</span>
+						<span class="w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center"
+							  :class="selected === 'testnet' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'">
+							<span x-show="selected === 'testnet'" class="text-black text-xs">✓</span>
+						</span>
+					</div>
+					<div class="text-[#33FF00] font-bold uppercase text-xl mb-2">Testnet Deployment</div>
+					<div class="text-[#AAAAAA] text-sm leading-relaxed mb-4">
+						Deploy to a public testnet like Sepolia or Holesky. Suitable for staging and public testing.
+					</div>
+					<div class="text-[#666600] text-xs">
+						• Real testnet deployment<br/>
+						• Requires testnet ETH<br/>
+						• Public accessibility<br/>
+						• Production-like environment
+					</div>
+				</div>
+			</div>
+
+			<!-- Continue Button - disabled until selection made -->
+			<div class="col-span-1 md:col-span-2 mt-2">
+				<button type="submit"
+						:disabled="!selected"
+						:class="selected ? 'bg-[#33FF00] text-black hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] cursor-pointer' : 'bg-[#333300] text-[#666600] cursor-not-allowed'"
+						class="w-full py-4 font-bold uppercase transition-all">
+					CONTINUE →
+				</button>
+			</div>
+		</div>
+
+		<div class="flex gap-4 pt-4">
+			<a href="/deployments/new?step=1"
+			   class="w-full py-3 border border-[#333300] text-[#666600] text-center uppercase
+					  hover:border-[#666600] hover:text-[#999] transition-colors">
+				← BACK
+			</a>
+		</div>
+	</form>
+}
+
+// DeploymentStep3Config - Chain configuration (was Step 2)
+templ DeploymentStep3Config(data DeploymentNewData) {
+	<form action="/deployments/new?step=4" method="POST" class="space-y-6">
+		<!-- Hidden fields from previous steps -->
+		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
+		<input type="hidden" name="environment" value={ data.FormData.Environment }/>
+
 		<div>
 			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Chain Configuration</h2>
 			<p class="text-[#666600] text-sm">Configure your chain parameters</p>
@@ -218,10 +294,10 @@ templ DeploymentStep2Config(data DeploymentNewData) {
 				<label class="block text-sm text-[#666600] uppercase mb-2">Chain Name</label>
 				<input type="text" name="chain_name" required
 					   value={ data.FormData.ChainName }
-					   placeholder="my-rollup"
+					   placeholder={ getChainNamePlaceholder(data.FormData.Environment) }
 					   pattern="[a-z0-9-]+"
 					   title="Lowercase letters, numbers, and hyphens only"
-					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]
 							  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none"/>
 				<p class="text-xs text-[#333300] mt-1">Lowercase letters, numbers, and hyphens only</p>
 			</div>
@@ -233,39 +309,68 @@ templ DeploymentStep2Config(data DeploymentNewData) {
 					   placeholder="42069"
 					   min="1"
 					   max="9999999999"
-					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
+					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]
 							  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none"/>
 				<p class="text-xs text-[#333300] mt-1">Pick a unique chain ID not already in use</p>
 			</div>
 
-			<div>
-				<label class="block text-sm text-[#666600] uppercase mb-2">L1 RPC URL</label>
-				<input type="url" name="l1_rpc" required
-					   value={ data.FormData.L1RPC }
-					   placeholder="https://eth-sepolia.g.alchemy.com/v2/..."
-					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
-							  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none"/>
-				<p class="text-xs text-[#333300] mt-1">Your L1 node RPC endpoint (Alchemy, Infura, etc.)</p>
-			</div>
+			if data.FormData.Environment == "local" {
+				<!-- Local environment uses Anvil - L1 config is hidden -->
+				<input type="hidden" name="l1_rpc" value="http://localhost:8545"/>
+				<input type="hidden" name="l1_chain_id" value="31337"/>
 
-			<div>
-				<label class="block text-sm text-[#666600] uppercase mb-2">L1 Network</label>
-				<select name="l1_chain_id" required
-						class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] 
-							   focus:border-[#33FF00] focus:outline-none appearance-none cursor-pointer
-							   bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20fill%3D%22%2333FF00%22%3E%3Cpath%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')]
-							   bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-10">
-					<option value="11155111" selected?={ data.FormData.L1ChainID == "11155111" || data.FormData.L1ChainID == "" } class="bg-black">
-						Sepolia (Testnet) - Recommended
-					</option>
-					<option value="17000" selected?={ data.FormData.L1ChainID == "17000" } class="bg-black">
-						Holesky (Testnet)
-					</option>
-					<option value="1" selected?={ data.FormData.L1ChainID == "1" } class="bg-black">
-						Ethereum Mainnet
-					</option>
-				</select>
-			</div>
+				<!-- Show info box about local configuration -->
+				<div class="p-4 bg-[#1a1500] border border-[#FFB000]/50">
+					<p class="text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2">
+						<span>📦</span>
+						<span>Local Environment Configuration</span>
+					</p>
+					<ul class="text-[#999] text-sm space-y-1.5">
+						<li class="flex items-start gap-2">
+							<span class="text-[#FFB000]">•</span>
+							<span><strong class="text-[#FFB000]">Local Anvil L1</strong> - Pre-configured at localhost:8545</span>
+						</li>
+						<li class="flex items-start gap-2">
+							<span class="text-[#FFB000]">•</span>
+							<span><strong class="text-[#FFB000]">Pre-funded accounts</strong> - No real ETH required</span>
+						</li>
+						<li class="flex items-start gap-2">
+							<span class="text-[#FFB000]">•</span>
+							<span><strong class="text-[#FFB000]">Docker Compose ready</strong> - Complete devnet bundle</span>
+						</li>
+					</ul>
+				</div>
+			} else {
+				<!-- Testnet environment needs L1 configuration -->
+				<div>
+					<label class="block text-sm text-[#666600] uppercase mb-2">L1 RPC URL</label>
+					<input type="url" name="l1_rpc" required
+						   value={ data.FormData.L1RPC }
+						   placeholder="https://eth-sepolia.g.alchemy.com/v2/..."
+						   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]
+								  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none"/>
+					<p class="text-xs text-[#333300] mt-1">Your L1 node RPC endpoint (Alchemy, Infura, etc.)</p>
+				</div>
+
+				<div>
+					<label class="block text-sm text-[#666600] uppercase mb-2">L1 Network</label>
+					<select name="l1_chain_id" required
+							class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]
+								   focus:border-[#33FF00] focus:outline-none appearance-none cursor-pointer
+								   bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20fill%3D%22%2333FF00%22%3E%3Cpath%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')]
+								   bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-10">
+						<option value="11155111" selected?={ data.FormData.L1ChainID == "11155111" || data.FormData.L1ChainID == "" } class="bg-black">
+							Sepolia (Testnet) - Recommended
+						</option>
+						<option value="17000" selected?={ data.FormData.L1ChainID == "17000" } class="bg-black">
+							Holesky (Testnet)
+						</option>
+						<option value="1" selected?={ data.FormData.L1ChainID == "1" } class="bg-black">
+							Ethereum Mainnet
+						</option>
+					</select>
+				</div>
+			}
 
 			<!-- Data Availability - Celestia only -->
 			<div>
@@ -276,7 +381,13 @@ templ DeploymentStep2Config(data DeploymentNewData) {
 						<span class="text-2xl">🟣</span>
 						<div>
 							<div class="text-[#33FF00] font-bold uppercase">Celestia</div>
-							<div class="text-[#666600] text-xs mt-1">Modular data availability layer for lower costs</div>
+							<div class="text-[#666600] text-xs mt-1">
+								if data.FormData.Environment == "local" {
+									Using Localestia (mock DA for development)
+								} else {
+									Modular data availability layer for lower costs
+								}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -284,13 +395,13 @@ templ DeploymentStep2Config(data DeploymentNewData) {
 		</div>
 
 		<div class="flex gap-4 pt-4">
-			<a href="/deployments/new?step=1" 
-			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase 
+			<a href="/deployments/new?step=2"
+			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase
 					  hover:border-[#666600] hover:text-[#999] transition-colors">
 				← BACK
 			</a>
-			<button type="submit" 
-					class="flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase 
+			<button type="submit"
+					class="flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase
 						   hover:bg-[#44FF11] transition-colors">
 				CONTINUE →
 			</button>
@@ -298,178 +409,13 @@ templ DeploymentStep2Config(data DeploymentNewData) {
 	</form>
 }
 
-// DeploymentStep2Bundle - Simplified config for POPKins bundle (no L1 RPC or keys needed)
-templ DeploymentStep2Bundle(data DeploymentNewData) {
-	<form action="/deployments" method="POST" class="space-y-6"
-		  x-data={ fmt.Sprintf("{ bundleStack: '%s' }", getDefaultBundleStack(data.FormData.BundleStack)) }>
-		<!-- Hidden field from previous step -->
-		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
-		<!-- POPKins bundle uses local Anvil, so hardcode these -->
-		<input type="hidden" name="l1_rpc" value="http://localhost:8545"/>
-		<input type="hidden" name="l1_chain_id" value="31337"/>
-		<input type="hidden" name="da" value="celestia"/>
-		<!-- No keys needed - uses Anvil's deterministic accounts -->
-		<input type="hidden" name="deployer_key" value="anvil-0"/>
-		<input type="hidden" name="batcher_key" value="anvil-1"/>
-		<input type="hidden" name="proposer_key" value="anvil-2"/>
 
-		<div>
-			<h2 class="text-lg text-[#FFB000] uppercase mb-2 font-bold">POPKins Bundle Configuration</h2>
-			<p class="text-[#666600] text-sm">Configure your local devnet bundle</p>
-		</div>
-
-		<!-- Bundle Stack Selection -->
-		<div class="space-y-4">
-			<label class="block text-sm text-[#666600] uppercase mb-2">Bundle Stack</label>
-			<div class="grid grid-cols-2 gap-4">
-				<!-- OP Stack Option -->
-				<div class="cursor-pointer" @click="bundleStack = 'opstack'; $refs.opstackBundle.checked = true">
-					<input type="radio" name="bundle_stack" value="opstack" x-ref="opstackBundle"
-						   class="hidden"
-						   checked?={ data.FormData.BundleStack == "opstack" || data.FormData.BundleStack == "" }/>
-					<div class="p-4 border transition-all"
-						 :class="bundleStack === 'opstack' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'">
-						<div class="flex items-center justify-between mb-2">
-							<span class="text-xl">⚡</span>
-							<span class="w-4 h-4 border-2 rounded-full transition-all flex items-center justify-center"
-								  :class="bundleStack === 'opstack' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'">
-								<span x-show="bundleStack === 'opstack'" class="text-black text-[10px]">✓</span>
-							</span>
-						</div>
-						<div class="text-[#FFB000] font-bold uppercase mb-1">OP Stack</div>
-						<div class="text-[#999] text-xs">op-geth + op-node + Celestia DA</div>
-					</div>
-				</div>
-				<!-- Nitro Option -->
-				<div class="cursor-pointer" @click="bundleStack = 'nitro'; $refs.nitroBundle.checked = true">
-					<input type="radio" name="bundle_stack" value="nitro" x-ref="nitroBundle"
-						   class="hidden"
-						   checked?={ data.FormData.BundleStack == "nitro" }/>
-					<div class="p-4 border transition-all"
-						 :class="bundleStack === 'nitro' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'">
-						<div class="flex items-center justify-between mb-2">
-							<span class="text-xl">🚀</span>
-							<span class="w-4 h-4 border-2 rounded-full transition-all flex items-center justify-center"
-								  :class="bundleStack === 'nitro' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'">
-								<span x-show="bundleStack === 'nitro'" class="text-black text-[10px]">✓</span>
-							</span>
-						</div>
-						<div class="text-[#FFB000] font-bold uppercase mb-1">Arbitrum Nitro</div>
-						<div class="text-[#999] text-xs">nitro-node + Celestia DA</div>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Dynamic Info Boxes -->
-		<!-- OP Stack Info Box -->
-		<div x-show="bundleStack === 'opstack'" class="p-4 bg-[#1a1500] border border-[#FFB000]/50 text-sm">
-			<p class="text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2">
-				<span>📦</span>
-				<span>What's in the OP Stack Bundle?</span>
-			</p>
-			<ul class="text-[#999] space-y-1.5">
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Pre-deployed OP Stack contracts</strong> - No waiting for deployment</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Local Anvil L1</strong> with funded accounts</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Celestia DA</strong> via Localestia (mock)</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Full OP Stack</strong>: op-geth, op-node, op-batcher, op-proposer</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Docker Compose</strong> ready - just run <code class="text-[#33FF00]">docker compose up</code></span>
-				</li>
-			</ul>
-		</div>
-
-		<!-- Nitro Info Box -->
-		<div x-show="bundleStack === 'nitro'" class="p-4 bg-[#1a1500] border border-[#FFB000]/50 text-sm">
-			<p class="text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2">
-				<span>📦</span>
-				<span>What's in the Nitro Bundle?</span>
-			</p>
-			<ul class="text-[#999] space-y-1.5">
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Pre-deployed Nitro contracts</strong> - No waiting for deployment</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Local Anvil L1</strong> with funded accounts</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Celestia DA</strong> via Localestia (mock)</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Nitro sequencer</strong> + batch-poster</span>
-				</li>
-				<li class="flex items-start gap-2">
-					<span class="text-[#FFB000]">•</span>
-					<span><strong class="text-[#FFB000]">Docker Compose</strong> ready - just run <code class="text-[#33FF00]">./scripts/start.sh</code></span>
-				</li>
-			</ul>
-		</div>
-
-		<div class="space-y-4">
-			<div>
-				<label class="block text-sm text-[#666600] uppercase mb-2">Chain Name</label>
-				<input type="text" name="chain_name" required
-					   value={ data.FormData.ChainName }
-					   placeholder="my-local-devnet"
-					   pattern="[a-z0-9-]+"
-					   title="Lowercase letters, numbers, and hyphens only"
-					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]
-							  placeholder-[#333300] focus:border-[#FFB000] focus:outline-none"/>
-				<p class="text-xs text-[#333300] mt-1">Used for bundle directory and docker container names</p>
-			</div>
-
-			<div>
-				<label class="block text-sm text-[#666600] uppercase mb-2">Chain ID</label>
-				<input type="number" name="chain_id" required
-					   value={ getDefaultChainID(data.FormData.ChainID) }
-					   placeholder="42069"
-					   min="1"
-					   max="9999999999"
-					   class="w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]
-							  placeholder-[#333300] focus:border-[#FFB000] focus:outline-none"/>
-				<p class="text-xs text-[#333300] mt-1">Your L2 chain ID (any unique number works for local dev)</p>
-			</div>
-		</div>
-
-		<div class="flex gap-4 pt-4">
-			<a href="/deployments/new?step=1"
-			   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase
-					  hover:border-[#666600] hover:text-[#999] transition-colors">
-				← BACK
-			</a>
-			<button type="submit"
-					class="flex-1 py-4 bg-[#FFB000] text-black font-bold uppercase text-lg
-						   hover:bg-[#FFCC00] hover:shadow-[0_0_30px_#FFB000] transition-all
-						   flex items-center justify-center gap-2">
-				<span>🚀</span>
-				<span>CREATE BUNDLE</span>
-			</button>
-		</div>
-	</form>
-}
-
-// DeploymentStep3Keys - Assign signing keys
-templ DeploymentStep3Keys(data DeploymentNewData) {
-	<form action="/deployments/new?step=4" method="POST" class="space-y-6">
+// DeploymentStep4Keys - Assign signing keys (Step 4, only for testnet)
+templ DeploymentStep4Keys(data DeploymentNewData) {
+	<form action="/deployments/new?step=5" method="POST" class="space-y-6">
 		<!-- Hidden fields from previous steps -->
 		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
+		<input type="hidden" name="environment" value={ data.FormData.Environment }/>
 		<input type="hidden" name="chain_name" value={ data.FormData.ChainName }/>
 		<input type="hidden" name="chain_id" value={ data.FormData.ChainID }/>
 		<input type="hidden" name="l1_rpc" value={ data.FormData.L1RPC }/>
@@ -581,19 +527,27 @@ templ DeploymentStep3Keys(data DeploymentNewData) {
 	</dialog>
 }
 
-// DeploymentStep4Review - Review and deploy
-templ DeploymentStep4Review(data DeploymentNewData) {
+// DeploymentStep5Review - Review and deploy (Step 5 for testnet, Step 4 for local)
+templ DeploymentStep5Review(data DeploymentNewData) {
 	<form action="/deployments" method="POST" class="space-y-6">
 		<!-- All hidden fields -->
 		<input type="hidden" name="stack" value={ data.FormData.Stack }/>
+		<input type="hidden" name="environment" value={ data.FormData.Environment }/>
 		<input type="hidden" name="chain_name" value={ data.FormData.ChainName }/>
 		<input type="hidden" name="chain_id" value={ data.FormData.ChainID }/>
 		<input type="hidden" name="l1_rpc" value={ data.FormData.L1RPC }/>
 		<input type="hidden" name="l1_chain_id" value={ data.FormData.L1ChainID }/>
 		<input type="hidden" name="da" value={ data.FormData.DA }/>
-		<input type="hidden" name="deployer_key" value={ data.FormData.DeployerKey }/>
-		<input type="hidden" name="batcher_key" value={ data.FormData.BatcherKey }/>
-		<input type="hidden" name="proposer_key" value={ data.FormData.ProposerKey }/>
+		if data.FormData.Environment == "local" {
+			<!-- Local uses Anvil deterministic accounts -->
+			<input type="hidden" name="deployer_key" value="anvil-0"/>
+			<input type="hidden" name="batcher_key" value="anvil-1"/>
+			<input type="hidden" name="proposer_key" value="anvil-2"/>
+		} else {
+			<input type="hidden" name="deployer_key" value={ data.FormData.DeployerKey }/>
+			<input type="hidden" name="batcher_key" value={ data.FormData.BatcherKey }/>
+			<input type="hidden" name="proposer_key" value={ data.FormData.ProposerKey }/>
+		}
 		
 		<div>
 			<h2 class="text-lg text-[#33FF00] uppercase mb-2 font-bold">Review & Deploy</h2>
@@ -603,29 +557,43 @@ templ DeploymentStep4Review(data DeploymentNewData) {
 		<!-- Configuration Summary -->
 		<div class="bg-[#0a0a00] border border-[#333300] divide-y divide-[#1a1a00]">
 			@ReviewRow("Rollup Stack", getStackDisplayName(data.FormData.Stack))
+			@ReviewRow("Environment", getEnvironmentDisplayName(data.FormData.Environment))
 			@ReviewRow("Chain Name", data.FormData.ChainName)
 			@ReviewRow("Chain ID", data.FormData.ChainID)
-			@ReviewRow("L1 Network", getNetworkName(data.FormData.L1ChainID))
-			@ReviewRow("Data Availability", getDADisplayName(data.FormData.DA))
+			if data.FormData.Environment == "testnet" {
+				@ReviewRow("L1 Network", getNetworkName(data.FormData.L1ChainID))
+			} else {
+				@ReviewRow("L1 Network", "Local Anvil")
+			}
+			@ReviewRow("Data Availability", getDADisplayName(data.FormData.DA, data.FormData.Environment))
 		</div>
 
 		<!-- Keys Summary -->
-		<div class="bg-[#0a0a00] border border-[#333300] p-4">
-			<h3 class="text-sm text-[#666600] uppercase mb-3">Assigned Keys</h3>
-			<div class="space-y-2 text-sm">
-				@ReviewKeyRow("Deployer", getKeyName(data.Keys, data.FormData.DeployerKey))
-				if data.FormData.Stack == "opstack" {
-					@ReviewKeyRow("Batcher", getKeyName(data.Keys, data.FormData.BatcherKey))
-					@ReviewKeyRow("Proposer", getKeyName(data.Keys, data.FormData.ProposerKey))
-				} else {
-					@ReviewKeyRow("Batch Poster", getKeyName(data.Keys, data.FormData.BatcherKey))
-					@ReviewKeyRow("Validator", getKeyName(data.Keys, data.FormData.ProposerKey))
-				}
+		if data.FormData.Environment == "testnet" {
+			<div class="bg-[#0a0a00] border border-[#333300] p-4">
+				<h3 class="text-sm text-[#666600] uppercase mb-3">Assigned Keys</h3>
+				<div class="space-y-2 text-sm">
+					@ReviewKeyRow("Deployer", getKeyName(data.Keys, data.FormData.DeployerKey))
+					if data.FormData.Stack == "opstack" {
+						@ReviewKeyRow("Batcher", getKeyName(data.Keys, data.FormData.BatcherKey))
+						@ReviewKeyRow("Proposer", getKeyName(data.Keys, data.FormData.ProposerKey))
+					} else {
+						@ReviewKeyRow("Batch Poster", getKeyName(data.Keys, data.FormData.BatcherKey))
+						@ReviewKeyRow("Validator", getKeyName(data.Keys, data.FormData.ProposerKey))
+					}
+				</div>
 			</div>
-		</div>
+		} else {
+			<div class="bg-[#0a0a00] border border-[#333300] p-4">
+				<h3 class="text-sm text-[#666600] uppercase mb-3">Local Anvil Accounts</h3>
+				<div class="space-y-2 text-sm text-[#999]">
+					<p>Pre-funded deterministic accounts will be used automatically</p>
+				</div>
+			</div>
+		}
 
-		<!-- Warning Box - different content for pop-bundle vs other stacks -->
-		if data.FormData.Stack == "pop-bundle" {
+		<!-- Warning Box - different content for local vs testnet -->
+		if data.FormData.Environment == "local" {
 			<div class="p-4 bg-[#0a1a0a] border border-[#33FF00]/50">
 				<p class="text-[#33FF00] font-bold uppercase mb-2 flex items-center gap-2">
 					<span>📦</span>
@@ -670,15 +638,15 @@ templ DeploymentStep4Review(data DeploymentNewData) {
 		}
 
 		<div class="flex gap-4 pt-4">
-			<!-- Back button: for pop-bundle go to step 5 (bundle config), otherwise step 3 (keys) -->
-			if data.FormData.Stack == "pop-bundle" {
-				<a href={ templ.SafeURL(buildBackURL(5, data.FormData)) }
+			<!-- Back button: for local go to step 3 (config), for testnet go to step 4 (keys) -->
+			if data.FormData.Environment == "local" {
+				<a href={ templ.SafeURL(buildBackURL(3, data.FormData)) }
 				   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase
 						  hover:border-[#666600] hover:text-[#999] transition-colors">
 					← BACK
 				</a>
 			} else {
-				<a href={ templ.SafeURL(buildBackURL(3, data.FormData)) }
+				<a href={ templ.SafeURL(buildBackURL(4, data.FormData)) }
 				   class="flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase
 						  hover:border-[#666600] hover:text-[#999] transition-colors">
 					← BACK
@@ -746,9 +714,12 @@ func getNetworkName(chainID string) string {
 	}
 }
 
-func getDADisplayName(da string) string {
+func getDADisplayName(da string, environment string) string {
 	switch da {
 	case "celestia":
+		if environment == "local" {
+			return "Celestia (Localestia)"
+		}
 		return "Celestia"
 	case "anytrust":
 		return "AnyTrust DAC"
@@ -760,6 +731,24 @@ func getDADisplayName(da string) string {
 		}
 		return strings.ToUpper(da)
 	}
+}
+
+func getEnvironmentDisplayName(environment string) string {
+	switch environment {
+	case "local":
+		return "LOCAL DEVELOPMENT"
+	case "testnet":
+		return "TESTNET"
+	default:
+		return strings.ToUpper(environment)
+	}
+}
+
+func getChainNamePlaceholder(environment string) string {
+	if environment == "local" {
+		return "my-local-devnet"
+	}
+	return "my-rollup"
 }
 
 func getKeyName(keys []components.KeyOption, keyID string) string {
@@ -785,15 +774,8 @@ func getDefaultChainID(chainID string) string {
 	return chainID
 }
 
-func getDefaultBundleStack(bundleStack string) string {
-	if bundleStack == "" {
-		return "opstack"
-	}
-	return bundleStack
-}
-
 func buildBackURL(step int, data DeploymentFormData) string {
-	return fmt.Sprintf("/deployments/new?step=%d&stack=%s&chain_name=%s&chain_id=%s",
-		step, data.Stack, data.ChainName, data.ChainID)
+	return fmt.Sprintf("/deployments/new?step=%d&stack=%s&environment=%s&chain_name=%s&chain_id=%s",
+		step, data.Stack, data.Environment, data.ChainName, data.ChainID)
 }
 
