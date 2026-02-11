@@ -10,15 +10,15 @@ templ DockerQuickstart(deploymentID, chainName, stack string) {
 			</div>
 			<p class="text-[#33FF00] text-sm mb-2">Click the "DOWNLOAD BUNDLE" button below</p>
 			if stack == "pop-bundle" {
-				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">unzip { chainName }-popdeployer-bundle.tar.gz</code></p>
+				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">tar -xzf { chainName }-popdeployer-bundle.tar.gz</code></p>
 			} else {
-				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">unzip { chainName }-{ stack }-artifacts.tar.gz</code></p>
+				<p class="text-[#444] text-xs">Then extract: <code class="text-[#33FF00]">tar -xzf { chainName }-{ stack }-artifacts.tar.gz</code></p>
 			}
 		</div>
 
 		<!-- Step 2: Configure (only for opstack/nitro, not pop-bundle) -->
 		if stack == "opstack" || stack == "nitro" {
-			@dockerStep("2", "Configure", getConfigureCommand(chainName), "Set your L1 RPC URL and credentials")
+			@dockerStep("2", "Configure", getConfigureCommand(chainName, stack), "Set your L1 RPC URL and credentials")
 			@dockerStep("3", "Run", "docker compose up -d", "Start all services in background")
 		} else {
 			<!-- pop-bundle is ready to run, no config needed -->
@@ -52,10 +52,17 @@ templ DockerQuickstart(deploymentID, chainName, stack string) {
 					<span class="text-[#33FF00]">✓</span>
 					docker-compose.yml (ready to run)
 				</li>
-				<li class="flex items-center gap-2">
-					<span class="text-[#33FF00]">✓</span>
-					.env.example (environment template)
-				</li>
+				if stack == "pop-bundle" {
+					<li class="flex items-center gap-2">
+						<span class="text-[#33FF00]">✓</span>
+						.env (ready to use - no changes needed)
+					</li>
+				} else {
+					<li class="flex items-center gap-2">
+						<span class="text-[#33FF00]">✓</span>
+						.env.example (environment template)
+					</li>
+				}
 				if stack == "pop-bundle" {
 					<li class="flex items-center gap-2">
 						<span class="text-[#33FF00]">✓</span>
@@ -118,7 +125,7 @@ templ dockerStep(stepNum, title, command, description string) {
 }
 
 // Helper function to generate configure command
-func getConfigureCommand(chainName string) string {
-	return "cd " + chainName + " && cp .env.example .env && vim .env"
+func getConfigureCommand(chainName, stack string) string {
+	return "cd " + chainName + "-" + stack + "-artifacts && cp .env.example .env && vim .env"
 }
 

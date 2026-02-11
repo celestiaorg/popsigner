@@ -337,7 +337,6 @@ Use any Ethereum tool (cast, ethers.js, web3.py) with RPC http://localhost:9545
 |------|-------------|------|
 | docker-compose.yml | All 9 services | ~5KB |
 | .env | Ready-to-use config | ~1KB |
-| .env.example | Environment template | ~1KB |
 | genesis.json | L2 genesis state | ~9MB |
 | rollup.json | Rollup config | ~2KB |
 | addresses.json | Contract addresses | ~3KB |
