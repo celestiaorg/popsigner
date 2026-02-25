@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/google/uuid"
 )
 
 // AnvilPrivateKeys contains Anvil's 10 deterministic private keys.
@@ -24,6 +25,9 @@ var AnvilPrivateKeys = []string{
 	"0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
 }
 
+// DevNamespaceID is a deterministic UUID for the dev namespace.
+var DevNamespaceID = uuid.NewSHA1(uuid.NameSpaceURL, []byte("popsigner-lite:dev")).String()
+
 // LoadAnvilKeys loads all 10 Anvil deterministic keys into memory.
 func LoadAnvilKeys() ([]*Key, error) {
 	keys := make([]*Key, len(AnvilPrivateKeys))
@@ -37,14 +41,19 @@ func LoadAnvilKeys() ([]*Key, error) {
 
 		publicKey := privateKey.Public().(*ecdsa.PublicKey)
 		address := crypto.PubkeyToAddress(*publicKey).Hex()
+		name := fmt.Sprintf("anvil-%d", i)
 
 		keys[i] = &Key{
-			ID:         fmt.Sprintf("anvil-%d", i),
-			Name:       fmt.Sprintf("anvil-%d", i),
-			Address:    address,
-			PrivateKey: privateKey,
-			PublicKey:  crypto.FromECDSAPub(publicKey),
-			CreatedAt:  time.Now(),
+			ID:          uuid.NewSHA1(uuid.NameSpaceURL, []byte("popsigner-lite:"+name)).String(),
+			NamespaceID: DevNamespaceID,
+			Name:        name,
+			Address:     address,
+			PrivateKey:  privateKey,
+			PublicKey:   crypto.CompressPubkey(publicKey),
+			Algorithm:   "secp256k1",
+			Exportable:  true,
+			Version:     1,
+			CreatedAt:   time.Now(),
 		}
 	}
 
