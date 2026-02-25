@@ -30,18 +30,21 @@ func NewEthSignTransactionHandler(ks *keystore.Keystore, s *signer.TransactionSi
 }
 
 // TransactionArgs represents the arguments for an Ethereum transaction.
+// Fields mirror go-ethereum's internal/ethapi.TransactionArgs for compatibility.
 type TransactionArgs struct {
-	From                 *common.Address `json:"from"`
-	To                   *common.Address `json:"to"`
-	Gas                  *hexutil.Uint64 `json:"gas"`
-	GasPrice             *hexutil.Big    `json:"gasPrice"`
-	MaxFeePerGas         *hexutil.Big    `json:"maxFeePerGas"`
-	MaxPriorityFeePerGas *hexutil.Big    `json:"maxPriorityFeePerGas"`
-	Value                *hexutil.Big    `json:"value"`
-	Nonce                *hexutil.Uint64 `json:"nonce"`
-	Data                 *hexutil.Bytes  `json:"data"`
-	Input                *hexutil.Bytes  `json:"input"`
-	ChainID              *hexutil.Big    `json:"chainId"`
+	From                 *common.Address   `json:"from"`
+	To                   *common.Address   `json:"to"`
+	Gas                  *hexutil.Uint64   `json:"gas"`
+	GasPrice             *hexutil.Big      `json:"gasPrice"`
+	MaxFeePerGas         *hexutil.Big      `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas *hexutil.Big      `json:"maxPriorityFeePerGas"`
+	Value                *hexutil.Big      `json:"value"`
+	Nonce                *hexutil.Uint64   `json:"nonce"`
+	Data                 *hexutil.Bytes    `json:"data"`
+	Input                *hexutil.Bytes    `json:"input"`
+	AccessList           *types.AccessList `json:"accessList,omitempty"`
+	ChainID              *hexutil.Big      `json:"chainId"`
+	Type                 *hexutil.Uint64   `json:"type,omitempty"`
 }
 
 // Handle implements the eth_signTransaction JSON-RPC method.
@@ -113,53 +116,74 @@ func (h *EthSignTransactionHandler) Handle(ctx context.Context, params json.RawM
 
 	chainID := txArgs.ChainID.ToInt()
 
+	// Resolve access list (nil → empty slice for type inference)
+	var accessList types.AccessList
+	if txArgs.AccessList != nil {
+		accessList = *txArgs.AccessList
+	}
+
+	// Determine transaction type.
+	// Use explicit type field if provided; otherwise infer from presence of fee fields.
+	txType := uint64(0)
+	if txArgs.Type != nil {
+		txType = uint64(*txArgs.Type)
+	} else if txArgs.MaxFeePerGas != nil {
+		txType = types.DynamicFeeTxType
+	} else if txArgs.AccessList != nil {
+		txType = types.AccessListTxType
+	}
+
 	// Determine transaction type and build transaction
 	var tx *types.Transaction
-	if txArgs.MaxFeePerGas != nil {
+	switch txType {
+	case types.DynamicFeeTxType:
 		// EIP-1559 transaction
-		maxFeePerGas := txArgs.MaxFeePerGas.ToInt()
+		maxFeePerGas := big.NewInt(0)
+		if txArgs.MaxFeePerGas != nil {
+			maxFeePerGas = txArgs.MaxFeePerGas.ToInt()
+		}
 		maxPriorityFeePerGas := big.NewInt(0)
 		if txArgs.MaxPriorityFeePerGas != nil {
 			maxPriorityFeePerGas = txArgs.MaxPriorityFeePerGas.ToInt()
 		}
+		tx = types.NewTx(&types.DynamicFeeTx{
+			ChainID:    chainID,
+			Nonce:      nonce,
+			GasTipCap:  maxPriorityFeePerGas,
+			GasFeeCap:  maxFeePerGas,
+			Gas:        gasLimit,
+			To:         txArgs.To,
+			Value:      value,
+			Data:       txData,
+			AccessList: accessList,
+		})
 
-		if txArgs.To == nil {
-			// Contract deployment
-			tx = types.NewTx(&types.DynamicFeeTx{
-				ChainID:   chainID,
-				Nonce:     nonce,
-				GasTipCap: maxPriorityFeePerGas,
-				GasFeeCap: maxFeePerGas,
-				Gas:       gasLimit,
-				To:        nil,
-				Value:     value,
-				Data:      txData,
-			})
-		} else {
-			// Regular transaction
-			tx = types.NewTx(&types.DynamicFeeTx{
-				ChainID:   chainID,
-				Nonce:     nonce,
-				GasTipCap: maxPriorityFeePerGas,
-				GasFeeCap: maxFeePerGas,
-				Gas:       gasLimit,
-				To:        txArgs.To,
-				Value:     value,
-				Data:      txData,
-			})
-		}
-	} else {
-		// Legacy transaction
+	case types.AccessListTxType:
+		// EIP-2930 transaction
 		gasPrice := big.NewInt(0)
 		if txArgs.GasPrice != nil {
 			gasPrice = txArgs.GasPrice.ToInt()
 		}
+		tx = types.NewTx(&types.AccessListTx{
+			ChainID:    chainID,
+			Nonce:      nonce,
+			GasPrice:   gasPrice,
+			Gas:        gasLimit,
+			To:         txArgs.To,
+			Value:      value,
+			Data:       txData,
+			AccessList: accessList,
+		})
 
+	default:
+		// Legacy transaction (type 0)
+		gasPrice := big.NewInt(0)
+		if txArgs.GasPrice != nil {
+			gasPrice = txArgs.GasPrice.ToInt()
+		}
 		if txArgs.To == nil {
-			// Contract deployment
 			tx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, txData)
 		} else {
-			// Regular transaction
 			tx = types.NewTransaction(nonce, *txArgs.To, value, gasLimit, gasPrice, txData)
 		}
 	}
