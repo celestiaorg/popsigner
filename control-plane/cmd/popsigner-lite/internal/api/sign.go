@@ -166,8 +166,10 @@ func (h *SignHandler) signSingleItem(item BatchSignItem) BatchSignResult {
 
 	// Success
 	sig := base64.StdEncoding.EncodeToString(signature)
+	pubKey := hex.EncodeToString(key.PublicKey)
+	version := key.Version
 	result.Signature = &sig
-	result.PublicKey = hex.EncodeToString(key.PublicKey)
-	result.KeyVersion = key.Version
+	result.PublicKey = &pubKey
+	result.KeyVersion = &version
 	return result
 }

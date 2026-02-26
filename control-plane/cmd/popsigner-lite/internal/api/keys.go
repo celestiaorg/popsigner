@@ -85,6 +85,28 @@ func (h *KeysHandler) CreateKey(c *gin.Context) {
 		return
 	}
 
+	if req.Name == "" {
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "name is required")
+		return
+	}
+
+	// Default namespace and algorithm
+	nsID := req.NamespaceID
+	if nsID == "" {
+		nsID = keystore.DevNamespaceID
+	} else if _, err := uuid.Parse(nsID); err != nil {
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "namespace_id must be a valid UUID")
+		return
+	}
+
+	algo := req.Algorithm
+	if algo == "" {
+		algo = "secp256k1"
+	} else if algo != "secp256k1" {
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "only secp256k1 algorithm is supported")
+		return
+	}
+
 	// Generate new private key
 	privateKey, err := crypto.GenerateKey()
 	if err != nil {
@@ -95,16 +117,6 @@ func (h *KeysHandler) CreateKey(c *gin.Context) {
 	// Derive compressed public key and address
 	publicKey := privateKey.Public().(*ecdsa.PublicKey)
 	address := crypto.PubkeyToAddress(*publicKey).Hex()
-
-	// Default namespace and algorithm
-	nsID := req.NamespaceID
-	if nsID == "" {
-		nsID = keystore.DevNamespaceID
-	}
-	algo := req.Algorithm
-	if algo == "" {
-		algo = "secp256k1"
-	}
 
 	// Create key object
 	key := &keystore.Key{
@@ -138,6 +150,10 @@ func (h *KeysHandler) CreateBatchKeys(c *gin.Context) {
 		return
 	}
 
+	if req.Prefix == "" {
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "prefix is required")
+		return
+	}
 	if req.Count < 1 || req.Count > 100 {
 		errorResponse(c, http.StatusBadRequest, "invalid_request", "count must be between 1 and 100")
 		return
@@ -146,25 +162,26 @@ func (h *KeysHandler) CreateBatchKeys(c *gin.Context) {
 	nsID := req.NamespaceID
 	if nsID == "" {
 		nsID = keystore.DevNamespaceID
+	} else if _, err := uuid.Parse(nsID); err != nil {
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "namespace_id must be a valid UUID")
+		return
 	}
 
-	keys := make([]KeyResponse, 0, req.Count)
-	for i := 1; i <= req.Count; i++ {
+	// Generate all keys first so that a generation failure doesn't result in a
+	// partial batch being added to the keystore.
+	batch := make([]*keystore.Key, req.Count)
+	for i := 0; i < req.Count; i++ {
 		privateKey, err := crypto.GenerateKey()
 		if err != nil {
-			errorResponse(c, http.StatusInternalServerError, "internal_error", fmt.Sprintf("failed to generate key %d: %v", i, err))
+			errorResponse(c, http.StatusInternalServerError, "internal_error", fmt.Sprintf("failed to generate key %d: %v", i+1, err))
 			return
 		}
-
 		publicKey := privateKey.Public().(*ecdsa.PublicKey)
-		address := crypto.PubkeyToAddress(*publicKey).Hex()
-		name := fmt.Sprintf("%s-%d", req.Prefix, i)
-
-		key := &keystore.Key{
+		batch[i] = &keystore.Key{
 			ID:          uuid.New().String(),
 			NamespaceID: nsID,
-			Name:        name,
-			Address:     address,
+			Name:        fmt.Sprintf("%s-%d", req.Prefix, i+1),
+			Address:     crypto.PubkeyToAddress(*publicKey).Hex(),
 			PrivateKey:  privateKey,
 			PublicKey:   crypto.CompressPubkey(publicKey),
 			Algorithm:   "secp256k1",
@@ -172,12 +189,15 @@ func (h *KeysHandler) CreateBatchKeys(c *gin.Context) {
 			Version:     1,
 			CreatedAt:   time.Now(),
 		}
+	}
 
+	// All keys generated — now add them to the keystore.
+	keys := make([]KeyResponse, 0, req.Count)
+	for _, key := range batch {
 		if err := h.keystore.AddKey(key); err != nil {
-			errorResponse(c, http.StatusConflict, "conflict", fmt.Sprintf("failed to add key %s: %v", name, err))
+			errorResponse(c, http.StatusConflict, "conflict", fmt.Sprintf("failed to add key %s: %v", key.Name, err))
 			return
 		}
-
 		keys = append(keys, keyToResponse(key))
 	}
 
@@ -192,6 +212,11 @@ func (h *KeysHandler) ImportKey(c *gin.Context) {
 	var req ImportKeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		errorResponse(c, http.StatusBadRequest, "invalid_request", fmt.Sprintf("failed to parse request: %v", err))
+		return
+	}
+
+	if req.Name == "" {
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "name is required")
 		return
 	}
 

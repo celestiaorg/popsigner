@@ -86,10 +86,10 @@ type BatchSignResponse struct {
 // BatchSignResult represents a single result in a batch sign response.
 type BatchSignResult struct {
 	KeyID      string  `json:"key_id"`
-	Signature  *string `json:"signature,omitempty"`  // Base64-encoded signature (null if error)
-	PublicKey  string  `json:"public_key,omitempty"`  // Hex-encoded, no 0x prefix
-	KeyVersion int     `json:"key_version,omitempty"`
-	Error      *string `json:"error,omitempty"`       // Error message (null if success)
+	Signature  *string `json:"signature,omitempty"`   // Base64-encoded signature (nil if error)
+	PublicKey  *string `json:"public_key,omitempty"`  // Hex-encoded, no 0x prefix (nil if error)
+	KeyVersion *int    `json:"key_version,omitempty"` // nil if error
+	Error      *string `json:"error,omitempty"`       // Error message (nil if success)
 }
 
 // HealthResponse represents a health check response.

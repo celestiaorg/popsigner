@@ -123,7 +123,9 @@ func (h *EthSignTransactionHandler) Handle(ctx context.Context, params json.RawM
 	}
 
 	// Determine transaction type.
-	// Use explicit type field if provided; otherwise infer from presence of fee fields.
+	// Priority: explicit type > maxFeePerGas (EIP-1559) > accessList only (EIP-2930) > legacy.
+	// Note: an EIP-1559 tx (type 2) may include an accessList — that doesn't make it type 1.
+	// Type 1 (EIP-2930) is only inferred when accessList is set but maxFeePerGas is not.
 	txType := uint64(0)
 	if txArgs.Type != nil {
 		txType = uint64(*txArgs.Type)
@@ -137,7 +139,7 @@ func (h *EthSignTransactionHandler) Handle(ctx context.Context, params json.RawM
 	var tx *types.Transaction
 	switch txType {
 	case types.DynamicFeeTxType:
-		// EIP-1559 transaction
+		// EIP-1559 transaction. To==nil means contract creation, which go-ethereum handles correctly.
 		maxFeePerGas := big.NewInt(0)
 		if txArgs.MaxFeePerGas != nil {
 			maxFeePerGas = txArgs.MaxFeePerGas.ToInt()
@@ -152,14 +154,14 @@ func (h *EthSignTransactionHandler) Handle(ctx context.Context, params json.RawM
 			GasTipCap:  maxPriorityFeePerGas,
 			GasFeeCap:  maxFeePerGas,
 			Gas:        gasLimit,
-			To:         txArgs.To,
+			To:         txArgs.To, // nil == contract creation
 			Value:      value,
 			Data:       txData,
 			AccessList: accessList,
 		})
 
 	case types.AccessListTxType:
-		// EIP-2930 transaction
+		// EIP-2930 transaction. To==nil means contract creation, which go-ethereum handles correctly.
 		gasPrice := big.NewInt(0)
 		if txArgs.GasPrice != nil {
 			gasPrice = txArgs.GasPrice.ToInt()
@@ -169,7 +171,7 @@ func (h *EthSignTransactionHandler) Handle(ctx context.Context, params json.RawM
 			Nonce:      nonce,
 			GasPrice:   gasPrice,
 			Gas:        gasLimit,
-			To:         txArgs.To,
+			To:         txArgs.To, // nil == contract creation
 			Value:      value,
 			Data:       txData,
 			AccessList: accessList,
