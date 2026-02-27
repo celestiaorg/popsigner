@@ -217,8 +217,17 @@ log_level = "info"
 # Celestia namespace for this chain
 namespace = "%s"
 
-# Localestia endpoint (JSON-RPC for both reads and submits)
+# Localestia endpoint for reads (JSON-RPC / WebSocket)
 bridge_addr = "ws://localestia:26658"
+
+# Localestia gRPC endpoint - enables tx-client mode (required for remote signer)
+core_grpc_addr = "localestia:9090"
+
+# Disable TLS for localestia gRPC (plain gRPC, not TLS)
+core_grpc_tls_enabled = false
+
+# p2p network identifier (must match what localestia reports: "private")
+p2p_network = "private"
 
 # Gas settings
 gas_limit = 100000
@@ -387,9 +396,11 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379
       - LISTEN_ADDR=0.0.0.0:26658
+      - GRPC_ADDR=0.0.0.0:9090
       - CLEAR_REDIS=true
     ports:
       - "26658:26658"
+      - "9090:9090"
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "26658"]
       interval: 2s
