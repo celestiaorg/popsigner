@@ -13,7 +13,7 @@ const (
 
 	// Nitro images (banhbao registry)
 	NitroNode      = "rg.nl-ams.scw.cloud/banhbao/nitro-node-dev:v3.10.0"
-	NitroDASServer = "rg.nl-ams.scw.cloud/banhbao/nitro-das-server:v0.8.2"
+	NitroDASServer = "rg.nl-ams.scw.cloud/banhbao/nitro-das-server:v0.8.4-rc.1"
 
 	// OP Stack images (banhbao registry)
 	OpAltDA = "rg.nl-ams.scw.cloud/banhbao/op-alt-da:v0.10.1"
