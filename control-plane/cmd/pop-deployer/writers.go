@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/Bidon15/popsigner/control-plane/internal/bootstrap/opstack"
+	v "github.com/Bidon15/popsigner/control-plane/internal/versions"
 	"github.com/ethereum-optimism/optimism/op-deployer/pkg/deployer/inspect"
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -631,8 +632,8 @@ networks:
   default:
     name: local-opstack-devnet
     driver: bridge
-`, imageRedis, imageFoundry, imagePopSignerLite, imageLocalestia,
-		imageOpAltDA, imageOpGeth, imageOpGeth, imageOpNode, imageOpBatcher, imageOpProposer)
+`, v.Redis, v.Foundry, v.PopSignerLite, v.Localestia,
+		v.OpAltDA, v.OpGeth, v.OpGeth, v.OpNode, v.OpBatcher, v.OpProposer)
 
 	path := filepath.Join(w.bundleDir, "docker-compose.yml")
 	if err := os.WriteFile(path, []byte(compose), 0644); err != nil {

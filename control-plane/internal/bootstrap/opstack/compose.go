@@ -3,17 +3,29 @@ package opstack
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"text/template"
+
+	v "github.com/Bidon15/popsigner/control-plane/internal/versions"
 )
 
-// Docker image versions for OP Stack services
-const (
-	OpNodeVersion     = "v1.16.3"
-	OpBatcherVersion  = "v1.16.3" // Use release tag, not commit hash
-	OpProposerVersion = "v1.10.0"
-	OpGethVersion     = "v1.101602.3"
-	OpAltDAVersion    = "v0.10.0"
+// Docker image version tags for OP Stack services (extracted from full image strings).
+// Source of truth: internal/versions/versions.go
+var (
+	OpNodeVersion     = imageTag(v.OpNode)
+	OpBatcherVersion  = imageTag(v.OpBatcher)
+	OpProposerVersion = imageTag(v.OpProposer)
+	OpGethVersion     = imageTag(v.OpGeth)
+	OpAltDAVersion    = imageTag(v.OpAltDA)
 )
+
+// imageTag extracts the version tag from a full image string (image:tag → tag).
+func imageTag(image string) string {
+	if idx := strings.LastIndex(image, ":"); idx >= 0 {
+		return image[idx+1:]
+	}
+	return image
+}
 
 // dockerComposeTemplate is the template for generating OP Stack docker-compose.yml with Celestia DA.
 // Environment variables are loaded from .env file in the same directory.

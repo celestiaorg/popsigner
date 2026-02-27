@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	v "github.com/Bidon15/popsigner/control-plane/internal/versions"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -498,7 +499,7 @@ volumes:
   nitro-data:
   anvil-data:
   redis-data:
-`, imageRedis, imageFoundry, imagePopSignerLite, imageLocalestia)
+`, v.Redis, v.Foundry, v.PopSignerLite, v.Localestia)
 
 	path := filepath.Join(w.bundleDir, "docker-compose.yml")
 	if err := os.WriteFile(path, []byte(compose), 0644); err != nil {
@@ -562,8 +563,8 @@ STAKE_TOKEN=%s
 		deployerAddress,
 		batcherAddress,
 		proposerAddress,
-		imageNitroNode,
-		imageNitroDASServer,
+		v.NitroNode,
+		v.NitroDASServer,
 		w.result.contracts.Rollup.Hex(),
 		w.result.contracts.Inbox.Hex(),
 		w.result.contracts.SequencerInbox.Hex(),
