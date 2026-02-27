@@ -536,16 +536,18 @@ func getKeyID(ctx context.Context, baseURL, address string) (string, error) {
 		return "", fmt.Errorf("get key (status %d): %s", resp.StatusCode, string(body))
 	}
 
-	// Parse response
-	var result struct {
-		ID        string `json:"id"`
-		Name      string `json:"name"`
-		Address   string `json:"address"`
-		PublicKey string `json:"public_key"`
+	// Parse response - API wraps payload in {"data": ...}
+	var envelope struct {
+		Data struct {
+			ID        string `json:"id"`
+			Name      string `json:"name"`
+			Address   string `json:"address"`
+			PublicKey string `json:"public_key"`
+		} `json:"data"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {
 		return "", fmt.Errorf("decode response: %w", err)
 	}
 
-	return result.ID, nil
+	return envelope.Data.ID, nil
 }
