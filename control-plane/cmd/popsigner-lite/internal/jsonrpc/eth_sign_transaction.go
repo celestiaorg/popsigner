@@ -30,18 +30,21 @@ func NewEthSignTransactionHandler(ks *keystore.Keystore, s *signer.TransactionSi
 }
 
 // TransactionArgs represents the arguments for an Ethereum transaction.
+// Fields mirror go-ethereum's internal/ethapi.TransactionArgs for compatibility.
 type TransactionArgs struct {
-	From                 *common.Address `json:"from"`
-	To                   *common.Address `json:"to"`
-	Gas                  *hexutil.Uint64 `json:"gas"`
-	GasPrice             *hexutil.Big    `json:"gasPrice"`
-	MaxFeePerGas         *hexutil.Big    `json:"maxFeePerGas"`
-	MaxPriorityFeePerGas *hexutil.Big    `json:"maxPriorityFeePerGas"`
-	Value                *hexutil.Big    `json:"value"`
-	Nonce                *hexutil.Uint64 `json:"nonce"`
-	Data                 *hexutil.Bytes  `json:"data"`
-	Input                *hexutil.Bytes  `json:"input"`
-	ChainID              *hexutil.Big    `json:"chainId"`
+	From                 *common.Address   `json:"from"`
+	To                   *common.Address   `json:"to"`
+	Gas                  *hexutil.Uint64   `json:"gas"`
+	GasPrice             *hexutil.Big      `json:"gasPrice"`
+	MaxFeePerGas         *hexutil.Big      `json:"maxFeePerGas"`
+	MaxPriorityFeePerGas *hexutil.Big      `json:"maxPriorityFeePerGas"`
+	Value                *hexutil.Big      `json:"value"`
+	Nonce                *hexutil.Uint64   `json:"nonce"`
+	Data                 *hexutil.Bytes    `json:"data"`
+	Input                *hexutil.Bytes    `json:"input"`
+	AccessList           *types.AccessList `json:"accessList,omitempty"`
+	ChainID              *hexutil.Big      `json:"chainId"`
+	Type                 *hexutil.Uint64   `json:"type,omitempty"`
 }
 
 // Handle implements the eth_signTransaction JSON-RPC method.
@@ -113,53 +116,92 @@ func (h *EthSignTransactionHandler) Handle(ctx context.Context, params json.RawM
 
 	chainID := txArgs.ChainID.ToInt()
 
+	// Resolve access list (nil → empty slice for type inference)
+	var accessList types.AccessList
+	if txArgs.AccessList != nil {
+		accessList = *txArgs.AccessList
+	}
+
+	// Determine transaction type.
+	// Priority: explicit type > maxFeePerGas (EIP-1559) > accessList only (EIP-2930) > legacy.
+	// Note: an EIP-1559 tx (type 2) may include an accessList — that doesn't make it type 1.
+	// Type 1 (EIP-2930) is only inferred when accessList is set but maxFeePerGas is not.
+	txType := uint64(0)
+	if txArgs.Type != nil {
+		txType = uint64(*txArgs.Type)
+		switch txType {
+		case types.DynamicFeeTxType:
+			if txArgs.MaxFeePerGas == nil || txArgs.MaxPriorityFeePerGas == nil {
+				return nil, ErrInvalidParams("type 0x2 requires maxFeePerGas and maxPriorityFeePerGas")
+			}
+		case types.AccessListTxType:
+			if txArgs.GasPrice == nil {
+				return nil, ErrInvalidParams("type 0x1 requires gasPrice")
+			}
+		case types.LegacyTxType:
+			if txArgs.GasPrice == nil {
+				return nil, ErrInvalidParams("type 0x0 requires gasPrice")
+			}
+		default:
+			return nil, ErrInvalidParams(fmt.Sprintf("unsupported transaction type: 0x%x", txType))
+		}
+	} else if txArgs.MaxFeePerGas != nil {
+		txType = types.DynamicFeeTxType
+	} else if txArgs.AccessList != nil {
+		txType = types.AccessListTxType
+	}
+
 	// Determine transaction type and build transaction
 	var tx *types.Transaction
-	if txArgs.MaxFeePerGas != nil {
-		// EIP-1559 transaction
-		maxFeePerGas := txArgs.MaxFeePerGas.ToInt()
+	switch txType {
+	case types.DynamicFeeTxType:
+		// EIP-1559 transaction. To==nil means contract creation, which go-ethereum handles correctly.
+		maxFeePerGas := big.NewInt(0)
+		if txArgs.MaxFeePerGas != nil {
+			maxFeePerGas = txArgs.MaxFeePerGas.ToInt()
+		}
 		maxPriorityFeePerGas := big.NewInt(0)
 		if txArgs.MaxPriorityFeePerGas != nil {
 			maxPriorityFeePerGas = txArgs.MaxPriorityFeePerGas.ToInt()
 		}
+		tx = types.NewTx(&types.DynamicFeeTx{
+			ChainID:    chainID,
+			Nonce:      nonce,
+			GasTipCap:  maxPriorityFeePerGas,
+			GasFeeCap:  maxFeePerGas,
+			Gas:        gasLimit,
+			To:         txArgs.To, // nil == contract creation
+			Value:      value,
+			Data:       txData,
+			AccessList: accessList,
+		})
 
-		if txArgs.To == nil {
-			// Contract deployment
-			tx = types.NewTx(&types.DynamicFeeTx{
-				ChainID:   chainID,
-				Nonce:     nonce,
-				GasTipCap: maxPriorityFeePerGas,
-				GasFeeCap: maxFeePerGas,
-				Gas:       gasLimit,
-				To:        nil,
-				Value:     value,
-				Data:      txData,
-			})
-		} else {
-			// Regular transaction
-			tx = types.NewTx(&types.DynamicFeeTx{
-				ChainID:   chainID,
-				Nonce:     nonce,
-				GasTipCap: maxPriorityFeePerGas,
-				GasFeeCap: maxFeePerGas,
-				Gas:       gasLimit,
-				To:        txArgs.To,
-				Value:     value,
-				Data:      txData,
-			})
-		}
-	} else {
-		// Legacy transaction
+	case types.AccessListTxType:
+		// EIP-2930 transaction. To==nil means contract creation, which go-ethereum handles correctly.
 		gasPrice := big.NewInt(0)
 		if txArgs.GasPrice != nil {
 			gasPrice = txArgs.GasPrice.ToInt()
 		}
+		tx = types.NewTx(&types.AccessListTx{
+			ChainID:    chainID,
+			Nonce:      nonce,
+			GasPrice:   gasPrice,
+			Gas:        gasLimit,
+			To:         txArgs.To, // nil == contract creation
+			Value:      value,
+			Data:       txData,
+			AccessList: accessList,
+		})
 
+	default:
+		// Legacy transaction (type 0)
+		gasPrice := big.NewInt(0)
+		if txArgs.GasPrice != nil {
+			gasPrice = txArgs.GasPrice.ToInt()
+		}
 		if txArgs.To == nil {
-			// Contract deployment
 			tx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, txData)
 		} else {
-			// Regular transaction
 			tx = types.NewTransaction(nonce, *txArgs.To, value, gasLimit, gasPrice, txData)
 		}
 	}

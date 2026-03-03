@@ -22,12 +22,17 @@ type Keystore struct {
 
 // Key represents a cryptographic key pair.
 type Key struct {
-	ID         string
-	Name       string
-	Address    string // 0x... Ethereum address
-	PrivateKey *ecdsa.PrivateKey
-	PublicKey  []byte
-	CreatedAt  time.Time
+	ID          string // UUID format
+	NamespaceID string // UUID format
+	Name        string
+	Address     string // 0x... Ethereum address
+	PrivateKey  *ecdsa.PrivateKey
+	PublicKey   []byte // 33-byte compressed secp256k1
+	Algorithm   string // "secp256k1"
+	Exportable  bool
+	Metadata    map[string]string
+	Version     int
+	CreatedAt   time.Time
 }
 
 // APIKey represents an API key for authentication.

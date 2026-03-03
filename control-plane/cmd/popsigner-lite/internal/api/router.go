@@ -34,7 +34,10 @@ func SetupRouter(ks *keystore.Keystore) *gin.Engine {
 		v1.GET("/keys", keysHandler.ListKeys)
 		v1.GET("/keys/:id", keysHandler.GetKey)
 		v1.POST("/keys", keysHandler.CreateKey)
+		v1.POST("/keys/batch", keysHandler.CreateBatchKeys)
+		v1.POST("/keys/import", keysHandler.ImportKey)
 		v1.DELETE("/keys/:id", keysHandler.DeleteKey)
+		v1.POST("/keys/:id/export", keysHandler.ExportKey)
 
 		// Signing endpoints
 		signHandler := NewSignHandler(ks)

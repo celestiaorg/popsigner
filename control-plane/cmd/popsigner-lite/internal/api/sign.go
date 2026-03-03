@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -30,27 +31,18 @@ func NewSignHandler(ks *keystore.Keystore) *SignHandler {
 func (h *SignHandler) Sign(c *gin.Context) {
 	keyID := c.Param("id")
 	if keyID == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: "key ID is required",
-		})
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "key ID is required")
 		return
 	}
 
 	var req SignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: fmt.Sprintf("failed to parse request: %v", err),
-		})
+		errorResponse(c, http.StatusBadRequest, "invalid_request", fmt.Sprintf("failed to parse request: %v", err))
 		return
 	}
 
 	if req.Data == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: "data is required",
-		})
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "data is required")
 		return
 	}
 
@@ -58,12 +50,9 @@ func (h *SignHandler) Sign(c *gin.Context) {
 	key, err := h.keystore.GetKeyByID(keyID)
 	if err != nil {
 		// Try by address
-		key, err = h.keystore.GetKey(keyID)
+		key, err = h.keystore.GetKeyInsensitive(keyID)
 		if err != nil {
-			c.JSON(http.StatusNotFound, ErrorResponse{
-				Error:   "not_found",
-				Message: fmt.Sprintf("key with ID %s not found", keyID),
-			})
+			errorResponse(c, http.StatusNotFound, "not_found", fmt.Sprintf("key with ID %s not found", keyID))
 			return
 		}
 	}
@@ -71,31 +60,19 @@ func (h *SignHandler) Sign(c *gin.Context) {
 	// Decode the data (base64)
 	data, err := base64.StdEncoding.DecodeString(req.Data)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: fmt.Sprintf("invalid data base64: %v", err),
-		})
+		errorResponse(c, http.StatusBadRequest, "invalid_request", fmt.Sprintf("invalid data base64: %v", err))
 		return
 	}
 
 	// Hash the data based on prehashed parameter
-	// - If prehashed=true: data is already a 32-byte hash, sign it directly
-	// - If prehashed=false: apply SHA-256 hash (Celestia/Cosmos SDK style)
-	// This matches the behavior of the original BaoKeyring.Sign() method
 	var hash []byte
 	if req.Prehashed {
-		// Data is already hashed, use it directly
 		if len(data) != 32 {
-			c.JSON(http.StatusBadRequest, ErrorResponse{
-				Error:   "invalid_request",
-				Message: fmt.Sprintf("prehashed data must be 32 bytes, got %d", len(data)),
-			})
+			errorResponse(c, http.StatusBadRequest, "invalid_request", fmt.Sprintf("prehashed data must be 32 bytes, got %d", len(data)))
 			return
 		}
 		hash = data
 	} else {
-		// Apply SHA-256 hash (Celestia/Cosmos SDK style)
-		// This matches the behavior of the original BaoKeyring.Sign() method
 		hashSum := sha256.Sum256(data)
 		hash = hashSum[:]
 	}
@@ -103,51 +80,40 @@ func (h *SignHandler) Sign(c *gin.Context) {
 	// Sign the hash
 	signature, err := h.signer.SignHash(hash, key.PrivateKey)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error:   "signing_failed",
-			Message: fmt.Sprintf("failed to sign data: %v", err),
-		})
+		errorResponse(c, http.StatusInternalServerError, "signing_failed", fmt.Sprintf("failed to sign data: %v", err))
 		return
 	}
 
-	response := SignResponse{
-		Signature: base64.StdEncoding.EncodeToString(signature),
-	}
-
-	c.JSON(http.StatusOK, response)
+	dataResponse(c, http.StatusOK, SignResponse{
+		Signature:  base64.StdEncoding.EncodeToString(signature),
+		PublicKey:  hex.EncodeToString(key.PublicKey),
+		KeyVersion: key.Version,
+	})
 }
 
 // BatchSign handles POST /v1/sign/batch - Signs multiple messages.
 func (h *SignHandler) BatchSign(c *gin.Context) {
 	var req BatchSignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: fmt.Sprintf("failed to parse request: %v", err),
-		})
+		errorResponse(c, http.StatusBadRequest, "invalid_request", fmt.Sprintf("failed to parse request: %v", err))
 		return
 	}
 
 	if len(req.Requests) == 0 {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: "at least one request is required",
-		})
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "at least one request is required")
 		return
 	}
 
 	// Process each item
 	results := make([]BatchSignResult, len(req.Requests))
 	for i, item := range req.Requests {
-		result := h.signSingleItem(item)
-		results[i] = result
+		results[i] = h.signSingleItem(item)
 	}
 
-	response := BatchSignResponse{
-		Results: results,
-	}
-
-	c.JSON(http.StatusOK, response)
+	dataResponse(c, http.StatusOK, BatchSignResponse{
+		Signatures: results,
+		Count:      len(results),
+	})
 }
 
 // signSingleItem signs a single item in a batch request.
@@ -160,7 +126,7 @@ func (h *SignHandler) signSingleItem(item BatchSignItem) BatchSignResult {
 	key, err := h.keystore.GetKeyByID(item.KeyID)
 	if err != nil {
 		// Try by address
-		key, err = h.keystore.GetKey(item.KeyID)
+		key, err = h.keystore.GetKeyInsensitive(item.KeyID)
 		if err != nil {
 			errMsg := fmt.Sprintf("key not found: %v", err)
 			result.Error = &errMsg
@@ -179,7 +145,6 @@ func (h *SignHandler) signSingleItem(item BatchSignItem) BatchSignResult {
 	// Hash the data based on prehashed parameter
 	var hash []byte
 	if item.Prehashed {
-		// Data is already hashed, use it directly
 		if len(data) != 32 {
 			errMsg := fmt.Sprintf("prehashed data must be 32 bytes, got %d", len(data))
 			result.Error = &errMsg
@@ -187,7 +152,6 @@ func (h *SignHandler) signSingleItem(item BatchSignItem) BatchSignResult {
 		}
 		hash = data
 	} else {
-		// Apply SHA-256 hash (Celestia/Cosmos SDK style)
 		hashSum := sha256.Sum256(data)
 		hash = hashSum[:]
 	}
@@ -202,6 +166,10 @@ func (h *SignHandler) signSingleItem(item BatchSignItem) BatchSignResult {
 
 	// Success
 	sig := base64.StdEncoding.EncodeToString(signature)
+	pubKey := hex.EncodeToString(key.PublicKey)
+	version := key.Version
 	result.Signature = &sig
+	result.PublicKey = &pubKey
+	result.KeyVersion = &version
 	return result
 }
