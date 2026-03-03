@@ -67,7 +67,7 @@ func (h *KeysHandler) GetKey(c *gin.Context) {
 	key, err := h.keystore.GetKeyByID(keyID)
 	if err != nil {
 		// Try to get by address
-		key, err = h.keystore.GetKey(keyID)
+		key, err = h.keystore.GetKeyInsensitive(keyID)
 		if err != nil {
 			errorResponse(c, http.StatusNotFound, "not_found", fmt.Sprintf("key with ID %s not found", keyID))
 			return
@@ -191,13 +191,27 @@ func (h *KeysHandler) CreateBatchKeys(c *gin.Context) {
 		}
 	}
 
+	// Ensure no generated key conflicts with an existing address before adding.
+	for _, key := range batch {
+		if _, err := h.keystore.GetKeyInsensitive(key.Address); err == nil {
+			errorResponse(c, http.StatusConflict, "conflict", fmt.Sprintf("failed to add key %s: key with address %s already exists", key.Name, key.Address))
+			return
+		}
+	}
+
 	// All keys generated — now add them to the keystore.
+	// If any add fails unexpectedly, roll back previously added keys from this batch.
 	keys := make([]KeyResponse, 0, req.Count)
+	addedAddresses := make([]string, 0, req.Count)
 	for _, key := range batch {
 		if err := h.keystore.AddKey(key); err != nil {
+			for _, addr := range addedAddresses {
+				_ = h.keystore.DeleteKey(addr)
+			}
 			errorResponse(c, http.StatusConflict, "conflict", fmt.Sprintf("failed to add key %s: %v", key.Name, err))
 			return
 		}
+		addedAddresses = append(addedAddresses, key.Address)
 		keys = append(keys, keyToResponse(key))
 	}
 
@@ -239,6 +253,9 @@ func (h *KeysHandler) ImportKey(c *gin.Context) {
 	nsID := req.NamespaceID
 	if nsID == "" {
 		nsID = keystore.DevNamespaceID
+	} else if _, err := uuid.Parse(nsID); err != nil {
+		errorResponse(c, http.StatusBadRequest, "invalid_request", "namespace_id must be a valid UUID")
+		return
 	}
 
 	key := &keystore.Key{
@@ -272,7 +289,7 @@ func (h *KeysHandler) ExportKey(c *gin.Context) {
 
 	key, err := h.keystore.GetKeyByID(keyID)
 	if err != nil {
-		key, err = h.keystore.GetKey(keyID)
+		key, err = h.keystore.GetKeyInsensitive(keyID)
 		if err != nil {
 			errorResponse(c, http.StatusNotFound, "not_found", fmt.Sprintf("key with ID %s not found", keyID))
 			return
@@ -304,7 +321,7 @@ func (h *KeysHandler) DeleteKey(c *gin.Context) {
 	key, err := h.keystore.GetKeyByID(keyID)
 	if err != nil {
 		// Try by address
-		key, err = h.keystore.GetKey(keyID)
+		key, err = h.keystore.GetKeyInsensitive(keyID)
 		if err != nil {
 			errorResponse(c, http.StatusNotFound, "not_found", fmt.Sprintf("key with ID %s not found", keyID))
 			return
@@ -317,7 +334,7 @@ func (h *KeysHandler) DeleteKey(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	dataResponse(c, http.StatusOK, gin.H{
 		"message": fmt.Sprintf("key %s deleted successfully", keyID),
 	})
 }

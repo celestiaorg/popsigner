@@ -50,7 +50,7 @@ func (h *SignHandler) Sign(c *gin.Context) {
 	key, err := h.keystore.GetKeyByID(keyID)
 	if err != nil {
 		// Try by address
-		key, err = h.keystore.GetKey(keyID)
+		key, err = h.keystore.GetKeyInsensitive(keyID)
 		if err != nil {
 			errorResponse(c, http.StatusNotFound, "not_found", fmt.Sprintf("key with ID %s not found", keyID))
 			return
@@ -126,7 +126,7 @@ func (h *SignHandler) signSingleItem(item BatchSignItem) BatchSignResult {
 	key, err := h.keystore.GetKeyByID(item.KeyID)
 	if err != nil {
 		// Try by address
-		key, err = h.keystore.GetKey(item.KeyID)
+		key, err = h.keystore.GetKeyInsensitive(item.KeyID)
 		if err != nil {
 			errMsg := fmt.Sprintf("key not found: %v", err)
 			result.Error = &errMsg

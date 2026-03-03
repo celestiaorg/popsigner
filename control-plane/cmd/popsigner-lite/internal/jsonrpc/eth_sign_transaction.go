@@ -129,6 +129,22 @@ func (h *EthSignTransactionHandler) Handle(ctx context.Context, params json.RawM
 	txType := uint64(0)
 	if txArgs.Type != nil {
 		txType = uint64(*txArgs.Type)
+		switch txType {
+		case types.DynamicFeeTxType:
+			if txArgs.MaxFeePerGas == nil || txArgs.MaxPriorityFeePerGas == nil {
+				return nil, ErrInvalidParams("type 0x2 requires maxFeePerGas and maxPriorityFeePerGas")
+			}
+		case types.AccessListTxType:
+			if txArgs.GasPrice == nil {
+				return nil, ErrInvalidParams("type 0x1 requires gasPrice")
+			}
+		case types.LegacyTxType:
+			if txArgs.GasPrice == nil {
+				return nil, ErrInvalidParams("type 0x0 requires gasPrice")
+			}
+		default:
+			return nil, ErrInvalidParams(fmt.Sprintf("unsupported transaction type: 0x%x", txType))
+		}
 	} else if txArgs.MaxFeePerGas != nil {
 		txType = types.DynamicFeeTxType
 	} else if txArgs.AccessList != nil {
