@@ -26,8 +26,9 @@ type DeploymentNewData struct {
 
 // DeploymentFormData holds form values across wizard steps
 type DeploymentFormData struct {
-	Stack       string // "opstack", "nitro", or "pop-bundle"
-	BundleStack string // "opstack" or "nitro" (only for pop-bundle)
+	Stack       string // "opstack" or "nitro"
+	Environment string // "local" or "testnet"
+	BundleStack string // deprecated - kept for compatibility
 	ChainName   string
 	ChainID     string
 	L1RPC       string
@@ -102,7 +103,7 @@ func DeploymentNewPage(data DeploymentNewData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = DeployWizardStep(2, "CONFIG", data.Step).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = DeployWizardStep(2, "ENVIRONMENT", data.Step).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -128,60 +129,119 @@ func DeploymentNewPage(data DeploymentNewData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = DeployWizardStep(3, "KEYS", data.Step).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = DeployWizardStep(3, "CONFIG", data.Step).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 = []any{"flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 3), templ.KV("bg-[#333300]", data.Step <= 3)}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var7...)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
+			if data.FormData.Environment != "local" {
+				var templ_7745c5c3_Var7 = []any{"flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 3), templ.KV("bg-[#333300]", data.Step <= 3)}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var7...)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var8 string
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var7).String())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 1, Col: 0}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = DeployWizardStep(4, "KEYS", data.Step).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var9 = []any{"flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 4), templ.KV("bg-[#333300]", data.Step <= 4)}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var9...)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var10 string
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var9).String())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 1, Col: 0}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = DeployWizardStep(5, "DEPLOY", data.Step).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				var templ_7745c5c3_Var11 = []any{"flex-1 h-px mx-2", templ.KV("bg-[#33FF00]", data.Step > 3), templ.KV("bg-[#333300]", data.Step <= 3)}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var11...)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var12 string
+				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var11).String())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 1, Col: 0}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\"></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = DeployWizardStep(4, "DEPLOY", data.Step).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var7).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = DeployWizardStep(4, "DEPLOY", data.Step).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><!-- Error Message -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div><!-- Error Message -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if data.ErrorMsg != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div class=\"mb-6 p-4 bg-[#1a0000] border border-[#FF3300] text-[#FF3300] text-sm flex items-start gap-3\"><span class=\"text-lg\">⚠</span> <span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"mb-6 p-4 bg-[#1a0000] border border-[#FF3300] text-[#FF3300] text-sm flex items-start gap-3\"><span class=\"text-lg\">⚠</span> <span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(data.ErrorMsg)
+				var templ_7745c5c3_Var13 string
+				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(data.ErrorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 64, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 72, Col: 26}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</span></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- Step Content --><div class=\"bg-black border border-[#333300] p-6\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<!-- Step Content --><div class=\"bg-black border border-[#333300] p-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -192,26 +252,33 @@ func DeploymentNewPage(data DeploymentNewData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			case 2:
-				templ_7745c5c3_Err = DeploymentStep2Config(data).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = DeploymentStep2Environment(data).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			case 3:
-				templ_7745c5c3_Err = DeploymentStep3Keys(data).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = DeploymentStep3Config(data).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			case 4:
-				templ_7745c5c3_Err = DeploymentStep4Review(data).Render(ctx, templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
+				if data.FormData.Environment == "local" {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " ")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = DeploymentStep5Review(data).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = DeploymentStep4Keys(data).Render(ctx, templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
 				}
 			case 5:
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " ")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = DeploymentStep2Bundle(data).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = DeploymentStep5Review(data).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -221,7 +288,7 @@ func DeploymentNewPage(data DeploymentNewData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -252,90 +319,90 @@ func DeployWizardStep(step int, label string, currentStep int) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var10 == nil {
-			templ_7745c5c3_Var10 = templ.NopComponent
+		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var14 == nil {
+			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var11 = []any{"flex items-center gap-2",
+		var templ_7745c5c3_Var15 = []any{"flex items-center gap-2",
 			templ.KV("text-[#33FF00]", step <= currentStep),
 			templ.KV("text-[#333300]", step > currentStep)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var11...)
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var15...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var11).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var13 = []any{"w-7 h-7 flex items-center justify-center border text-xs font-bold",
-			templ.KV("border-[#33FF00] bg-[#33FF00]/20", step < currentStep),
-			templ.KV("border-[#33FF00] bg-[#33FF00] text-black", step == currentStep),
-			templ.KV("border-[#333300]", step > currentStep)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var13...)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var13).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if step < currentStep {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "✓")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", step))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 102, Col: 29}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</span> <span class=\"uppercase text-xs hidden sm:inline\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var15).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 105, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</span></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var17 = []any{"w-7 h-7 flex items-center justify-center border text-xs font-bold",
+			templ.KV("border-[#33FF00] bg-[#33FF00]/20", step < currentStep),
+			templ.KV("border-[#33FF00] bg-[#33FF00] text-black", step == currentStep),
+			templ.KV("border-[#333300]", step > currentStep)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var17...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var17).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if step < currentStep {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "✓")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			var templ_7745c5c3_Var19 string
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", step))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 114, Col: 29}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</span> <span class=\"uppercase text-xs hidden sm:inline\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var20 string
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 117, Col: 58}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -343,7 +410,7 @@ func DeployWizardStep(step int, label string, currentStep int) templ.Component {
 	})
 }
 
-// DeploymentStep1Stack - Select rollup stack
+// DeploymentStep1Stack - Select rollup stack (OP or Nitro only)
 func DeploymentStep1Stack(data DeploymentNewData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -360,42 +427,32 @@ func DeploymentStep1Stack(data DeploymentNewData) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var21 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var21 == nil {
+			templ_7745c5c3_Var21 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<form id=\"stack-form\" action=\"/deployments/new?step=2\" method=\"POST\" class=\"space-y-6\" x-data=\"{ selected: '' }\" @submit=\"if(selected === 'pop-bundle') { $el.action = '/deployments/new?step=2-bundle'; }\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Select Rollup Stack</h2><p class=\"text-[#666600] text-sm\">Choose the technology stack for your chain</p></div><div class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"><!-- OP Stack Option --><div class=\"cursor-pointer\" @click=\"selected = 'opstack'; $refs.opstack.checked = true\"><input type=\"radio\" name=\"stack\" value=\"opstack\" x-ref=\"opstack\" class=\"hidden\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<form id=\"stack-form\" action=\"/deployments/new?step=2\" method=\"POST\" class=\"space-y-6\" x-data=\"{ selected: '' }\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Select Rollup Stack</h2><p class=\"text-[#666600] text-sm\">Choose the technology stack for your chain</p></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\"><!-- OP Stack Option --><div class=\"cursor-pointer\" @click=\"selected = 'opstack'; $refs.opstack.checked = true\"><input type=\"radio\" name=\"stack\" value=\"opstack\" x-ref=\"opstack\" class=\"hidden\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if data.FormData.Stack == "opstack" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'opstack' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-4\"><span class=\"text-3xl\">⚡</span> <span class=\"w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"selected === 'opstack' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'\"><span x-show=\"selected === 'opstack'\" class=\"text-black text-xs\">✓</span></span></div><div class=\"text-[#33FF00] font-bold uppercase text-xl mb-2\">OP Stack</div><div class=\"text-[#AAAAAA] text-sm leading-relaxed mb-4\">Optimism's battle-tested modular architecture. Powers Base, Zora, and more.</div><div class=\"text-[#666600] text-xs\">~35 deployment transactions • Celestia DA</div></div></div><!-- Nitro Option --><div class=\"cursor-pointer\" @click=\"selected = 'nitro'; $refs.nitro.checked = true\"><input type=\"radio\" name=\"stack\" value=\"nitro\" x-ref=\"nitro\" class=\"hidden\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'opstack' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-4\"><span class=\"text-3xl\">⚡</span> <span class=\"w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"selected === 'opstack' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'\"><span x-show=\"selected === 'opstack'\" class=\"text-black text-xs\">✓</span></span></div><div class=\"text-[#33FF00] font-bold uppercase text-xl mb-2\">OP Stack</div><div class=\"text-[#AAAAAA] text-sm leading-relaxed mb-4\">Optimism's battle-tested modular architecture. Powers Base, Zora, and more.</div><div class=\"text-[#666600] text-xs\">~35 deployment transactions • Celestia DA</div></div></div><!-- Nitro Option --><div class=\"cursor-pointer\" @click=\"selected = 'nitro'; $refs.nitro.checked = true\"><input type=\"radio\" name=\"stack\" value=\"nitro\" x-ref=\"nitro\" class=\"hidden\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if data.FormData.Stack == "nitro" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'nitro' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-4\"><span class=\"text-3xl\">🚀</span> <span class=\"w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"selected === 'nitro' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'\"><span x-show=\"selected === 'nitro'\" class=\"text-black text-xs\">✓</span></span></div><div class=\"text-[#33FF00] font-bold uppercase text-xl mb-2\">Arbitrum Nitro</div><div class=\"text-[#AAAAAA] text-sm leading-relaxed mb-4\">Arbitrum Orbit SDK for Nitro chains. Single atomic deployment.</div><div class=\"text-[#666600] text-xs\">1 atomic transaction • Celestia DA</div></div></div><!-- POPKins Devnet Bundle Option --><div class=\"cursor-pointer\" @click=\"selected = 'pop-bundle'; $refs.popbundle.checked = true\"><input type=\"radio\" name=\"stack\" value=\"pop-bundle\" x-ref=\"popbundle\" class=\"hidden\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if data.FormData.Stack == "pop-bundle" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'pop-bundle' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-4\"><span class=\"text-3xl\">📦</span> <span class=\"w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"selected === 'pop-bundle' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'\"><span x-show=\"selected === 'pop-bundle'\" class=\"text-black text-xs\">✓</span></span></div><div class=\"text-[#FFB000] font-bold uppercase text-xl mb-2\">POPKins Bundle</div><div class=\"text-[#AAAAAA] text-sm leading-relaxed mb-4\">Complete local devnet with pre-deployed contracts. Perfect for development.</div><div class=\"text-[#666600] text-xs\">Pre-deployed • Local only • Celestia DA</div></div></div><!-- Continue Button - disabled until selection made --><div class=\"col-span-1 md:col-span-3 mt-2\"><button type=\"submit\" :disabled=\"!selected\" :class=\"selected ? 'bg-[#33FF00] text-black hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] cursor-pointer' : 'bg-[#333300] text-[#666600] cursor-not-allowed'\" class=\"w-full py-4 font-bold uppercase transition-all\">CONTINUE →</button></div></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'nitro' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-4\"><span class=\"text-3xl\">🚀</span> <span class=\"w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"selected === 'nitro' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'\"><span x-show=\"selected === 'nitro'\" class=\"text-black text-xs\">✓</span></span></div><div class=\"text-[#33FF00] font-bold uppercase text-xl mb-2\">Arbitrum Nitro</div><div class=\"text-[#AAAAAA] text-sm leading-relaxed mb-4\">Arbitrum Orbit SDK for Nitro chains. Single atomic deployment.</div><div class=\"text-[#666600] text-xs\">1 atomic transaction • Celestia DA</div></div></div><!-- Continue Button - disabled until selection made --><div class=\"col-span-1 md:col-span-2 mt-2\"><button type=\"submit\" :disabled=\"!selected\" :class=\"selected ? 'bg-[#33FF00] text-black hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] cursor-pointer' : 'bg-[#333300] text-[#666600] cursor-not-allowed'\" class=\"w-full py-4 font-bold uppercase transition-all\">CONTINUE →</button></div></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -403,8 +460,8 @@ func DeploymentStep1Stack(data DeploymentNewData) templ.Component {
 	})
 }
 
-// DeploymentStep2Config - Chain configuration
-func DeploymentStep2Config(data DeploymentNewData) templ.Component {
+// DeploymentStep2Environment - Select deployment environment (Local or Testnet)
+func DeploymentStep2Environment(data DeploymentNewData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -420,94 +477,45 @@ func DeploymentStep2Config(data DeploymentNewData) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var18 == nil {
-			templ_7745c5c3_Var18 = templ.NopComponent
+		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var22 == nil {
+			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<form action=\"/deployments/new?step=3\" method=\"POST\" class=\"space-y-6\"><!-- Hidden field from previous step --><input type=\"hidden\" name=\"stack\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<form action=\"/deployments/new?step=3\" method=\"POST\" class=\"space-y-6\" x-data=\"{ selected: '' }\"><!-- Hidden field from previous step --><input type=\"hidden\" name=\"stack\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
+		var templ_7745c5c3_Var23 string
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 209, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 197, Col: 63}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Chain Configuration</h2><p class=\"text-[#666600] text-sm\">Configure your chain parameters</p></div><div class=\"space-y-4\"><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Chain Name</label> <input type=\"text\" name=\"chain_name\" required value=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 220, Col: 39}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Select Environment</h2><p class=\"text-[#666600] text-sm\">Choose where to deploy your chain</p></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-4\"><!-- Local Environment Option --><div class=\"cursor-pointer\" @click=\"selected = 'local'; $refs.local.checked = true\"><input type=\"radio\" name=\"environment\" value=\"local\" x-ref=\"local\" class=\"hidden\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" placeholder=\"my-rollup\" pattern=\"[a-z0-9-]+\" title=\"Lowercase letters, numbers, and hyphens only\" class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] \n\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Lowercase letters, numbers, and hyphens only</p></div><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Chain ID</label> <input type=\"number\" name=\"chain_id\" required value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 232, Col: 37}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" placeholder=\"42069\" min=\"1\" max=\"9999999999\" class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] \n\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Pick a unique chain ID not already in use</p></div><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">L1 RPC URL</label> <input type=\"url\" name=\"l1_rpc\" required value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 244, Col: 35}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" placeholder=\"https://eth-sepolia.g.alchemy.com/v2/...\" class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] \n\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Your L1 node RPC endpoint (Alchemy, Infura, etc.)</p></div><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">L1 Network</label> <select name=\"l1_chain_id\" required class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] \n\t\t\t\t\t\t\t   focus:border-[#33FF00] focus:outline-none appearance-none cursor-pointer\n\t\t\t\t\t\t\t   bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20fill%3D%22%2333FF00%22%3E%3Cpath%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')]\n\t\t\t\t\t\t\t   bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-10\"><option value=\"11155111\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if data.FormData.L1ChainID == "11155111" || data.FormData.L1ChainID == "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " selected")
+		if data.FormData.Environment == "local" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, " class=\"bg-black\">Sepolia (Testnet) - Recommended</option> <option value=\"17000\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'local' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-4\"><span class=\"text-3xl\">📦</span> <span class=\"w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"selected === 'local' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'\"><span x-show=\"selected === 'local'\" class=\"text-black text-xs\">✓</span></span></div><div class=\"text-[#FFB000] font-bold uppercase text-xl mb-2\">Local Development</div><div class=\"text-[#AAAAAA] text-sm leading-relaxed mb-4\">Complete local devnet bundle with pre-deployed contracts. Perfect for development and testing.</div><div class=\"text-[#666600] text-xs\">• Pre-deployed contracts<br>• Local Anvil L1<br>• No real ETH required<br>• Docker Compose ready</div></div></div><!-- Testnet Environment Option --><div class=\"cursor-pointer\" @click=\"selected = 'testnet'; $refs.testnet.checked = true\"><input type=\"radio\" name=\"environment\" value=\"testnet\" x-ref=\"testnet\" class=\"hidden\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.FormData.L1ChainID == "17000" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, " selected")
+		if data.FormData.Environment == "testnet" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " class=\"bg-black\">Holesky (Testnet)</option> <option value=\"1\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if data.FormData.L1ChainID == "1" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, " selected")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, " class=\"bg-black\">Ethereum Mainnet</option></select></div><!-- Data Availability - Celestia only --><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Data Availability</label> <input type=\"hidden\" name=\"da\" value=\"celestia\"><div class=\"p-4 border border-[#33FF00] bg-[#33FF00]/5\"><div class=\"flex items-center gap-3\"><span class=\"text-2xl\">🟣</span><div><div class=\"text-[#33FF00] font-bold uppercase\">Celestia</div><div class=\"text-[#666600] text-xs mt-1\">Modular data availability layer for lower costs</div></div></div></div></div></div><div class=\"flex gap-4 pt-4\"><a href=\"/deployments/new?step=1\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase \n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t\t\t   hover:bg-[#44FF11] transition-colors\">CONTINUE →</button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "><div class=\"p-5 border transition-all h-full\" :class=\"selected === 'testnet' ? 'border-[#33FF00] bg-[#33FF00]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-4\"><span class=\"text-3xl\">🌐</span> <span class=\"w-5 h-5 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"selected === 'testnet' ? 'bg-[#33FF00] border-[#33FF00]' : 'border-[#666600]'\"><span x-show=\"selected === 'testnet'\" class=\"text-black text-xs\">✓</span></span></div><div class=\"text-[#33FF00] font-bold uppercase text-xl mb-2\">Testnet Deployment</div><div class=\"text-[#AAAAAA] text-sm leading-relaxed mb-4\">Deploy to a public testnet like Sepolia or Holesky. Suitable for staging and public testing.</div><div class=\"text-[#666600] text-xs\">• Real testnet deployment<br>• Requires testnet ETH<br>• Public accessibility<br>• Production-like environment</div></div></div><!-- Continue Button - disabled until selection made --><div class=\"col-span-1 md:col-span-2 mt-2\"><button type=\"submit\" :disabled=\"!selected\" :class=\"selected ? 'bg-[#33FF00] text-black hover:bg-[#44FF11] hover:shadow-[0_0_20px_#33FF00] cursor-pointer' : 'bg-[#333300] text-[#666600] cursor-not-allowed'\" class=\"w-full py-4 font-bold uppercase transition-all\">CONTINUE →</button></div></div><div class=\"flex gap-4 pt-4\"><a href=\"/deployments/new?step=1\" class=\"w-full py-3 border border-[#333300] text-[#666600] text-center uppercase\n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -515,8 +523,8 @@ func DeploymentStep2Config(data DeploymentNewData) templ.Component {
 	})
 }
 
-// DeploymentStep2Bundle - Simplified config for POPKins bundle (no L1 RPC or keys needed)
-func DeploymentStep2Bundle(data DeploymentNewData) templ.Component {
+// DeploymentStep3Config - Chain configuration (was Step 2)
+func DeploymentStep3Config(data DeploymentNewData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -532,84 +540,150 @@ func DeploymentStep2Bundle(data DeploymentNewData) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var23 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var23 == nil {
-			templ_7745c5c3_Var23 = templ.NopComponent
+		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var24 == nil {
+			templ_7745c5c3_Var24 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<form action=\"/deployments\" method=\"POST\" class=\"space-y-6\" x-data=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var24 string
-		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("{ bundleStack: '%s' }", getDefaultBundleStack(data.FormData.BundleStack)))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 304, Col: 99}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\"><!-- Hidden field from previous step --><input type=\"hidden\" name=\"stack\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<form action=\"/deployments/new?step=4\" method=\"POST\" class=\"space-y-6\"><!-- Hidden fields from previous steps --><input type=\"hidden\" name=\"stack\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 306, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 284, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\"><!-- POPKins bundle uses local Anvil, so hardcode these --><input type=\"hidden\" name=\"l1_rpc\" value=\"http://localhost:8545\"> <input type=\"hidden\" name=\"l1_chain_id\" value=\"31337\"> <input type=\"hidden\" name=\"da\" value=\"celestia\"><!-- No keys needed - uses Anvil's deterministic accounts --><input type=\"hidden\" name=\"deployer_key\" value=\"anvil-0\"> <input type=\"hidden\" name=\"batcher_key\" value=\"anvil-1\"> <input type=\"hidden\" name=\"proposer_key\" value=\"anvil-2\"><div><h2 class=\"text-lg text-[#FFB000] uppercase mb-2 font-bold\">POPKins Bundle Configuration</h2><p class=\"text-[#666600] text-sm\">Configure your local devnet bundle</p></div><!-- Bundle Stack Selection --><div class=\"space-y-4\"><label class=\"block text-sm text-[#666600] uppercase mb-2\">Bundle Stack</label><div class=\"grid grid-cols-2 gap-4\"><!-- OP Stack Option --><div class=\"cursor-pointer\" @click=\"bundleStack = 'opstack'; $refs.opstackBundle.checked = true\"><input type=\"radio\" name=\"bundle_stack\" value=\"opstack\" x-ref=\"opstackBundle\" class=\"hidden\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if data.FormData.BundleStack == "opstack" || data.FormData.BundleStack == "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "><div class=\"p-4 border transition-all\" :class=\"bundleStack === 'opstack' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-2\"><span class=\"text-xl\">⚡</span> <span class=\"w-4 h-4 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"bundleStack === 'opstack' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'\"><span x-show=\"bundleStack === 'opstack'\" class=\"text-black text-[10px]\">✓</span></span></div><div class=\"text-[#FFB000] font-bold uppercase mb-1\">OP Stack</div><div class=\"text-[#999] text-xs\">op-geth + op-node + Celestia DA</div></div></div><!-- Nitro Option --><div class=\"cursor-pointer\" @click=\"bundleStack = 'nitro'; $refs.nitroBundle.checked = true\"><input type=\"radio\" name=\"bundle_stack\" value=\"nitro\" x-ref=\"nitroBundle\" class=\"hidden\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if data.FormData.BundleStack == "nitro" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "><div class=\"p-4 border transition-all\" :class=\"bundleStack === 'nitro' ? 'border-[#FFB000] bg-[#FFB000]/10' : 'border-[#444400] hover:border-[#666600]'\"><div class=\"flex items-center justify-between mb-2\"><span class=\"text-xl\">🚀</span> <span class=\"w-4 h-4 border-2 rounded-full transition-all flex items-center justify-center\" :class=\"bundleStack === 'nitro' ? 'bg-[#FFB000] border-[#FFB000]' : 'border-[#666600]'\"><span x-show=\"bundleStack === 'nitro'\" class=\"text-black text-[10px]\">✓</span></span></div><div class=\"text-[#FFB000] font-bold uppercase mb-1\">Arbitrum Nitro</div><div class=\"text-[#999] text-xs\">nitro-node + Celestia DA</div></div></div></div></div><!-- Dynamic Info Boxes --><!-- OP Stack Info Box --><div x-show=\"bundleStack === 'opstack'\" class=\"p-4 bg-[#1a1500] border border-[#FFB000]/50 text-sm\"><p class=\"text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2\"><span>📦</span> <span>What's in the OP Stack Bundle?</span></p><ul class=\"text-[#999] space-y-1.5\"><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Pre-deployed OP Stack contracts</strong> - No waiting for deployment</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Local Anvil L1</strong> with funded accounts</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Celestia DA</strong> via Localestia (mock)</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Full OP Stack</strong>: op-geth, op-node, op-batcher, op-proposer</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Docker Compose</strong> ready - just run <code class=\"text-[#33FF00]\">docker compose up</code></span></li></ul></div><!-- Nitro Info Box --><div x-show=\"bundleStack === 'nitro'\" class=\"p-4 bg-[#1a1500] border border-[#FFB000]/50 text-sm\"><p class=\"text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2\"><span>📦</span> <span>What's in the Nitro Bundle?</span></p><ul class=\"text-[#999] space-y-1.5\"><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Pre-deployed Nitro rollup contracts</strong> - No waiting for deployment</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Local Anvil L1</strong> with funded accounts</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Celestia DA</strong> via Localestia (mock)</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Nitro sequencer</strong> + batch-poster</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Docker Compose</strong> ready - just run <code class=\"text-[#33FF00]\">./scripts/start.sh</code></span></li></ul></div><div class=\"space-y-4\"><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Chain Name</label> <input type=\"text\" name=\"chain_name\" required value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\"> <input type=\"hidden\" name=\"environment\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Environment)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 429, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 285, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" placeholder=\"my-local-devnet\" pattern=\"[a-z0-9-]+\" title=\"Lowercase letters, numbers, and hyphens only\" class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]\n\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#FFB000] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Used for bundle directory and docker container names</p></div><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Chain ID</label> <input type=\"number\" name=\"chain_id\" required value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Chain Configuration</h2><p class=\"text-[#666600] text-sm\">Configure your chain parameters</p></div><div class=\"space-y-4\"><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Chain Name</label> <input type=\"text\" name=\"chain_name\" required value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var27 string
-		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(getDefaultChainID(data.FormData.ChainID))
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 441, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 296, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" placeholder=\"42069\" min=\"1\" max=\"9999999999\" class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]\n\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#FFB000] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Your L2 chain ID (any unique number works for local dev)</p></div></div><div class=\"flex gap-4 pt-4\"><a href=\"/deployments/new?step=1\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase\n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-4 bg-[#FFB000] text-black font-bold uppercase text-lg\n\t\t\t\t\t\t   hover:bg-[#FFCC00] hover:shadow-[0_0_30px_#FFB000] transition-all\n\t\t\t\t\t\t   flex items-center justify-center gap-2\"><span>🚀</span> <span>CREATE BUNDLE</span></button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\" placeholder=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(getChainNamePlaceholder(data.FormData.Environment))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 297, Col: 72}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\" pattern=\"[a-z0-9-]+\" title=\"Lowercase letters, numbers, and hyphens only\" class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]\n\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Lowercase letters, numbers, and hyphens only</p></div><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Chain ID</label> <input type=\"number\" name=\"chain_id\" required value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var29 string
+		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 308, Col: 37}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\" placeholder=\"42069\" min=\"1\" max=\"9999999999\" class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]\n\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Pick a unique chain ID not already in use</p></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if data.FormData.Environment == "local" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<!-- Local environment uses Anvil - L1 config is hidden --> <input type=\"hidden\" name=\"l1_rpc\" value=\"http://localhost:8545\"> <input type=\"hidden\" name=\"l1_chain_id\" value=\"31337\"><!-- Show info box about local configuration --> <div class=\"p-4 bg-[#1a1500] border border-[#FFB000]/50\"><p class=\"text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2\"><span>📦</span> <span>Local Environment Configuration</span></p><ul class=\"text-[#999] text-sm space-y-1.5\"><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Local Anvil L1</strong> - Pre-configured at localhost:8545</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Pre-funded accounts</strong> - No real ETH required</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span><strong class=\"text-[#FFB000]\">Docker Compose ready</strong> - Complete devnet bundle</span></li></ul></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<!-- Testnet environment needs L1 configuration --> <div><label class=\"block text-sm text-[#666600] uppercase mb-2\">L1 RPC URL</label> <input type=\"url\" name=\"l1_rpc\" required value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var30 string
+			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 348, Col: 36}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\" placeholder=\"https://eth-sepolia.g.alchemy.com/v2/...\" class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]\n\t\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Your L1 node RPC endpoint (Alchemy, Infura, etc.)</p></div><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">L1 Network</label> <select name=\"l1_chain_id\" required class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00]\n\t\t\t\t\t\t\t\t   focus:border-[#33FF00] focus:outline-none appearance-none cursor-pointer\n\t\t\t\t\t\t\t\t   bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20fill%3D%22%2333FF00%22%3E%3Cpath%20d%3D%22M6%208L1%203h10z%22%2F%3E%3C%2Fsvg%3E')]\n\t\t\t\t\t\t\t\t   bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-10\"><option value=\"11155111\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if data.FormData.L1ChainID == "11155111" || data.FormData.L1ChainID == "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, " selected")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, " class=\"bg-black\">Sepolia (Testnet) - Recommended</option> <option value=\"17000\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if data.FormData.L1ChainID == "17000" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, " selected")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, " class=\"bg-black\">Holesky (Testnet)</option> <option value=\"1\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if data.FormData.L1ChainID == "1" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, " selected")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, " class=\"bg-black\">Ethereum Mainnet</option></select></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<!-- Data Availability - Celestia only --><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Data Availability</label> <input type=\"hidden\" name=\"da\" value=\"celestia\"><div class=\"p-4 border border-[#33FF00] bg-[#33FF00]/5\"><div class=\"flex items-center gap-3\"><span class=\"text-2xl\">🟣</span><div><div class=\"text-[#33FF00] font-bold uppercase\">Celestia</div><div class=\"text-[#666600] text-xs mt-1\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if data.FormData.Environment == "local" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "Using Localestia (mock DA for development)")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "Modular data availability layer for lower costs")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</div></div></div></div></div></div><div class=\"flex gap-4 pt-4\"><a href=\"/deployments/new?step=2\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase\n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase\n\t\t\t\t\t\t   hover:bg-[#44FF11] transition-colors\">CONTINUE →</button></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -617,8 +691,8 @@ func DeploymentStep2Bundle(data DeploymentNewData) templ.Component {
 	})
 }
 
-// DeploymentStep3Keys - Assign signing keys
-func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
+// DeploymentStep4Keys - Assign signing keys (Step 4, only for testnet)
+func DeploymentStep4Keys(data DeploymentNewData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -634,90 +708,103 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var28 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var28 == nil {
-			templ_7745c5c3_Var28 = templ.NopComponent
+		templ_7745c5c3_Var31 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var31 == nil {
+			templ_7745c5c3_Var31 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<form action=\"/deployments/new?step=4\" method=\"POST\" class=\"space-y-6\"><!-- Hidden fields from previous steps --><input type=\"hidden\" name=\"stack\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var29 string
-		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 472, Col: 63}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\"> <input type=\"hidden\" name=\"chain_name\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var30 string
-		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 473, Col: 72}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\"> <input type=\"hidden\" name=\"chain_id\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var31 string
-		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 474, Col: 68}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "\"> <input type=\"hidden\" name=\"l1_rpc\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<form action=\"/deployments/new?step=5\" method=\"POST\" class=\"space-y-6\"><!-- Hidden fields from previous steps --><input type=\"hidden\" name=\"stack\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var32 string
-		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
+		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 475, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 417, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\"> <input type=\"hidden\" name=\"l1_chain_id\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\"> <input type=\"hidden\" name=\"environment\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var33 string
-		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1ChainID)
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Environment)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 476, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 418, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\"> <input type=\"hidden\" name=\"da\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\"> <input type=\"hidden\" name=\"chain_name\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var34 string
-		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DA)
+		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 477, Col: 57}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 419, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Assign Signing Keys</h2><p class=\"text-[#666600] text-sm\">Select which of your POPSigner keys to use for each role.  Keys will be funded automatically during deployment.</p></div><div class=\"p-4 bg-[#0a1a0a] border border-[#33FF00]/30 text-sm mb-6\"><p class=\"text-[#33FF00] mb-1\">💡 <strong>Tip:</strong> Use different keys for each role</p><p class=\"text-[#666600]\">This improves security and makes it easier to manage key permissions.</p></div><div class=\"space-y-6\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\"> <input type=\"hidden\" name=\"chain_id\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var35 string
+		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 420, Col: 68}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "\"> <input type=\"hidden\" name=\"l1_rpc\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var36 string
+		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 421, Col: 64}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\"> <input type=\"hidden\" name=\"l1_chain_id\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var37 string
+		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1ChainID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 422, Col: 73}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\"> <input type=\"hidden\" name=\"da\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var38 string
+		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DA)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 423, Col: 57}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Assign Signing Keys</h2><p class=\"text-[#666600] text-sm\">Select which of your POPSigner keys to use for each role.  Keys will be funded automatically during deployment.</p></div><div class=\"p-4 bg-[#0a1a0a] border border-[#33FF00]/30 text-sm mb-6\"><p class=\"text-[#33FF00] mb-1\">💡 <strong>Tip:</strong> Use different keys for each role</p><p class=\"text-[#666600]\">This improves security and makes it easier to manage key permissions.</p></div><div class=\"space-y-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -734,7 +821,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -751,7 +838,7 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -762,124 +849,124 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</div><div class=\"flex gap-4 pt-4\"><a href=\"/deployments/new?step=2\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase \n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t\t\t   hover:bg-[#44FF11] transition-colors\">CONTINUE →</button></div></form><!-- Create Key Modal --><dialog id=\"create-key-modal\" class=\"bg-transparent p-0 backdrop:bg-black/80\"><div class=\"bg-black border border-[#33FF00] p-6 min-w-[400px]\"><div class=\"flex items-center justify-between mb-6\"><h3 class=\"text-lg text-[#33FF00] font-bold uppercase\">Create New Key</h3><button type=\"button\" onclick=\"document.getElementById('create-key-modal').close()\" class=\"text-[#666600] hover:text-[#33FF00]\">✕</button></div><form action=\"/deployments/keys/create\" method=\"POST\"><!-- Preserve wizard state --><input type=\"hidden\" name=\"stack\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var35 string
-		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 544, Col: 65}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\"> <input type=\"hidden\" name=\"chain_name\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var36 string
-		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 545, Col: 74}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\"> <input type=\"hidden\" name=\"chain_id\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var37 string
-		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 546, Col: 70}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "\"> <input type=\"hidden\" name=\"l1_rpc\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var38 string
-		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 547, Col: 66}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\"> <input type=\"hidden\" name=\"l1_chain_id\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</div><div class=\"flex gap-4 pt-4\"><a href=\"/deployments/new?step=2\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase \n\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> <button type=\"submit\" class=\"flex-1 py-3 bg-[#33FF00] text-black font-bold uppercase \n\t\t\t\t\t\t   hover:bg-[#44FF11] transition-colors\">CONTINUE →</button></div></form><!-- Create Key Modal --><dialog id=\"create-key-modal\" class=\"bg-transparent p-0 backdrop:bg-black/80\"><div class=\"bg-black border border-[#33FF00] p-6 min-w-[400px]\"><div class=\"flex items-center justify-between mb-6\"><h3 class=\"text-lg text-[#33FF00] font-bold uppercase\">Create New Key</h3><button type=\"button\" onclick=\"document.getElementById('create-key-modal').close()\" class=\"text-[#666600] hover:text-[#33FF00]\">✕</button></div><form action=\"/deployments/keys/create\" method=\"POST\"><!-- Preserve wizard state --><input type=\"hidden\" name=\"stack\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var39 string
-		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1ChainID)
+		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 548, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 490, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\"> <input type=\"hidden\" name=\"da\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\"> <input type=\"hidden\" name=\"chain_name\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var40 string
-		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DA)
+		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 549, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 491, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\"> <input type=\"hidden\" name=\"deployer_key\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\"> <input type=\"hidden\" name=\"chain_id\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var41 string
-		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DeployerKey)
+		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 550, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 492, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\"> <input type=\"hidden\" name=\"batcher_key\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "\"> <input type=\"hidden\" name=\"l1_rpc\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var42 string
-		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.BatcherKey)
+		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 551, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 493, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "\"> <input type=\"hidden\" name=\"proposer_key\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\"> <input type=\"hidden\" name=\"l1_chain_id\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var43 string
-		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ProposerKey)
+		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1ChainID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 552, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 494, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\"><div class=\"space-y-4\"><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Key Name</label> <input type=\"text\" name=\"key_name\" required placeholder=\"e.g., deployer, batcher, proposer\" autofocus class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] \n\t\t\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Give your key a descriptive name</p></div></div><div class=\"flex gap-4 mt-6\"><button type=\"button\" onclick=\"document.getElementById('create-key-modal').close()\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] uppercase \n\t\t\t\t\t\t\t\t   hover:border-[#666600] hover:text-[#999] transition-colors\">Cancel</button> <button type=\"submit\" class=\"flex-1 py-3 bg-[#FFB000] text-black font-bold uppercase \n\t\t\t\t\t\t\t\t   hover:bg-[#FFCC00] transition-colors\">Create Key</button></div></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\"> <input type=\"hidden\" name=\"da\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var44 string
+		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DA)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 495, Col: 59}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "\"> <input type=\"hidden\" name=\"deployer_key\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var45 string
+		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DeployerKey)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 496, Col: 78}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "\"> <input type=\"hidden\" name=\"batcher_key\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var46 string
+		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.BatcherKey)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 497, Col: 76}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\"> <input type=\"hidden\" name=\"proposer_key\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var47 string
+		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ProposerKey)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 498, Col: 78}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "\"><div class=\"space-y-4\"><div><label class=\"block text-sm text-[#666600] uppercase mb-2\">Key Name</label> <input type=\"text\" name=\"key_name\" required placeholder=\"e.g., deployer, batcher, proposer\" autofocus class=\"w-full px-4 py-3 bg-black border border-[#333300] text-[#33FF00] \n\t\t\t\t\t\t\t\t\t  placeholder-[#333300] focus:border-[#33FF00] focus:outline-none\"><p class=\"text-xs text-[#333300] mt-1\">Give your key a descriptive name</p></div></div><div class=\"flex gap-4 mt-6\"><button type=\"button\" onclick=\"document.getElementById('create-key-modal').close()\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] uppercase \n\t\t\t\t\t\t\t\t   hover:border-[#666600] hover:text-[#999] transition-colors\">Cancel</button> <button type=\"submit\" class=\"flex-1 py-3 bg-[#FFB000] text-black font-bold uppercase \n\t\t\t\t\t\t\t\t   hover:bg-[#FFCC00] transition-colors\">Create Key</button></div></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -887,8 +974,8 @@ func DeploymentStep3Keys(data DeploymentNewData) templ.Component {
 	})
 }
 
-// DeploymentStep4Review - Review and deploy
-func DeploymentStep4Review(data DeploymentNewData) templ.Component {
+// DeploymentStep5Review - Review and deploy (Step 5 for testnet, Step 4 for local)
+func DeploymentStep5Review(data DeploymentNewData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -904,133 +991,165 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var44 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var44 == nil {
-			templ_7745c5c3_Var44 = templ.NopComponent
+		templ_7745c5c3_Var48 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var48 == nil {
+			templ_7745c5c3_Var48 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<form action=\"/deployments\" method=\"POST\" class=\"space-y-6\"><!-- All hidden fields --><input type=\"hidden\" name=\"stack\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var45 string
-		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 588, Col: 63}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\"> <input type=\"hidden\" name=\"chain_name\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var46 string
-		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 589, Col: 72}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "\"> <input type=\"hidden\" name=\"chain_id\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var47 string
-		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 590, Col: 68}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\"> <input type=\"hidden\" name=\"l1_rpc\" value=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var48 string
-		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 591, Col: 64}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\"> <input type=\"hidden\" name=\"l1_chain_id\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<form action=\"/deployments\" method=\"POST\" class=\"space-y-6\"><!-- All hidden fields --><input type=\"hidden\" name=\"stack\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var49 string
-		templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1ChainID)
+		templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Stack)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 592, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 534, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "\"> <input type=\"hidden\" name=\"da\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "\"> <input type=\"hidden\" name=\"environment\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var50 string
-		templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DA)
+		templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.Environment)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 593, Col: 57}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 535, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "\"> <input type=\"hidden\" name=\"deployer_key\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "\"> <input type=\"hidden\" name=\"chain_name\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var51 string
-		templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DeployerKey)
+		templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 594, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 536, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\"> <input type=\"hidden\" name=\"batcher_key\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "\"> <input type=\"hidden\" name=\"chain_id\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var52 string
-		templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.BatcherKey)
+		templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ChainID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 595, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 537, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "\"> <input type=\"hidden\" name=\"proposer_key\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "\"> <input type=\"hidden\" name=\"l1_rpc\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var53 string
-		templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ProposerKey)
+		templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1RPC)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 596, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 538, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "\"><div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Review & Deploy</h2><p class=\"text-[#666600] text-sm\">Verify your chain configuration before deploying</p></div><!-- Configuration Summary --><div class=\"bg-[#0a0a00] border border-[#333300] divide-y divide-[#1a1a00]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\"> <input type=\"hidden\" name=\"l1_chain_id\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var54 string
+		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.L1ChainID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 539, Col: 73}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "\"> <input type=\"hidden\" name=\"da\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var55 string
+		templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DA)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 540, Col: 57}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "\"> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if data.FormData.Environment == "local" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<!-- Local uses Anvil deterministic accounts --> <input type=\"hidden\" name=\"deployer_key\" value=\"anvil-0\"> <input type=\"hidden\" name=\"batcher_key\" value=\"anvil-1\"> <input type=\"hidden\" name=\"proposer_key\" value=\"anvil-2\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "<input type=\"hidden\" name=\"deployer_key\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var56 string
+			templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.DeployerKey)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 547, Col: 77}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\"> <input type=\"hidden\" name=\"batcher_key\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var57 string
+			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.BatcherKey)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 548, Col: 75}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\"> <input type=\"hidden\" name=\"proposer_key\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var58 string
+			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(data.FormData.ProposerKey)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 549, Col: 77}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "<div><h2 class=\"text-lg text-[#33FF00] uppercase mb-2 font-bold\">Review & Deploy</h2><p class=\"text-[#666600] text-sm\">Verify your chain configuration before deploying</p></div><!-- Configuration Summary --><div class=\"bg-[#0a0a00] border border-[#333300] divide-y divide-[#1a1a00]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = ReviewRow("Rollup Stack", getStackDisplayName(data.FormData.Stack)).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = ReviewRow("Environment", getEnvironmentDisplayName(data.FormData.Environment)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1042,132 +1161,154 @@ func DeploymentStep4Review(data DeploymentNewData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = ReviewRow("L1 Network", getNetworkName(data.FormData.L1ChainID)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = ReviewRow("Data Availability", getDADisplayName(data.FormData.DA)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</div><!-- Keys Summary --><div class=\"bg-[#0a0a00] border border-[#333300] p-4\"><h3 class=\"text-sm text-[#666600] uppercase mb-3\">Assigned Keys</h3><div class=\"space-y-2 text-sm\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = ReviewKeyRow("Deployer", getKeyName(data.Keys, data.FormData.DeployerKey)).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if data.FormData.Stack == "opstack" {
-			templ_7745c5c3_Err = ReviewKeyRow("Batcher", getKeyName(data.Keys, data.FormData.BatcherKey)).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, " ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = ReviewKeyRow("Proposer", getKeyName(data.Keys, data.FormData.ProposerKey)).Render(ctx, templ_7745c5c3_Buffer)
+		if data.FormData.Environment == "testnet" {
+			templ_7745c5c3_Err = ReviewRow("L1 Network", getNetworkName(data.FormData.L1ChainID)).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = ReviewKeyRow("Batch Poster", getKeyName(data.Keys, data.FormData.BatcherKey)).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, " ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = ReviewKeyRow("Validator", getKeyName(data.Keys, data.FormData.ProposerKey)).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = ReviewRow("L1 Network", "Local Anvil").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</div></div><!-- Warning Box - different content for pop-bundle vs other stacks -->")
+		templ_7745c5c3_Err = ReviewRow("Data Availability", getDADisplayName(data.FormData.DA, data.FormData.Environment)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.FormData.Stack == "pop-bundle" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<div class=\"p-4 bg-[#0a1a0a] border border-[#33FF00]/50\"><p class=\"text-[#33FF00] font-bold uppercase mb-2 flex items-center gap-2\"><span>📦</span> <span>Local Devnet Bundle</span></p><ul class=\"text-[#999] text-sm space-y-1.5\"><li class=\"flex items-start gap-2\"><span class=\"text-[#33FF00]\">•</span> <span>Uses <strong class=\"text-[#33FF00]\">local Anvil</strong> with pre-funded accounts</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#33FF00]\">•</span> <span><strong class=\"text-[#33FF00]\">No real ETH</strong> required - all accounts funded automatically</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#33FF00]\">•</span> <span>Download a <strong class=\"text-[#33FF00]\">Docker Compose bundle</strong> ready to run locally</span></li></ul></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</div><!-- Keys Summary -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if data.FormData.Environment == "testnet" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<div class=\"bg-[#0a0a00] border border-[#333300] p-4\"><h3 class=\"text-sm text-[#666600] uppercase mb-3\">Assigned Keys</h3><div class=\"space-y-2 text-sm\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = ReviewKeyRow("Deployer", getKeyName(data.Keys, data.FormData.DeployerKey)).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if data.FormData.Stack == "opstack" {
+				templ_7745c5c3_Err = ReviewKeyRow("Batcher", getKeyName(data.Keys, data.FormData.BatcherKey)).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, " ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = ReviewKeyRow("Proposer", getKeyName(data.Keys, data.FormData.ProposerKey)).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = ReviewKeyRow("Batch Poster", getKeyName(data.Keys, data.FormData.BatcherKey)).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, " ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = ReviewKeyRow("Validator", getKeyName(data.Keys, data.FormData.ProposerKey)).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<div class=\"p-4 bg-[#1a1500] border border-[#FFB000]/50\"><p class=\"text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2\"><span>⚠</span> <span>Before You Deploy</span></p><ul class=\"text-[#999] text-sm space-y-1.5\"><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span>Deployment will take <strong class=\"text-[#FFB000]\">5-15 minutes</strong> depending on network congestion</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span>Deployer key needs <strong class=\"text-[#FFB000]\">~0.5 ETH</strong> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var54 string
-			templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs("for")
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 662, Col: 87}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, " gas (testnet ETH on Sepolia)</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span>You can <strong>resume</strong> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var55 string
-			templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs("if")
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 666, Col: 50}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, " deployment is interrupted</span></li></ul></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<div class=\"bg-[#0a0a00] border border-[#333300] p-4\"><h3 class=\"text-sm text-[#666600] uppercase mb-3\">Local Anvil Accounts</h3><div class=\"space-y-2 text-sm text-[#999]\"><p>Pre-funded deterministic accounts will be used automatically</p></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "<div class=\"flex gap-4 pt-4\"><!-- Back button: for pop-bundle go to step 5 (bundle config), otherwise step 3 (keys) -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<!-- Warning Box - different content for local vs testnet -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if data.FormData.Stack == "pop-bundle" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "<a href=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var56 templ.SafeURL
-			templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(buildBackURL(5, data.FormData)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 675, Col: 59}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase\n\t\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> ")
+		if data.FormData.Environment == "local" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<div class=\"p-4 bg-[#0a1a0a] border border-[#33FF00]/50\"><p class=\"text-[#33FF00] font-bold uppercase mb-2 flex items-center gap-2\"><span>📦</span> <span>Local Devnet Bundle</span></p><ul class=\"text-[#999] text-sm space-y-1.5\"><li class=\"flex items-start gap-2\"><span class=\"text-[#33FF00]\">•</span> <span>Uses <strong class=\"text-[#33FF00]\">local Anvil</strong> with pre-funded accounts</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#33FF00]\">•</span> <span><strong class=\"text-[#33FF00]\">No real ETH</strong> required - all accounts funded automatically</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#33FF00]\">•</span> <span>Download a <strong class=\"text-[#33FF00]\">Docker Compose bundle</strong> ready to run locally</span></li></ul></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<div class=\"p-4 bg-[#1a1500] border border-[#FFB000]/50\"><p class=\"text-[#FFB000] font-bold uppercase mb-2 flex items-center gap-2\"><span>⚠</span> <span>Before You Deploy</span></p><ul class=\"text-[#999] text-sm space-y-1.5\"><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span>Deployment will take <strong class=\"text-[#FFB000]\">5-15 minutes</strong> depending on network congestion</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span>Deployer key needs <strong class=\"text-[#FFB000]\">~0.5 ETH</strong> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var57 templ.SafeURL
-			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(buildBackURL(3, data.FormData)))
+			var templ_7745c5c3_Var59 string
+			templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs("for")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 681, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 630, Col: 87}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase\n\t\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, " gas (testnet ETH on Sepolia)</span></li><li class=\"flex items-start gap-2\"><span class=\"text-[#FFB000]\">•</span> <span>You can <strong>resume</strong> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var60 string
+			templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs("if")
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 634, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, " deployment is interrupted</span></li></ul></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<button type=\"submit\" class=\"flex-1 py-4 bg-[#FFB000] text-black font-bold uppercase text-lg\n\t\t\t\t\t\t   hover:bg-[#FFCC00] hover:shadow-[0_0_30px_#FFB000] transition-all\n\t\t\t\t\t\t   flex items-center justify-center gap-2\"><span>🚀</span> <span>DEPLOY CHAIN</span></button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<div class=\"flex gap-4 pt-4\"><!-- Back button: for local go to step 3 (config), for testnet go to step 4 (keys) -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if data.FormData.Environment == "local" {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "<a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var61 templ.SafeURL
+			templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(buildBackURL(3, data.FormData)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 643, Col: 59}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase\n\t\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var62 templ.SafeURL
+			templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(buildBackURL(4, data.FormData)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 649, Col: 59}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "\" class=\"flex-1 py-3 border border-[#333300] text-[#666600] text-center uppercase\n\t\t\t\t\t\t  hover:border-[#666600] hover:text-[#999] transition-colors\">← BACK</a> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<button type=\"submit\" class=\"flex-1 py-4 bg-[#FFB000] text-black font-bold uppercase text-lg\n\t\t\t\t\t\t   hover:bg-[#FFCC00] hover:shadow-[0_0_30px_#FFB000] transition-all\n\t\t\t\t\t\t   flex items-center justify-center gap-2\"><span>🚀</span> <span>DEPLOY CHAIN</span></button></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1192,38 +1333,38 @@ func ReviewRow(label, value string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var58 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var58 == nil {
-			templ_7745c5c3_Var58 = templ.NopComponent
+		templ_7745c5c3_Var63 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var63 == nil {
+			templ_7745c5c3_Var63 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<div class=\"flex justify-between items-center px-4 py-3\"><span class=\"text-[#666600] uppercase text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<div class=\"flex justify-between items-center px-4 py-3\"><span class=\"text-[#666600] uppercase text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var59 string
-		templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		var templ_7745c5c3_Var64 string
+		templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 701, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 669, Col: 56}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "</span> <span class=\"text-[#33FF00] font-bold\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var60 string
-		templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(value)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 702, Col: 48}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</span> <span class=\"text-[#33FF00] font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "</span></div>")
+		var templ_7745c5c3_Var65 string
+		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 670, Col: 48}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "</span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1248,38 +1389,38 @@ func ReviewKeyRow(role, keyName string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var61 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var61 == nil {
-			templ_7745c5c3_Var61 = templ.NopComponent
+		templ_7745c5c3_Var66 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var66 == nil {
+			templ_7745c5c3_Var66 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<div class=\"flex justify-between items-center\"><span class=\"text-[#666600]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "<div class=\"flex justify-between items-center\"><span class=\"text-[#666600]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var62 string
-		templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(role)
+		var templ_7745c5c3_Var67 string
+		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(role)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 709, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 677, Col: 37}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, ":</span> <span class=\"text-[#33FF00]\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var63 string
-		templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(keyName)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 710, Col: 40}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, ":</span> <span class=\"text-[#33FF00]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "</span></div>")
+		var templ_7745c5c3_Var68 string
+		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(keyName)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/pages/deployment_new.templ`, Line: 678, Col: 40}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "</span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1322,9 +1463,12 @@ func getNetworkName(chainID string) string {
 	}
 }
 
-func getDADisplayName(da string) string {
+func getDADisplayName(da string, environment string) string {
 	switch da {
 	case "celestia":
+		if environment == "local" {
+			return "Celestia (Localestia)"
+		}
 		return "Celestia"
 	case "anytrust":
 		return "AnyTrust DAC"
@@ -1336,6 +1480,24 @@ func getDADisplayName(da string) string {
 		}
 		return strings.ToUpper(da)
 	}
+}
+
+func getEnvironmentDisplayName(environment string) string {
+	switch environment {
+	case "local":
+		return "LOCAL DEVELOPMENT"
+	case "testnet":
+		return "TESTNET"
+	default:
+		return strings.ToUpper(environment)
+	}
+}
+
+func getChainNamePlaceholder(environment string) string {
+	if environment == "local" {
+		return "my-local-devnet"
+	}
+	return "my-rollup"
 }
 
 func getKeyName(keys []components.KeyOption, keyID string) string {
@@ -1361,16 +1523,9 @@ func getDefaultChainID(chainID string) string {
 	return chainID
 }
 
-func getDefaultBundleStack(bundleStack string) string {
-	if bundleStack == "" {
-		return "opstack"
-	}
-	return bundleStack
-}
-
 func buildBackURL(step int, data DeploymentFormData) string {
-	return fmt.Sprintf("/deployments/new?step=%d&stack=%s&chain_name=%s&chain_id=%s",
-		step, data.Stack, data.ChainName, data.ChainID)
+	return fmt.Sprintf("/deployments/new?step=%d&stack=%s&environment=%s&chain_name=%s&chain_id=%s",
+		step, data.Stack, data.Environment, data.ChainName, data.ChainID)
 }
 
 var _ = templruntime.GeneratedTemplate

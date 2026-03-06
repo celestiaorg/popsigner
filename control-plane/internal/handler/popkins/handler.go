@@ -200,6 +200,7 @@ func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err == nil {
 			formData = pages.DeploymentFormData{
 				Stack:       r.FormValue("stack"),
+				Environment: r.FormValue("environment"),
 				BundleStack: r.FormValue("bundle_stack"),
 				ChainName:   r.FormValue("chain_name"),
 				ChainID:     r.FormValue("chain_id"),
@@ -213,6 +214,7 @@ func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 			slog.Info("DeploymentsNew POST form data",
 				"step", step,
 				"stack", formData.Stack,
+				"environment", formData.Environment,
 				"chain_name", formData.ChainName,
 				"chain_id", formData.ChainID,
 				"l1_chain_id", formData.L1ChainID,
@@ -227,6 +229,7 @@ func (h *Handler) DeploymentsNew(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		formData = pages.DeploymentFormData{
 			Stack:       q.Get("stack"),
+			Environment: q.Get("environment"),
 			BundleStack: q.Get("bundle_stack"),
 			ChainName:   q.Get("chain_name"),
 			ChainID:     q.Get("chain_id"),
@@ -299,17 +302,12 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Helper to build redirect URL with preserved form data
-	// For pop-bundle, use step 5 (bundle config) instead of step 4 (review)
 	buildErrorRedirect := func(step int, errorMsg string) string {
-		stack := r.FormValue("stack")
-		// For pop-bundle, redirect errors to step 5 (bundle config) or step 2-bundle
-		if stack == "pop-bundle" && step >= 2 {
-			step = 5 // Use step 5 for bundle config
-		}
 		q := make(url.Values)
 		q.Set("step", strconv.Itoa(step))
 		q.Set("error", errorMsg)
-		q.Set("stack", stack)
+		q.Set("stack", r.FormValue("stack"))
+		q.Set("environment", r.FormValue("environment"))
 		q.Set("chain_name", r.FormValue("chain_name"))
 		q.Set("chain_id", r.FormValue("chain_id"))
 		q.Set("l1_rpc", r.FormValue("l1_rpc"))
@@ -331,27 +329,34 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	// Validate required fields
 	chainName := r.FormValue("chain_name")
 	stack := r.FormValue("stack")
+	environment := r.FormValue("environment")
 	l1RPC := r.FormValue("l1_rpc")
 
 	if chainName == "" {
-		http.Redirect(w, r, buildErrorRedirect(2, "Chain name is required"), http.StatusFound)
+		http.Redirect(w, r, buildErrorRedirect(3, "Chain name is required"), http.StatusFound)
 		return
 	}
 	if stack == "" {
 		http.Redirect(w, r, buildErrorRedirect(1, "Please select a rollup stack"), http.StatusFound)
 		return
 	}
-
-	// POPKins bundle uses local Anvil, so L1 RPC validation is different
-	isPopBundle := stack == "pop-bundle"
-	if !isPopBundle && l1RPC == "" {
-		http.Redirect(w, r, buildErrorRedirect(2, "L1 RPC URL is required"), http.StatusFound)
+	if environment == "" {
+		http.Redirect(w, r, buildErrorRedirect(2, "Please select an environment"), http.StatusFound)
 		return
 	}
 
-	// Parse L1 chain ID as uint64 (pop-bundle defaults to 31337 for Anvil)
+	// Check if this is local development (previously detected via pop-bundle)
+	isLocal := environment == "local"
+
+	// Local uses Anvil, testnet needs L1 RPC validation
+	if !isLocal && l1RPC == "" {
+		http.Redirect(w, r, buildErrorRedirect(3, "L1 RPC URL is required for testnet deployment"), http.StatusFound)
+		return
+	}
+
+	// Parse L1 chain ID as uint64 (local defaults to 31337 for Anvil)
 	var l1ChainID uint64
-	if isPopBundle {
+	if isLocal {
 		l1ChainID = 31337 // Anvil default
 		if l1RPC == "" {
 			l1RPC = "http://localhost:8545" // Will be overridden in bundle
@@ -359,21 +364,21 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 	} else {
 		l1ChainID, err = strconv.ParseUint(r.FormValue("l1_chain_id"), 10, 64)
 		if err != nil || l1ChainID == 0 {
-			http.Redirect(w, r, buildErrorRedirect(2, "Invalid L1 chain ID"), http.StatusFound)
+			http.Redirect(w, r, buildErrorRedirect(3, "Invalid L1 chain ID"), http.StatusFound)
 			return
 		}
 	}
 
-	// Validate keys are selected (pop-bundle uses Anvil placeholder keys)
+	// Validate keys are selected (local uses Anvil placeholder keys)
 	deployerKey := r.FormValue("deployer_key")
 	batcherKey := r.FormValue("batcher_key")
 	proposerKey := r.FormValue("proposer_key")
-	if !isPopBundle && (deployerKey == "" || batcherKey == "" || proposerKey == "") {
-		http.Redirect(w, r, buildErrorRedirect(3, "Please select keys for all roles"), http.StatusFound)
+	if !isLocal && (deployerKey == "" || batcherKey == "" || proposerKey == "") {
+		http.Redirect(w, r, buildErrorRedirect(4, "Please select keys for all roles"), http.StatusFound)
 		return
 	}
-	// For pop-bundle, use Anvil placeholder keys if not provided
-	if isPopBundle {
+	// For local, use Anvil placeholder keys if not provided
+	if isLocal {
 		if deployerKey == "" {
 			deployerKey = "anvil-0"
 		}
@@ -385,10 +390,11 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Get bundle_stack for pop-bundle (defaults to opstack)
-	bundleStack := r.FormValue("bundle_stack")
-	if bundleStack == "" && isPopBundle {
-		bundleStack = "opstack" // Default to OP Stack for bundles
+	// For backwards compatibility: if it's local, use pop-bundle for the deployment stack
+	// but store the actual stack (opstack/nitro) in bundle_stack
+	actualStack := stack // Save the actual stack selected by user
+	if isLocal {
+		stack = "pop-bundle" // Use pop-bundle for the deployment record
 	}
 
 	// Build deployment config
@@ -398,15 +404,16 @@ func (h *Handler) DeploymentsCreate(w http.ResponseWriter, r *http.Request) {
 		"l1_rpc":       l1RPC,
 		"l1_chain_id":  l1ChainID,
 		"da":           r.FormValue("da"),
+		"environment":  environment,
 		"deployer_key": deployerKey,
 		"batcher_key":  batcherKey,
 		"proposer_key": proposerKey,
 		"org_id":       org.ID.String(),
 	}
 
-	// Add bundle_stack for pop-bundle deployments
-	if isPopBundle {
-		config["bundle_stack"] = bundleStack
+	// For local deployments, add bundle_stack (which is the actual stack to use)
+	if isLocal {
+		config["bundle_stack"] = actualStack // Store the actual stack (opstack or nitro)
 	}
 
 	configJSON, err := json.Marshal(config)
