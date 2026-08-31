@@ -45,6 +45,10 @@ import (
 
 const sessionCookieName = "banhbao_session"
 
+// cookieDomain is the Domain attribute for auth cookies, set once from
+// auth.cookie_domain before the router is built. Empty means host-only.
+var cookieDomain string
+
 func main() {
 	// Setup structured logger
 	logLevel := slog.LevelInfo
@@ -62,6 +66,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+	cookieDomain = cfg.Auth.CookieDomain
 
 	logger.Info("Starting Control Plane API",
 		slog.String("environment", cfg.Server.Environment),
@@ -529,8 +534,8 @@ func oauthRedirectHandler(oauthSvc service.OAuthService, provider string) http.H
 			Name:     "oauth_return_to",
 			Value:    returnTo,
 			Path:     "/",
-			Domain:   ".popsigner.com", // Share across all subdomains
-			MaxAge:   300,              // 5 minutes
+			Domain:   cookieDomain, // Share across all subdomains
+			MaxAge:   300,          // 5 minutes
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteLaxMode,
@@ -575,7 +580,7 @@ func oauthCallbackHandler(oauthSvc service.OAuthService, provider string, cfg *c
 			Name:     sessionCookieName,
 			Value:    sessionID,
 			Path:     "/",
-			Domain:   ".popsigner.com", // Share session across all subdomains
+			Domain:   cookieDomain, // Share session across all subdomains
 			MaxAge:   int(cfg.Auth.SessionExpiry.Seconds()),
 			HttpOnly: true,
 			Secure:   true,
@@ -607,7 +612,7 @@ func oauthCallbackHandler(oauthSvc service.OAuthService, provider string, cfg *c
 			Name:   "oauth_return_to",
 			Value:  "",
 			Path:   "/",
-			Domain: ".popsigner.com",
+			Domain: cookieDomain,
 			MaxAge: -1,
 		})
 
@@ -634,7 +639,7 @@ func dashboardHandler(sessionRepo repository.SessionRepository, userRepo reposit
 				Name:   sessionCookieName,
 				Value:  "",
 				Path:   "/",
-				Domain: ".popsigner.com",
+				Domain: cookieDomain,
 				MaxAge: -1,
 			})
 			http.Redirect(w, r, "/login", http.StatusFound)
@@ -648,7 +653,7 @@ func dashboardHandler(sessionRepo repository.SessionRepository, userRepo reposit
 				Name:   sessionCookieName,
 				Value:  "",
 				Path:   "/",
-				Domain: ".popsigner.com",
+				Domain: cookieDomain,
 				MaxAge: -1,
 			})
 			http.Redirect(w, r, "/login?error="+url.QueryEscape("Session expired"), http.StatusFound)
@@ -724,7 +729,7 @@ func logoutHandler(sessionRepo repository.SessionRepository) http.HandlerFunc {
 			Name:   sessionCookieName,
 			Value:  "",
 			Path:   "/",
-			Domain: ".popsigner.com",
+			Domain: cookieDomain,
 			MaxAge: -1,
 		})
 
@@ -746,7 +751,7 @@ func getAuthenticatedUser(w http.ResponseWriter, r *http.Request, sessionRepo re
 			Name:   sessionCookieName,
 			Value:  "",
 			Path:   "/",
-			Domain: ".popsigner.com",
+			Domain: cookieDomain,
 			MaxAge: -1,
 		})
 		http.Redirect(w, r, "/login", http.StatusFound)

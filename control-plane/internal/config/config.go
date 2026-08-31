@@ -81,6 +81,9 @@ type AuthConfig struct {
 	OAuthGoogleSecret string        `mapstructure:"oauth_google_secret"`
 	OAuthCallbackURL  string        `mapstructure:"oauth_callback_url"`
 	DashboardURL      string        `mapstructure:"dashboard_url"`
+	// CookieDomain is the Domain attribute on auth cookies. Empty means host-only
+	// (no Domain attribute), for deployments served from a single hostname.
+	CookieDomain string `mapstructure:"cookie_domain"`
 }
 
 // Load reads configuration from files and environment variables.
@@ -109,6 +112,7 @@ func Load() (*Config, error) {
 	v.BindEnv("auth.oauth_google_id", "BANHBAO_AUTH_OAUTH_GOOGLE_ID")
 	v.BindEnv("auth.oauth_google_secret", "BANHBAO_AUTH_OAUTH_GOOGLE_SECRET")
 	v.BindEnv("auth.oauth_callback_url", "BANHBAO_AUTH_OAUTH_CALLBACK_URL")
+	v.BindEnv("auth.cookie_domain", "BANHBAO_AUTH_COOKIE_DOMAIN")
 
 	// Explicitly bind OpenBao environment variables
 	v.BindEnv("openbao.address", "BANHBAO_OPENBAO_ADDRESS")
@@ -168,5 +172,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("auth.session_expiry", "168h") // 7 days
 	v.SetDefault("auth.oauth_callback_url", "http://localhost:8080")
 	v.SetDefault("auth.dashboard_url", "http://localhost:3000")
+	// Matches the previously hardcoded value so existing deployments keep sharing
+	// cookies across popsigner.com subdomains.
+	v.SetDefault("auth.cookie_domain", ".popsigner.com")
 }
-
